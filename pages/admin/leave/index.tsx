@@ -125,7 +125,7 @@ export default function LeavePage({ user }: Props) {
         .page-controls { margin-bottom: var(--s5); }
         .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
         .filter-tab {
-          padding: 6px 14px; border-radius: 20px;
+          padding: 10px 14px; min-height: 44px; border-radius: 20px;
           font-size: .875rem; font-weight: 500;
           color: var(--text-sub); background: var(--surface);
           border: 1px solid var(--border);
@@ -136,8 +136,8 @@ export default function LeavePage({ user }: Props) {
         .filter-tab:not(.active):hover { border-color: var(--brand); color: var(--brand); }
         .badge-count {
           background: var(--danger); color: #fff;
-          font-size: .6875rem; font-weight: 700;
-          border-radius: 10px; padding: 1px 6px; min-width: 18px; text-align: center;
+          font-size: .75rem; font-weight: 700;
+          border-radius: 10px; padding: 2px 7px; min-width: 20px; text-align: center;
         }
 
         .leave-list { display: flex; flex-direction: column; gap: var(--s3); }
@@ -182,7 +182,7 @@ export default function LeavePage({ user }: Props) {
         }
         @media (max-width: 480px) {
           .filter-tabs { gap: var(--s1); }
-          .filter-tab { padding: 5px 10px; font-size: .8125rem; }
+          .filter-tab { padding: 8px 12px; font-size: .8125rem; min-height: 44px; }
         }
       `}</style>
     </AdminLayout>

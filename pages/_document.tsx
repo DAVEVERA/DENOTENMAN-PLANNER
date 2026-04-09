@@ -5,11 +5,6 @@ export default function Document() {
     <Html lang="nl">
       <Head>
         <meta charSet="utf-8" />
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#C8882A" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

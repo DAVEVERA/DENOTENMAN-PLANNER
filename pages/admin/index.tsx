@@ -246,6 +246,60 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         </div>
       )}
 
+      {/* ── Mobile Employee Cards (≤768px) ── */}
+      {!loading && (
+        <div className="plan-mobile-view" aria-label="Planning weekoverzicht mobiel">
+          {employees.map(emp => (
+            <div key={emp.id} className="mobile-emp-card">
+              <div className="mobile-emp-header">
+                <span className="mobile-emp-name">{emp.name}</span>
+                {emp.location === 'both' && <LocationBadge location="both" size="xs" />}
+              </div>
+              <div className="mobile-days-strip">
+                {DAYS.map((day, i) => {
+                  const dayShifts = shiftsFor(emp.id, day)
+                  const isWeekend = day === 'zaterdag' || day === 'zondag'
+                  return (
+                    <div key={day} className={`mobile-day-col${isWeekend ? ' weekend' : ''}`}>
+                      <div className="mobile-day-head">
+                        <span className="mobile-day-short">{DAY_SHORT[day]}</span>
+                        <span className="mobile-day-num">{dayDate(week, year, i)}</span>
+                      </div>
+                      <div className="mobile-day-shifts">
+                        {dayShifts.map(s => (
+                          <button
+                            key={s.id}
+                            className="mobile-shift-chip"
+                            data-type={s.shift_type.toLowerCase()}
+                            onClick={() => setModal({ shift: s, employee: emp, day })}
+                            aria-label={`${s.shift_type} - ${emp.name} - ${day}. Tik om te bewerken.`}
+                          >
+                            <span className="mobile-chip-type">{s.shift_type.slice(0, 3)}</span>
+                            {s.start_time && (
+                              <span className="mobile-chip-time">{formatTime(s.start_time)}</span>
+                            )}
+                          </button>
+                        ))}
+                        <button
+                          className="mobile-add-btn"
+                          onClick={() => setModal({ shift: null, employee: emp, day })}
+                          aria-label={`Dienst toevoegen voor ${emp.name} op ${day}`}
+                        >+</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+          {employees.length === 0 && (
+            <div className="empty-row">
+              Geen medewerkers gevonden voor deze locatie.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Shift Modal ── */}
       {modal && (
         <ShiftModal
@@ -334,28 +388,28 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           cursor: pointer; color: inherit; font: inherit;
         }
         .shift-chip-edit-btn:hover, .open-chip-edit-btn:hover { background: rgba(0,0,0,.04); }
-        .chip-type { font-size: .6875rem; font-weight: 700; line-height: 1.2; }
-        .chip-time { font-size: .5625rem; opacity: .8; line-height: 1.2; color: var(--text-sub); }
+        .chip-type { font-size: .75rem; font-weight: 700; line-height: 1.2; }
+        .chip-time { font-size: .6875rem; opacity: .8; line-height: 1.2; color: var(--text-sub); }
         .chip-delete {
           border: none; background: rgba(0,0,0,.05); color: var(--text-sub);
-          padding: 0 8px; font-size: 1rem; cursor: pointer; display: flex; align-items: center;
-          transition: background .15s, color .15s; min-width: 28px; justify-content: center;
+          padding: 0 10px; font-size: 1rem; cursor: pointer; display: flex; align-items: center;
+          transition: background .15s, color .15s; min-width: 36px; min-height: 36px; justify-content: center;
         }
         .chip-delete:hover { background: rgba(220,53,69,.15); color: #dc3545; }
 
         /* Add button — always subtly visible, fully visible on hover/focus */
         .cell-add-btn {
-          width: 100%; height: 22px; border: 1px dashed var(--border);
+          width: 100%; min-height: 28px; border: 1px dashed var(--border);
           background: transparent; border-radius: 4px; margin-top: 3px;
           color: var(--text-muted); cursor: pointer; transition: all .15s;
           display: flex; align-items: center; justify-content: center; font-weight: 600;
-          font-size: .875rem; opacity: 0;
+          font-size: .875rem; opacity: 0.25;
         }
         .shift-cell:hover .cell-add-btn,
         .cell-add-btn:focus { opacity: 1; border-color: var(--brand); color: var(--brand); }
 
         .open-chip { background: var(--brand-light) !important; border: 1px solid var(--brand); border-style: dashed; }
-        .chip-invite { font-size: .5625rem; border-radius: 3px; padding: 1px 4px; font-weight: 600; margin-top: 2px; }
+        .chip-invite { font-size: .6875rem; border-radius: 3px; padding: 1px 4px; font-weight: 600; margin-top: 2px; }
         .chip-invite.pending  { background: #FFF3E0; color: #E65100; }
         .chip-invite.accepted { background: #E8F5E9; color: #2E7D32; }
         .chip-invite.declined { background: #FCE4EC; color: #B71C1C; }
@@ -363,34 +417,55 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         .loading-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
         .empty-row { padding: var(--s8); text-align: center; color: var(--text-muted); font-size: .9375rem; }
 
-        /* ── Mobile ── */
+        /* ── Mobile card view ── */
+        .plan-mobile-view { display: none; }
+
+        .mobile-emp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+        .mobile-emp-header { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); background: var(--surface-alt); border-bottom: 1px solid var(--border); }
+        .mobile-emp-name { font-size: .875rem; font-weight: 600; flex: 1; }
+        .mobile-days-strip { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .mobile-day-col { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 64px; }
+        .mobile-day-col:last-child { border-right: none; }
+        .mobile-day-col.weekend { background: rgba(140,128,120,.04); }
+        .mobile-day-head { display: flex; flex-direction: column; align-items: center; padding: 4px 2px; background: var(--surface-alt); border-bottom: 1px solid var(--border); gap: 1px; }
+        .mobile-day-short { font-size: .625rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .mobile-day-num { font-size: .75rem; font-weight: 600; }
+        .mobile-day-shifts { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 3px 2px; }
+        .mobile-shift-chip {
+          width: 100%; min-height: 32px; border: none; border-radius: 3px;
+          display: flex; flex-direction: column; align-items: flex-start;
+          padding: 3px 4px; cursor: pointer; gap: 1px; font: inherit; text-align: left;
+        }
+        .mobile-shift-chip:active { opacity: .8; }
+        .mobile-chip-type { font-size: .6875rem; font-weight: 700; line-height: 1.2; }
+        .mobile-chip-time { font-size: .625rem; color: var(--text-sub); line-height: 1.2; }
+        .mobile-add-btn {
+          width: 100%; min-height: 32px; background: transparent;
+          border: 1px dashed var(--border); border-radius: 3px;
+          color: var(--text-muted); cursor: pointer; font-size: .875rem; font-weight: 700;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .mobile-add-btn:active { border-color: var(--brand); color: var(--brand); background: var(--brand-subtle); }
+
+        /* ── Mobile breakpoints ── */
         @media (max-width: 768px) {
+          .plan-grid-wrap { display: none; }
+          .plan-mobile-view { display: flex; flex-direction: column; gap: var(--s2); }
           .week-label { min-width: unset; font-size: .875rem; }
           .plan-controls { gap: var(--s2); }
           .loc-tab { padding: 5px 8px; font-size: .75rem; }
-          .col-emp { width: 80px; min-width: 72px; }
-          .emp-name { font-size: .75rem; }
-          /* Always show add button on touch devices */
-          .cell-add-btn { opacity: 0.35; height: 28px; }
-          .cell-add-btn:active { opacity: 1; }
-          /* Bigger touch target for delete */
-          .chip-delete { min-width: 32px; padding: 0 10px; }
-          .shift-chip { min-height: 36px; }
+          .chip-delete { min-width: 44px; min-height: 44px; padding: 0 12px; }
         }
 
-        /* Touch devices: show add button permanently */
         @media (hover: none) and (pointer: coarse) {
-          .cell-add-btn { opacity: 0.35 !important; }
-          .cell-add-btn:active { opacity: 1 !important; }
+          .cell-add-btn { opacity: 0.5 !important; min-height: 36px; }
         }
 
         @media (max-width: 480px) {
           .plan-controls { flex-direction: column; align-items: stretch; }
           .loc-tabs { justify-content: center; }
           .week-nav { justify-content: center; }
-          .plan-grid { min-width: 480px; }
-          .col-emp { width: 70px; min-width: 60px; }
-          .col-day { min-width: 55px; }
+          .mobile-chip-time { display: none; }
         }
       `}</style>
     </AdminLayout>

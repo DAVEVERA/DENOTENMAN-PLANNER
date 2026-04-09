@@ -179,6 +179,7 @@ export default function MyHoursPage({ user }: Props) {
           .log-date { font-size: .8125rem; }
         }
         @media (max-width: 480px) {
+          .hours-page { max-width: 100%; }
           .filters { flex-direction: column; align-items: stretch; }
           .date-range { flex-wrap: wrap; }
           .date-range input { flex: 1; min-width: 120px; }

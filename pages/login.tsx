@@ -105,14 +105,24 @@ export default function LoginPage() {
         .login-btn { width: 100%; justify-content: center; margin-top: var(--s2); height: 44px; font-size: 1rem; }
 
         .login-locations {
-          display: flex; align-items: center; justify-content: center;
-          gap: 6px; margin-top: var(--s6);
+          display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+          gap: 6px; row-gap: 4px; margin-top: var(--s6);
           font-size: .8125rem; color: var(--text-muted);
         }
         .loc-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
         .markt-dot { background: var(--markt); }
         .noot-dot  { background: var(--noot);  }
         .loc-sep   { color: var(--border); }
+
+        @media (max-width: 480px) {
+          .login-card { padding: var(--s5); }
+          .login-shell { padding: var(--s4); }
+        }
+        @media (max-width: 360px) {
+          .login-card { padding: var(--s4); }
+          .login-shell { padding: var(--s3); }
+          .login-title { font-size: 1.25rem; }
+        }
       `}</style>
     </div>
   )

@@ -121,7 +121,8 @@ export default function TeamLayout({ user, children, location }: Props) {
 
         .team-nav { display: flex; align-items: center; gap: 2px; flex: 1; }
         .team-nav-link {
-          padding: 6px var(--s3); border-radius: var(--r1);
+          padding: 10px var(--s3); border-radius: var(--r1);
+          min-height: 44px; display: inline-flex; align-items: center;
           font-size: .9375rem; font-weight: 500; color: var(--text-sub);
           transition: background .15s, color .15s;
         }
@@ -145,22 +146,23 @@ export default function TeamLayout({ user, children, location }: Props) {
           .team-header-user { display: none; }
           .team-header-inner { padding: 0 var(--s4); height: 52px; }
           .team-brand-name { font-size: .9375rem; }
-          .team-main { padding: var(--s3) var(--s3) 80px; }
+          .team-main { padding: var(--s3) var(--s3) calc(64px + env(safe-area-inset-bottom, 0px)); }
 
           .team-bottom-nav {
             display: flex; position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--surface); border-top: 1px solid var(--border);
             z-index: 100; box-shadow: 0 -2px 8px rgba(26,20,18,.08);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
           }
           .tbn-item {
             flex: 1; display: flex; flex-direction: column; align-items: center;
-            padding: 8px 2px 6px; gap: 3px; min-width: 0;
+            padding: 10px 2px 8px; min-height: 56px; gap: 3px; min-width: 0;
             color: var(--text-muted); text-decoration: none;
             transition: color .15s;
           }
           .tbn-item.active { color: var(--brand); }
           .tbn-icon { display: flex; align-items: center; justify-content: center; }
-          .tbn-label { font-size: .5625rem; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+          .tbn-label { font-size: .6875rem; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
         }
       `}</style>
     </div>

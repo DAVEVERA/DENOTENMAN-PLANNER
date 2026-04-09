@@ -146,7 +146,7 @@ export default function SettingsPage({ user }: Props) {
         }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin-bottom: var(--s3); }
         .form-hint { display: block; font-size: .8125rem; color: var(--text-muted); margin-top: 4px; }
-        .check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: .9375rem; }
+        .check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: .9375rem; min-height: 44px; }
         .settings-info-box {
           background: var(--surface-alt); border: 1px solid var(--border);
           border-radius: var(--radius); padding: var(--s4);
@@ -156,10 +156,12 @@ export default function SettingsPage({ user }: Props) {
         .env-block {
           display: block; background: var(--text); color: #e8d5b0;
           padding: var(--s3); border-radius: var(--radius);
-          font-size: .8125rem; white-space: pre; margin: var(--s2) 0;
+          font-size: .8125rem; white-space: pre; overflow-x: auto;
+          -webkit-overflow-scrolling: touch; max-width: 100%; margin: var(--s2) 0;
         }
         .form-footer { margin-top: var(--s5); }
 
+        @media (max-width: 768px) { .settings-form { max-width: 100%; } }
         @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
       `}</style>
     </AdminLayout>

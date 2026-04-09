@@ -221,6 +221,10 @@ export default function MyLeavePage({ user }: Props) {
           .leave-header { flex-wrap: wrap; gap: var(--s3); }
           .page-title { font-size: 1.125rem; }
         }
+        @media (max-width: 360px) {
+          .leave-header { flex-direction: column; align-items: stretch; gap: var(--s2); }
+          .leave-header .btn { width: 100%; }
+        }
       `}</style>
     </TeamLayout>
   )

@@ -227,7 +227,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .day-card {
           background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
           padding: var(--s3); cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s;
-          display: flex; flex-direction: column; gap: var(--s2);
+          display: flex; flex-direction: column; gap: var(--s2); min-height: 72px;
         }
         .day-card:hover { transform: translateY(-2px); border-color: var(--brand); box-shadow: var(--shadow-md); }
         .day-card.weekend { background: rgba(140,128,120,.04); }
@@ -242,7 +242,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .day-expand { margin-top: var(--s3); border-top: 1px solid var(--border); padding-top: var(--s2); }
         .day-shift-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
         .day-shift-chip {
-          font-size: .6875rem; font-weight: 600; padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+          font-size: .75rem; font-weight: 600; padding: 3px 7px; border-radius: 3px; white-space: nowrap;
         }
         .day-shift-chip:not([data-type]) { background: var(--surface-alt); }
 
@@ -266,27 +266,32 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         }
         .shift-pill:not([data-type]) { background: var(--surface-alt); }
 
-        .pill-time { font-size: .625rem; color: var(--text-sub); }
+        .pill-time { font-size: .6875rem; color: var(--text-sub); }
 
         .loading-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
         .empty-row { text-align: center; color: var(--text-muted); padding: var(--s8); }
 
         /* ── Responsive ── */
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
           .occ-overview { grid-template-columns: repeat(4, 1fr); }
           .team-grid-section { display: none; }
-          .week-label { min-width: 0; }
+        }
+        @media (max-width: 768px) {
+          .week-label { min-width: 0; font-size: .875rem; }
+          .team-controls { flex-wrap: wrap; gap: var(--s2); }
         }
         @media (max-width: 600px) {
           .occ-overview { grid-template-columns: repeat(2, 1fr); }
-          /* Expanded card stays single column on small screens */
           .day-card.expanded { grid-column: span 1; }
           .day-num { font-size: 1rem; }
         }
-        @media (max-width: 380px) {
-          .occ-overview { grid-template-columns: 1fr; }
+        @media (max-width: 480px) {
+          .occ-overview { grid-template-columns: repeat(2, 1fr); }
           .team-controls { flex-direction: column; align-items: stretch; }
           .week-nav { justify-content: center; }
+        }
+        @media (max-width: 360px) {
+          .occ-overview { grid-template-columns: 1fr; }
         }
       `}</style>
     </TeamLayout>

@@ -80,8 +80,8 @@ export default function AdminLayout({ user, children, title }: Props) {
       </main>
 
       {/* ── Bottom nav (mobile) ───────────────────────────────────────── */}
-      <nav className="admin-bottom-nav" aria-label="Mobiele navigatie">
-        {links.slice(0, 5).map(l => {
+      <nav className="admin-bottom-nav" aria-label="Mobiele navigatie" data-count={links.length}>
+        {links.map(l => {
           const isActive = router.pathname === l.href || (l.href !== '/admin' && router.pathname.startsWith(l.href))
           return (
             <Link
@@ -159,7 +159,7 @@ export default function AdminLayout({ user, children, title }: Props) {
         }
         .admin-topbar-title { font-size: 1.0625rem; font-weight: 600; margin: 0; }
         .admin-topbar-user { display: flex; align-items: center; gap: var(--s3); }
-        .topbar-logout-btn { font-size: .8125rem; color: var(--text-muted); display: none; }
+        .topbar-logout-btn { font-size: .8125rem; color: var(--text-muted); display: none; min-height: 44px; padding: 0 var(--s2); }
         .topbar-logout-btn:hover { color: var(--text); }
         .admin-content {
           flex: 1; padding: var(--s8);
@@ -170,7 +170,7 @@ export default function AdminLayout({ user, children, title }: Props) {
 
         @media (max-width: 768px) {
           .admin-sidebar { display: none; }
-          .admin-main { margin-left: 0; padding-bottom: 70px; }
+          .admin-main { margin-left: 0; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
           .admin-content { padding: var(--s4) var(--s3); }
           .admin-topbar { padding: var(--s3) var(--s4); }
           .topbar-logout-btn { display: inline-flex; }
@@ -180,16 +180,19 @@ export default function AdminLayout({ user, children, title }: Props) {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--surface); border-top: 1px solid var(--border);
             z-index: 100; box-shadow: 0 -2px 8px rgba(26,20,18,.08);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
           }
           .bottom-nav-item {
             flex: 1; display: flex; flex-direction: column; align-items: center;
-            padding: 8px 2px 6px; gap: 3px;
+            padding: 10px 2px 8px; min-height: 56px; gap: 3px;
             color: var(--text-muted); text-decoration: none;
             transition: color .15s; min-width: 0;
           }
           .bottom-nav-item.active { color: var(--brand); }
           .bottom-nav-icon { display: flex; align-items: center; justify-content: center; }
-          .bottom-nav-label { font-size: .5625rem; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+          .bottom-nav-label { font-size: .6875rem; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+          .admin-bottom-nav[data-count="6"] .bottom-nav-label { display: none; }
+          .admin-bottom-nav[data-count="6"] .bottom-nav-item { padding: 16px 4px; }
         }
       `}</style>
     </div>

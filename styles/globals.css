@@ -96,10 +96,10 @@ h4{font-size:1rem;font-weight:600}
 .btn-markt:hover:not(:disabled){background:#235a3b}
 .btn-noot{background:var(--noot);color:#fff;border-color:var(--noot)}
 .btn-noot:hover:not(:disabled){background:#643f24}
-.btn-sm{min-height:34px;padding:0 var(--s3);font-size:.875rem;border-radius:var(--r1)}
-.btn-xs{min-height:28px;padding:0 var(--s2);font-size:.8125rem;border-radius:var(--r1)}
+.btn-sm{min-height:40px;padding:0 var(--s3);font-size:.875rem;border-radius:var(--r1)}
+.btn-xs{min-height:36px;padding:0 var(--s2);font-size:.8125rem;border-radius:var(--r1)}
 .btn-icon{padding:0;width:44px}
-.btn-icon.btn-sm{width:34px}
+.btn-icon.btn-sm{width:40px}
 
 /* ─── Badges ───────────────────────────────────────────────────────────────── */
 .loc-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:var(--r-pill);font-size:.75rem;font-weight:600;letter-spacing:.02em}
@@ -194,8 +194,8 @@ h4{font-size:1rem;font-weight:600}
 .form-control:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(200,136,42,.15)}
 .form-control::placeholder{color:var(--text-muted)}
 textarea.form-control{padding:var(--s3);min-height:90px;resize:vertical}
-.form-control-sm{min-height:34px;font-size:.875rem;padding:0 var(--s2)}
-.form-control-xs{min-height:28px;font-size:.8125rem;padding:0 var(--s2)}
+.form-control-sm{min-height:40px;font-size:.875rem;padding:0 var(--s2)}
+.form-control-xs{min-height:36px;font-size:.8125rem;padding:0 var(--s2)}
 select.form-control{appearance:none;padding-right:var(--s8);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238C8078' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .form-control-readonly{background:var(--surface-alt)}
 .form-checkbox-label{display:flex;align-items:center;gap:var(--s2);cursor:pointer;-webkit-user-select:none;user-select:none}
@@ -229,7 +229,7 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
 
 /* ─── Misc UI ──────────────────────────────────────────────────────────────── */
 .loc-tabs{display:flex;gap:2px;background:var(--border);border-radius:var(--r2);padding:3px}
-.loc-tab{flex:1;min-height:36px;padding:0 var(--s4);border-radius:calc(var(--r2) - 2px);font-size:.875rem;font-weight:500;color:var(--text-sub);background:transparent;transition:background .15s,color .15s;text-align:center}
+.loc-tab{flex:1;min-height:44px;padding:0 var(--s4);border-radius:calc(var(--r2) - 2px);font-size:.875rem;font-weight:500;color:var(--text-sub);background:transparent;transition:background .15s,color .15s;text-align:center}
 .loc-tab:hover:not(.active){background:rgba(255,255,255,.6);color:var(--text)}
 .loc-tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
 .loc-tab.active.markt{color:var(--markt)}
@@ -257,12 +257,16 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
   .form-grid{grid-template-columns:1fr}
   .modal{max-width:100%;border-radius:var(--r2) var(--r2) 0 0;max-height:95vh}
   .modal-overlay{align-items:flex-end;padding:0}
+  .modal-header{padding:var(--s4)}
+  .modal-body{padding:var(--s4);gap:var(--s4)}
+  .modal-footer{padding:var(--s3) var(--s4)}
   .week-nav .week-label{min-width:auto}
-  .planning-grid td,.planning-grid th{min-width:88px}
+  .planning-grid td,.planning-grid th{min-width:72px}
   .data-table th,.data-table td{padding:var(--s2) var(--s3)}
   .card-body{padding:var(--s4)}
 }
 @media(max-width:480px){
   .page-header{flex-direction:column;align-items:flex-start}
   .toolbar{flex-direction:column;align-items:flex-start}
+  .modal-body{padding:var(--s3);gap:var(--s3)}
 }

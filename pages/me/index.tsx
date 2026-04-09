@@ -224,9 +224,10 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
           border-radius: var(--radius); padding: 3px;
         }
         .view-tab {
-          padding: 5px 14px; border-radius: calc(var(--radius) - 2px);
+          padding: 10px 14px; min-height: 44px; border-radius: calc(var(--radius) - 2px);
           font-size: .875rem; font-weight: 500; color: var(--text-sub);
           transition: background .15s, color .15s;
+          display: inline-flex; align-items: center;
         }
         .view-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 
@@ -275,7 +276,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-type { font-size: .75rem; font-weight: 700; }
         .slot-time { font-size: .6875rem; color: var(--text-sub); }
         .slot-loc {
-          font-size: .625rem; font-weight: 700; align-self: flex-start;
+          font-size: .6875rem; font-weight: 700; align-self: flex-start;
           padding: 1px 4px; border-radius: 3px; margin-top: 1px;
         }
         .slot-loc.loc-markt        { background: rgba(44,110,73,.15); color: var(--markt); }
@@ -283,16 +284,16 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-empty { font-size: .875rem; color: var(--text-muted); padding: 2px 0; }
 
         /* ── Responsive ── */
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
           .days-grid { grid-template-columns: repeat(4, 1fr); }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 600px) {
           .me-controls { gap: var(--s2); }
           .period-label { min-width: 0; font-size: .875rem; }
-          .view-tab { padding: 5px 10px; font-size: .8125rem; }
+          .view-tab { padding: 8px 10px; }
           .days-grid { grid-template-columns: repeat(4, 1fr); }
         }
-        @media (max-width: 520px) {
+        @media (max-width: 480px) {
           .me-controls { flex-direction: column; align-items: stretch; }
           .period-nav { justify-content: space-between; }
           .view-tabs { justify-content: center; }

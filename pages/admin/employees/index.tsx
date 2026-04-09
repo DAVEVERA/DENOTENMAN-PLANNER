@@ -243,6 +243,13 @@ export default function EmployeesPage({ user }: Props) {
           .data-table thead th:nth-child(5),
           .data-table tbody td:nth-child(5) { display: none; }
         }
+        @media (max-width: 480px) {
+          .form-grid-3 { grid-template-columns: 1fr; }
+          .page-header { flex-direction: column; align-items: stretch; }
+          .page-header .btn { width: 100%; }
+          .filters { flex-direction: column; align-items: stretch; }
+          .filters .form-control { width: 100%; }
+        }
       `}</style>
     </AdminLayout>
   )
