@@ -1,0 +1,68 @@
+<!-- Employee Detail Template — mirrors pages/employee.tsx -->
+<link rel="stylesheet" href="/styles/globals.css" />
+
+<div class="planner20-employee">
+  <h1>👤 Mijn Rooster — {{employeeName}}</h1>
+
+  <!-- Navigation tabs -->
+  <div class="emp-detail-nav">
+    <a href="/employee?month={{month}}&year={{year}}&months=1"
+       class="emp-detail-tab {{#months1Active}}active{{/months1Active}}{{^months1Active}}inactive{{/months1Active}}">
+      1 Maand
+    </a>
+    <a href="/employee?month={{month}}&year={{year}}&months=3"
+       class="emp-detail-tab {{#months3Active}}active{{/months3Active}}{{^months3Active}}inactive{{/months3Active}}">
+      3 Maanden
+    </a>
+    <div class="emp-detail-pager">
+      <a href="/employee?month={{prevMonth}}&year={{prevYear}}&months={{months}}" class="button">← Vorig</a>
+      <strong class="emp-detail-month">{{monthName}} {{year}}</strong>
+      <a href="/employee?month={{nextMonth}}&year={{nextYear}}&months={{months}}" class="button">Volgend →</a>
+    </div>
+  </div>
+
+  <!-- Week cards -->
+  <!-- {{#weeks}} -->
+  <div class="emp-week-card">
+    <div class="emp-week-header">
+      <strong class="emp-week-title">Week {{week}} ({{weekYear}})</strong>
+      <span class="emp-week-meta">
+        {{shiftCount}} diensten{{#hasAbsent}} · {{absentCount}} afwezig{{/hasAbsent}}
+      </span>
+    </div>
+    <div class="emp-week-body">
+      <!-- {{#hasShifts}} -->
+      <div class="emp-week-grid">
+        <!-- {{#days}} -->
+        <div>
+          <div class="emp-day-label">{{dayAbbrev}}</div>
+          <!-- {{#shifts}} -->
+          <div class="pp-shift">
+            <strong>{{shift_type}}</strong>
+            <br /><span class="shift-time">{{start_time}}–{{end_time}}</span>
+            <!-- {{#note}} -->
+            <br /><span class="shift-note">{{note}}</span>
+            <!-- {{/note}} -->
+          </div>
+          <!-- {{/shifts}} -->
+          <!-- {{^shifts}} -->
+          <div class="emp-day-empty">—</div>
+          <!-- {{/shifts}} -->
+        </div>
+        <!-- {{/days}} -->
+      </div>
+      <!-- {{/hasShifts}} -->
+      <!-- {{^hasShifts}} -->
+      <p class="emp-week-empty">Nog geen diensten gepland.</p>
+      <!-- {{/hasShifts}} -->
+    </div>
+  </div>
+  <!-- {{/weeks}} -->
+
+  <!-- No employee linked warning -->
+  <!-- {{^employee}} -->
+  <div class="alert-warning">
+    <strong>Let op:</strong> Je account is niet gekoppeld aan een medewerker. Vraag een beheerder dit in te stellen.
+  </div>
+  <!-- {{/employee}} -->
+</div>

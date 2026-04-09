@@ -1,0 +1,1830 @@
+/* Reset and Base */
+.planner20-admin *,
+.pp-employee-view *,
+.pp-team-view * {
+    box-sizing: border-box;
+}
+
+/* Custom Tooltip */
+.pp-tooltip {
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10000;
+    pointer-events: none;
+    display: none;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.pp-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+
+/* Admin Interface - RESET */
+.planner20-admin {
+    padding: 20px 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: visible; /* Zorgt dat de admin container zelf niets afkapt */
+    box-sizing: border-box;
+}
+
+/* Bulk Operations */
+.pp-bulk-toolbar {
+    background: #f0f6ff;
+    border: 2px solid #0866ff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(8, 102, 255, 0.1);
+}
+
+.bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.bulk-selected-count {
+    font-weight: 600;
+    color: #0866ff;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #0866ff;
+}
+
+.smart-tools {
+    display: flex;
+    gap: 10px;
+    margin-left: 20px;
+    padding-left: 20px;
+    border-left: 1px solid #ddd;
+}
+
+/* Selection States */
+.selectable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.selectable:hover {
+    background: rgba(8, 102, 255, 0.05);
+    border-color: #0866ff;
+}
+
+.selected {
+    background: rgba(8, 102, 255, 0.1) !important;
+    border: 2px solid #0866ff !important;
+    box-shadow: 0 0 0 2px rgba(8, 102, 255, 0.2);
+}
+
+.shift-select, .day-select {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    z-index: 10;
+    transform: scale(1.2);
+}
+
+.day-header {
+    position: relative;
+    min-height: 30px;
+}
+
+/* Enhanced Day Cells */
+.day-cell {
+    position: relative;
+    min-height: 120px;
+}
+
+.day-cell.selectable {
+    border: 2px dashed transparent;
+}
+
+.day-cell.selected {
+    border: 2px solid #0866ff;
+    background: rgba(8, 102, 255, 0.05);
+}
+
+/* Enhanced Shift Blocks */
+.shift-block {
+    position: relative;
+    margin-bottom: 6px;
+}
+
+.shift-block.selectable {
+    border: 2px dashed transparent;
+}
+
+.shift-block.selected {
+    border: 2px solid #0866ff;
+    background: rgba(8, 102, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(8, 102, 255, 0.2);
+}
+
+/* Settings Tabs */
+.pp-settings-tabs {
+    margin-bottom: 30px;
+}
+
+.pp-settings-tabs .nav-tab-wrapper {
+    border-bottom: 1px solid #ccd0d4;
+    margin-bottom: 0;
+}
+
+.pp-settings-tabs .nav-tab {
+    background: #f1f1f1;
+    border: 1px solid #ccd0d4;
+    border-bottom: none;
+    color: #555;
+    text-decoration: none;
+    padding: 8px 12px;
+    margin-right: 5px;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s ease;
+}
+
+.pp-settings-tabs .nav-tab:hover {
+    background: #f9f9f9;
+    color: #0073aa;
+}
+
+.pp-settings-tabs .nav-tab-active {
+    background: #fff;
+    border-bottom: 1px solid #fff;
+    color: #000;
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-top: none;
+    padding: 20px;
+    border-radius: 0 0 4px 4px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Settings Form Enhancements */
+.rule-group {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    border-left: 4px solid #0073aa;
+}
+
+.rule-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.rule-group .description {
+    margin: 5px 0 0 25px;
+    font-style: italic;
+    color: #666;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-suffix {
+    color: #666;
+    font-weight: 500;
+}
+
+/* Peak Hours Configuration */
+.peak-hours-config, .manager-hours-config {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.peak-hours-presets, .manager-hours-presets {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: #e0e0e0;
+    border-color: #0073aa;
+}
+
+/* Template Cards */
+.templates-container {
+    max-width: 100%;
+}
+
+.template-section {
+    margin-bottom: 30px;
+}
+
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.template-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+.template-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.template-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.template-header h4 {
+    margin: 0;
+    color: #0073aa;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    flex: 1;
+}
+
+.template-delete {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.template-delete:hover {
+    background: #c82333;
+}
+
+.template-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.template-fields label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+}
+
+.template-fields input {
+    width: 120px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.template-fields input[readonly] {
+    background: #f9f9f9;
+    color: #666;
+}
+
+/* Employee Preferences */
+.employee-preference-card {
+    transition: all 0.2s ease;
+}
+
+.employee-preference-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.workdays-grid {
+    gap: 15px;
+}
+
+.workday-card {
+    transition: all 0.2s ease;
+}
+
+.workday-card:hover {
+    background: #f8f9fa;
+    border-color: #0073aa;
+}
+
+/* Export & Backup */
+.export-card, .backup-section, .import-section {
+    transition: all 0.2s ease;
+}
+
+.export-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+/* Advanced Settings */
+.color-card {
+    transition: all 0.2s ease;
+}
+
+.color-card:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.warning-box {
+    border-left: 4px solid #ffc107;
+}
+
+/* Template Add Section */
+.template-add-section {
+    border: 2px dashed #0073aa;
+    transition: all 0.2s ease;
+}
+
+.template-add-section:hover {
+    border-color: #005a87;
+    background: #f0f6ff;
+}
+
+/* Shift Type Selector */
+.shift-type-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.template-quick-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.template-btn {
+    background: #f0f6ff;
+    border: 1px solid #0866ff;
+    color: #0866ff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+}
+
+.template-btn:hover {
+    background: #0866ff;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(8, 102, 255, 0.3);
+}
+
+.template-btn:active {
+    transform: translateY(0);
+}
+
+.pp-week-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.pp-week-dropdown,
+.pp-year-dropdown {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Stats Bar */
+.pp-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Collapsible Conflicts/Warnings */
+.pp-conflicts-collapsible {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.conflicts-header {
+    background: #ffc107;
+    color: #856404;
+    padding: 12px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.2s ease;
+}
+
+.conflicts-header:hover {
+    background: #e0a800;
+}
+
+.toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+.conflicts-content {
+    padding: 15px 20px;
+    background: #fff3cd;
+}
+
+.conflicts-content ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.conflicts-content.expanded .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.pp-conflicts h3 {
+    margin: 0 0 10px 0;
+}
+
+.pp-conflicts ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.conflict-low { color: #666; }
+.conflict-medium { color: #ff9800; }
+.conflict-high { color: #f44336; font-weight: 600; }
+.conflict-critical { color: #d32f2f; font-weight: 700; }
+
+/* Dagstart Info */
+.pp-dagstart-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.dagstart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.dagstart-day {
+    background: #fff;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dagstart-select {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+}
+
+/* Planning Grid */
+.pp-planning-grid {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    max-height: 85vh; 
+    overflow: auto;
+    margin-bottom: 30px;
+    border: 1px solid #e0e0e0;
+    background: #ffffff;
+}
+
+.pp-planning-grid table {
+    width: 100%;
+    min-width: auto; 
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: auto;
+}
+
+.pp-planning-grid th {
+    background: #ffffff;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 20; 
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); 
+}
+
+.employee-column {
+    width: 150px;
+    min-width: 150px; 
+    position: sticky;
+    left: 0;
+    background: #f5f6fa;
+    z-index: 21; 
+    border-right: 2px solid #dee2e6; 
+}
+
+.employee-cell {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    border-right: 2px solid #dee2e6;
+    padding: 10px;
+    font-weight: 600;
+    z-index: 10;
+}
+
+.day-cell {
+    padding: 8px;
+    vertical-align: top;
+    border: 1px solid #e4e6eb;
+    min-height: 100px;
+    position: relative;
+}
+
+/* Shift Blocks */
+.add-shift-btn {
+    width: 100%;
+    padding: 6px;
+    background: transparent;
+    border: 2px dashed #dadde1;
+    border-radius: 4px;
+    color: #65676b;
+    cursor: pointer;
+    font-size: 12px;
+    margin-bottom: 4px;
+    transition: all 0.2s;
+}
+
+.add-shift-btn:hover {
+    border-color: #0866ff;
+    background: #f0f6ff;
+    color: #0866ff;
+}
+
+.shift-block {
+    padding: 6px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    position: relative;
+    cursor: default;
+    border-left: 3px solid;
+}
+
+.shift-inbound {
+    background: #06a600;
+    border-color: #06a600;
+    color: #000;
+}
+
+.shift-backoffice-\&-chat,
+.shift-outbound-\&-chat {
+    background: #001aff;
+    border-color: #324ccf;
+    color: #fff;
+}
+
+.shift-backoffice-\&-chat .shift-title,
+.shift-backoffice-\&-chat .shift-time,
+.shift-outbound-\&-chat .shift-title,
+.shift-outbound-\&-chat .shift-time {
+    color: #fff;
+}
+
+.shift-training {
+    background: #ff9900;
+    border-color: #ff9900;
+    color: #000;
+}
+
+.shift-verlof {
+    background: #961414;
+    border-color: #961414;
+    color: #000;
+}
+
+.shift-vakantie {
+    background: #53008f;
+    border-color: #53008f;
+    color: #fff;
+}
+
+.shift-vakantie .shift-title,
+.shift-vakantie .shift-time {
+    color: #fff;
+}
+
+.shift-verzuim {
+    background: #961414;
+    border-color: #961414;
+    color: #000;
+}
+
+.shift-tandarts,
+.shift-tandarts-dokter,
+.shift-tandarts\/dokter {
+    background: #961414;
+    border-color: #961414;
+    color: #000;
+}
+
+.shift-meeting {
+    background: #ff9900;
+    border-color: #ff9900;
+    color: #000;
+}
+
+.shift-extern {
+    background: #ff9900;
+    border-color: #ff9900;
+    color: #000;
+}
+
+.shift-title {
+    font-weight: 600;
+    color: #000;
+}
+
+.shift-time {
+    font-size: 11px;
+    color: #000;
+    margin-top: 2px;
+}
+
+.shift-note {
+    font-size: 10px;
+    color: #90949c;
+    font-style: italic;
+    margin-top: 2px;
+}
+
+.shift-actions {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: none;
+    gap: 2px;
+}
+
+.shift-block:hover .shift-actions {
+    display: flex;
+}
+
+.shift-edit,
+.shift-delete {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #dadde1;
+    background: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shift-delete {
+    color: #f44336;
+}
+
+/* Modal */
+.pp-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pp-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.pp-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e4e6eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pp-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.pp-modal-body {
+    padding: 20px;
+}
+
+.pp-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #e4e6eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-group input[type="time"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.quick-times {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.quick-time {
+    padding: 4px 8px;
+    background: #f0f2f5;
+    border: 1px solid #dadde1;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.quick-time:hover {
+    background: #e4e6eb;
+}
+
+/* Employee View */
+.pp-employee-view {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.pp-employee-selector {
+    background: #fff;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pp-employee-selector label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.pp-employee-selector select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+.pp-today-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.pp-today-card h2,
+.pp-today-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    margin: 0 0 14px 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.pp-today-name {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.pp-today-day {
+    font-size: 13px;
+    font-weight: 500;
+    color: #65676b;
+}
+
+.today-shift {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid;
+}
+
+.no-shift {
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.shift-type {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.shift-buddy {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Manager Status */
+.pp-manager-status {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.manager-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    padding: 10px;
+    border-radius: 6px;
+    background: #f8f9fa;
+}
+
+.status-icon {
+    font-size: 20px;
+}
+
+.status-available { background: #6aa84f; }
+.status-busy { background: #fff9c4; }
+.status-meeting { background: #cc0000; }
+.status-external { background: #e69138; }
+.status-unavailable { background: #cc0000; }
+
+/* Week Overview */
+.pp-week-overview {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.week-day {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.week-day.current-day {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.day-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
+
+.day-shift {
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    border-left: 2px solid;
+}
+
+.shift-item {
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    border-left: 2px solid;
+    background: rgba(255,255,255,0.8);
+}
+
+/* Employee Stats */
+.pp-employee-stats {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Team View */
+.pp-team-view {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.pp-team-status {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.status-card {
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.status-card.available {
+    background: #e8f5e9;
+    border-color: #4caf50;
+}
+
+.status-card.on-break {
+    background: #fff9c4;
+    border-color: #ffc107;
+}
+
+.status-card.unavailable {
+    background: #ffebee;
+    border-color: #f44336;
+}
+
+.status-count {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.status-names {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.employee-tag {
+    background: rgba(255,255,255,0.8);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.employee-tag small {
+    opacity: 0.7;
+}
+
+/* Dagstart Today */
+.pp-dagstart-today {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.dagstart-person {
+    font-size: 24px;
+    font-weight: 600;
+    color: #000;
+    margin-top: 10px;
+}
+
+/* Week Navigation Team */
+.pp-week-nav-team {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #ffffff;
+    border-radius: 8px;
+}
+
+.nav-prev,
+.nav-next {
+    padding: 8px 15px;
+    background: #f0f2f5;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #000;
+    transition: background 0.2s;
+}
+
+.nav-prev:hover,
+.nav-next:hover {
+    background: #e4e6eb;
+}
+
+.current-week {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* Team Schedule Grid */
+.pp-team-schedule {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.team-grid-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+.team-grid {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.team-grid th {
+    background: #ffffff;
+    padding: 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid #e0e0e0;
+}
+
+.team-grid th:first-child {
+    width: 150px;
+    min-width: 150px;
+    max-width: 150px;
+}
+
+.team-grid th:not(:first-child) {
+    width: 20%;
+    min-width: 20%;
+    max-width: 20%;
+}
+
+.team-grid td {
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    vertical-align: top;
+    min-height: 80px;
+}
+
+.team-grid .employee-name {
+    width: 120px;
+    min-width: 120px;
+    max-width: 130px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: transparent;
+}
+
+.team-grid .day-cell {
+    width: 20%;
+    min-width: 20%;
+    max-width: 20%;
+}
+
+.dagstart-row {
+    background: transparent;
+    border-bottom: 2px solid #000;
+}
+
+.dagstart-label {
+    background: transparent;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px !important;
+}
+
+.dagstart-person {
+    background: #000;
+    font-weight: 600;
+    text-align: center;
+    color: #fff;
+    padding: 8px !important;
+}
+
+.full-shift {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 4px;
+    border-left: 3px solid;
+    font-size: 12px;
+}
+
+.full-shift .shift-type {
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: #000;
+}
+
+.full-shift .shift-time {
+    font-size: 10px;
+    color: #000;
+    margin-bottom: 2px;
+}
+
+.full-shift .shift-buddy {
+    font-size: 10px;
+    color: #000;
+    font-style: italic;
+}
+
+/* Team View Shift Colors - same as admin side */
+.full-shift.shift-inbound {
+    background: #06a600;
+    border-color: #06a600;
+    color: #000;
+}
+
+.full-shift.shift-backoffice-\&-chat,
+.full-shift.shift-outbound-\&-chat {
+    background: #001aff;
+    border-color: #324ccf;
+    color: #fff;
+}
+
+.full-shift.shift-backoffice-\&-chat .shift-type,
+.full-shift.shift-backoffice-\&-chat .shift-time,
+.full-shift.shift-outbound-\&-chat .shift-type,
+.full-shift.shift-outbound-\&-chat .shift-time {
+    color: #fff;
+}
+
+.full-shift.shift-training {
+    background: #ff9900;
+    border-color: #ff9900;
+    color: #000;
+}
+
+.full-shift.shift-verlof {
+    background: #961414;
+    border-color: #961414;
+    color: #000;
+}
+
+.full-shift.shift-vakantie {
+    background: #53008f;
+    border-color: #53008f;
+    color: #fff;
+}
+
+.full-shift.shift-vakantie .shift-type,
+.full-shift.shift-vakantie .shift-time {
+    color: #fff;
+}
+
+.full-shift.shift-verzuim {
+    background: #961414;
+    border-color: #961414;
+    color: #000;
+}
+
+.full-shift.shift-tandarts,
+.full-shift.shift-tandarts-dokter,
+.full-shift.shift-tandarts\/dokter {
+    background: #961414;
+    border-color: #961414;
+    color: #000;
+}
+
+.full-shift.shift-meeting {
+    background: #ff9900;
+    border-color: #ff9900;
+    color: #000;
+}
+
+.full-shift.shift-extern {
+    background: #ff9900;
+    border-color: #ff9900;
+    color: #000;
+}
+
+@keyframes scroll-left {
+    0% { transform: translate3d(100%, 0, 0); }
+    100% { transform: translate3d(-100%, 0, 0); }
+}
+
+/* Teamleider Section */
+.pp-teamleader-section {
+    background: #f8f9fa;
+    border: 2px solid #0073aa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.pp-teamleader-section h3 {
+    margin: 0 0 20px 0;
+    color: #0073aa;
+}
+
+.teamleader-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.teamleader-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border-left: 4px solid #0073aa;
+}
+
+.teamleader-role {
+    background: #0073aa;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.teamleader-days {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+}
+
+.teamleader-day {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    min-height: 120px;
+}
+
+.teamleader-day .day-label {
+    font-weight: 600;
+    color: #0073aa;
+    margin-bottom: 10px;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 8px;
+}
+
+.teamleader-shift {
+    background: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-left: 3px solid #0073aa;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 6px;
+    position: relative;
+}
+
+.teamleader-shift .shift-content {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0073aa;
+}
+
+.teamleader-shift .shift-time {
+    font-size: 10px;
+    color: #666;
+    margin-left: 5px;
+}
+
+.teamleader-add {
+    background: #e3f2fd;
+    border: 2px dashed #2196f3;
+    color: #0073aa;
+}
+
+.no-shift {
+    color: #999;
+    font-size: 12px;
+}
+
+/* Coverage Analysis */
+.pp-coverage-analysis {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.coverage-warnings {
+    margin-top: 15px;
+}
+
+.coverage-warning {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.coverage-ok {
+    background: #d4edda;
+    border-left: 4px solid #28a835;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPLOYEE VIEW — TOPBAR (employee select + period tabs, mobile-first)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Mobile base: stack vertically */
+.pp-topbar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 14px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e4e6eb;
+}
+
+.pp-topbar-emp-form {
+    margin: 0;
+}
+
+.pp-emp-select {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    border: 1.5px solid #dde0e4;
+    border-radius: 10px;
+    background: #f8f9fa;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a2e;
+    cursor: pointer;
+    -webkit-appearance: auto;
+    appearance: auto;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pp-emp-select:focus {
+    outline: none;
+    border-color: #0866ff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(8,102,255,0.12);
+}
+
+/* Segmented control style for tabs */
+.pp-period-tabs {
+    display: flex;
+    background: #f0f2f5;
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+    border: none;
+    margin: 0;
+}
+
+.pp-period-tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 6px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #65676b;
+    background: transparent;
+    border: none;
+    position: static;
+    bottom: auto;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+}
+
+.pp-period-tab:hover {
+    color: #2c3e50;
+    background: rgba(255,255,255,0.7);
+}
+
+.pp-period-tab.active {
+    background: #fff;
+    color: #0866ff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.14);
+    border: none;
+}
+
+/* Desktop: single row */
+@media (min-width: 560px) {
+    .pp-topbar {
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+    }
+
+    .pp-topbar-emp-form {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pp-emp-select {
+        height: 40px;
+        font-size: 14px;
+    }
+
+    .pp-period-tabs {
+        flex: 0 0 auto;
+    }
+
+    .pp-period-tab {
+        padding: 8px 18px;
+        flex: 0 0 auto;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPLOYEE VIEW — PERIOD NAVIGATION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pp-period-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e4e6eb;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+}
+
+/* Large touch targets on mobile */
+.pp-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 6px 14px;
+    background: #f0f2f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.pp-nav-btn:hover {
+    background: #0866ff;
+    color: #fff;
+    border-color: #0866ff;
+}
+
+.pp-period-title {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2c3e50;
+    padding: 0 4px;
+}
+
+@media (min-width: 560px) {
+    .pp-period-nav { padding: 10px 16px; }
+    .pp-period-title { font-size: 15px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPLOYEE VIEW — MULTI-WEEK TABLE (month / 3-month views)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pp-multiweek-overview {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    border: 1px solid #e4e6eb;
+}
+
+.pp-multiweek-overview h3 {
+    margin: 0 0 16px 0;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.pp-multiweek-table-wrap {
+    overflow-x: auto;
+}
+
+.pp-multiweek-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.pp-multiweek-table th {
+    background: #f5f6fa;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 11px;
+    color: #65676b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e4e6eb;
+    white-space: nowrap;
+}
+
+.pp-th-week  { width: 50px;  }
+.pp-th-dates { width: 110px; color: #999; }
+.pp-th-day   { width: 14%;   text-align: center; }
+.pp-th-hours { width: 55px;  text-align: right;  }
+
+/* Month separator row */
+.pp-month-separator td {
+    background: #f0f6ff;
+    color: #0866ff;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-top: 2px solid #d0e4ff;
+    border-bottom: 1px solid #d0e4ff;
+}
+
+/* Regular week rows */
+.pp-week-row td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+}
+
+.pp-week-row:hover td {
+    background: #fafbff;
+}
+
+.pp-current-week td {
+    background: #f0f6ff !important;
+}
+
+.pp-current-week .pp-cell-week strong {
+    color: #0866ff;
+}
+
+.pp-cell-week {
+    font-weight: 600;
+    color: #65676b;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.pp-cell-dates {
+    color: #999;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pp-cell-hours {
+    text-align: right;
+    font-weight: 600;
+    color: #2c3e50;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+/* Day cells */
+.pp-schedule-cell {
+    vertical-align: top;
+    min-width: 80px;
+}
+
+.pp-today-cell {
+    background: rgba(33, 150, 243, 0.06) !important;
+    border-left: 2px solid #2196f3;
+}
+
+.pp-cell-empty {
+    color: #ccc;
+    display: block;
+    text-align: center;
+    padding: 4px 0;
+}
+
+/* Shift pills inside the multi-week table */
+.pp-shift-pill {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    border-left: 3px solid transparent;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.pp-pill-type {
+    font-weight: 600;
+    color: inherit;
+}
+
+.pp-pill-time {
+    font-size: 10px;
+    opacity: 0.85;
+}
+
+/* Apply shift-type colours to pills (mirrors admin-side classes) */
+.pp-shift-pill.shift-inbound          { background: #e8f8e8; border-color: #06a600; color: #1a5c1a; }
+.pp-shift-pill.shift-backoffice-chat,
+.pp-shift-pill.shift-outbound-chat    { background: #e8eeff; border-color: #001aff; color: #001aff; }
+.pp-shift-pill.shift-training         { background: #fff3e0; border-color: #ff9900; color: #7a4800; }
+.pp-shift-pill.shift-verlof           { background: #fce4e4; border-color: #961414; color: #961414; }
+.pp-shift-pill.shift-vakantie         { background: #f0e4fa; border-color: #53008f; color: #53008f; }
+.pp-shift-pill.shift-verzuim          { background: #fce4e4; border-color: #961414; color: #961414; }
+.pp-shift-pill.shift-meeting          { background: #fff3e0; border-color: #ff9900; color: #7a4800; }
+.pp-shift-pill.shift-extern           { background: #fff3e0; border-color: #ff9900; color: #7a4800; }
+
+.pp-no-shift-dash {
+    color: #ccc;
+    display: block;
+    text-align: center;
+}
+
+.pp-no-data {
+    color: #999;
+    font-style: italic;
+    margin: 0;
+    padding: 10px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPLOYEE VIEW — RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide date column on very small screens (already hidden via pp-hide-xs class) */
+@media (max-width: 480px) {
+    .pp-hide-xs { display: none !important; }
+
+    .pp-multiweek-table { min-width: 0; }
+
+    .pp-schedule-cell { min-width: 48px; }
+
+    .pp-shift-pill { padding: 2px 4px; }
+
+    .pp-pill-time { display: none; }
+}

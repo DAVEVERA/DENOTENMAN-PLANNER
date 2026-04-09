@@ -1,0 +1,331 @@
+/**
+ * Planner20 Mobile Styles
+ * Mobile-first responsive overrides
+ */
+
+/* Mobile Base (320px and up) */
+@media screen and (max-width: 767px) {
+    /* Admin Interface Mobile */
+    .planner20-admin {
+        padding: 10px 0;
+    }
+    
+    .pp-week-nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .pp-week-nav .button {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .pp-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 10px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+    
+    /* Simplify table on mobile */
+    .pp-planning-grid table {
+        min-width: auto;
+        font-size: 12px;
+    }
+    
+    .pp-planning-grid th,
+    .pp-planning-grid td {
+        padding: 5px;
+    }
+    
+    .employee-column {
+        width: 80px;
+        font-size: 11px;
+    }
+    
+    .employee-cell {
+        padding: 5px;
+        font-size: 12px;
+    }
+    
+    .contract-hours {
+        display: none;
+    }
+    
+    .day-cell {
+        min-height: 60px;
+        padding: 4px;
+    }
+    
+    .add-shift-btn {
+        font-size: 10px;
+        padding: 4px;
+    }
+    
+    .shift-block {
+        padding: 4px;
+        font-size: 10px;
+    }
+    
+    .shift-time {
+        font-size: 9px;
+    }
+    
+    .shift-note {
+        display: none;
+    }
+    
+    .shift-actions {
+        display: none !important;
+    }
+    
+    /* Touch-friendly shift actions */
+    .shift-block {
+        cursor: pointer;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    }
+    
+    /* Modal Mobile */
+    .pp-modal-content {
+        width: 95%;
+        margin: 10px;
+        max-height: 95vh;
+    }
+    
+    .pp-modal-header {
+        padding: 15px;
+    }
+    
+    .pp-modal-header h2 {
+        font-size: 18px;
+    }
+    
+    .pp-modal-body {
+        padding: 15px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-times {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .quick-time {
+        padding: 8px;
+        text-align: center;
+        min-height: 44px;
+    }
+    
+    /* Employee View Mobile */
+    .pp-employee-view {
+        padding: 10px;
+    }
+    
+    .pp-today-card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .pp-today-card h2 {
+        font-size: 20px;
+    }
+    
+    .week-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .week-day {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+    }
+    
+    .day-header {
+        flex: 0 0 80px;
+    }
+    
+    .day-shift {
+        flex: 1;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Team View Mobile */
+    .pp-team-view {
+        padding: 10px;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .team-grid {
+        font-size: 10px;
+    }
+    
+    .team-grid th,
+    .team-grid td {
+        padding: 4px;
+    }
+    
+    /* Mobile Dagstart Row Fixes */
+    .dagstart-row {
+        font-size: 9px !important;
+    }
+    
+    .dagstart-label {
+        font-size: 9px !important;
+        padding: 4px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .dagstart-person {
+        font-size: 8px !important;
+        padding: 4px 2px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 50px;
+    }
+    
+    .mini-shift {
+        font-size: 9px;
+        padding: 1px 3px;
+    }
+    
+    /* Hide day names on very small screens */
+    .team-grid thead th:not(:first-child) {
+        width: 35px;
+        font-size: 11px;
+    }
+    
+    /* Week navigation mobile */
+    .pp-week-nav-team {
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+    
+    .current-week {
+        width: 100%;
+        text-align: center;
+        margin: 10px 0;
+    }
+}
+
+/* Small Tablets (480px and up) */
+@media screen and (min-width: 480px) and (max-width: 767px) {
+    .pp-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .week-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .team-grid {
+        font-size: 11px;
+    }
+    
+    /* Slightly larger dagstart text on tablets */
+    .dagstart-label {
+        font-size: 10px !important;
+    }
+    
+    .dagstart-person {
+        font-size: 9px !important;
+        max-width: 60px;
+    }
+}
+
+/* Tablets (768px and up) */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    .pp-stats-bar {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .week-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop (1025px and up) */
+@media screen and (min-width: 1025px) {
+    .week-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+    
+    .status-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase touch targets */
+    .add-shift-btn,
+    .button,
+    .quick-time {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Remove hover effects on touch */
+    .shift-block:hover .shift-actions {
+        display: none;
+    }
+    
+    /* Add long-press context menu */
+    .shift-block {
+        -webkit-touch-callout: default;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .pp-week-nav,
+    .pp-modal,
+    .add-shift-btn,
+    .shift-actions,
+    .nav-prev,
+    .nav-next {
+        display: none !important;
+    }
+    
+    .planner20-admin,
+    .pp-employee-view,
+    .pp-team-view {
+        padding: 0;
+    }
+    
+    .pp-planning-grid table {
+        font-size: 10pt;
+        border: 1px solid #000;
+    }
+    
+    .shift-block {
+        border: 1px solid #000;
+        margin: 2px 0;
+    }
+}

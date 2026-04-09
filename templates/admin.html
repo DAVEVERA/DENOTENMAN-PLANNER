@@ -1,0 +1,104 @@
+<!-- Planning Admin Template — mirrors pages/index.tsx -->
+<link rel="stylesheet" href="/styles/globals.css" />
+
+<div class="planner20-admin">
+  <h1>Planner 2.0 — Week {{week}} ({{year}})</h1>
+
+  <div class="pp-week-nav">
+    <a href="/?week={{prevWeek}}&year={{prevYear}}" class="button">← Vorige</a>
+    <select
+      title="Selecteer week"
+      class="select-inline"
+      id="week-select"
+      onchange="location.href='/?week='+this.value+'&year={{year}}'"
+    >
+      <!-- {{#weeks}}<option value="{{w}}" {{#selected}}selected{{/selected}}>Week {{w}}</option>{{/weeks}} -->
+    </select>
+    <select
+      title="Selecteer jaar"
+      class="select-inline"
+      id="year-select"
+      onchange="location.href='/?week={{week}}&year='+this.value"
+    >
+      <!-- {{#years}}<option value="{{y}}" {{#selected}}selected{{/selected}}>{{y}}</option>{{/years}} -->
+    </select>
+    <a href="/?week={{nextWeek}}&year={{nextYear}}" class="button">Volgende →</a>
+    <button class="button button-primary" id="populate-btn">🔄 Vul uit Patronen</button>
+    <button class="button" id="validate-btn">✓ Valideer</button>
+    <button class="button" id="export-btn">📊 Export</button>
+  </div>
+
+  <!-- Status message -->
+  <div class="alert-success" id="status-msg" hidden>
+    <span id="status-text"></span>
+    <button class="alert-dismiss" onclick="this.parentElement.hidden=true">✕</button>
+  </div>
+
+  <!-- Conflicts -->
+  <div class="alert-warning" id="conflicts-box" hidden>
+    <strong>⚠️ <span id="conflict-count"></span> planning probleem(en):</strong>
+    <ul class="alert-list" id="conflict-list">
+      <!-- {{#conflicts}}<li class="severity-{{severity}}">{{description}}</li>{{/conflicts}} -->
+    </ul>
+  </div>
+
+  <!-- Dagstart bar -->
+  <div class="dagstart-bar">
+    <strong>🌅 Dagstart:</strong>
+    <!-- {{#days}} -->
+    <span class="dagstart-day">
+      <em>{{dayLabel}}:</em>
+      <select
+        title="Dagstart {{dayLabel}}"
+        class="dagstart-select"
+        id="dagstart-{{day}}"
+        data-day="{{day}}"
+      >
+        <option value="">— kies —</option>
+        <!-- {{#employees}}<option value="{{name}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/employees}} -->
+      </select>
+    </span>
+    <!-- {{/days}} -->
+  </div>
+
+  <!-- Schedule grid -->
+  <div class="table-wrap">
+    <table class="pp-schedule-table">
+      <thead>
+        <tr>
+          <th>Medewerker</th>
+          <th>Maandag</th>
+          <th>Dinsdag</th>
+          <th>Woensdag</th>
+          <th>Donderdag</th>
+          <th>Vrijdag</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- {{#employees}} -->
+        <tr>
+          <td class="sched-emp-cell">
+            {{name}}<br />
+            <span class="text-subtle text-xxs">{{contract_hours}}u</span>
+          </td>
+          <!-- {{#days}} -->
+          <td class="sched-day-cell">
+            <!-- {{#shifts}} -->
+            <div class="pp-shift shift-{{shiftClass}}">
+              <strong>{{shift_type}}</strong>
+              <br /><span class="text-muted">{{start_time}}–{{end_time}}</span>
+              <div class="shift-actions">
+                <button class="shift-action-btn edit" data-id="{{id}}">✏️</button>
+                <button class="shift-action-btn delete" data-id="{{id}}">✕</button>
+              </div>
+            </div>
+            <!-- {{/shifts}} -->
+            <button class="add-shift-btn" data-emp="{{empId}}" data-day="{{day}}">+ Dienst</button>
+          </td>
+          <!-- {{/days}} -->
+        </tr>
+        <!-- {{/employees}} -->
+      </tbody>
+    </table>
+  </div>
+</div>

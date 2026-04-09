@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep \"echo.*POST\\\\|echo.*GET\\\\|echo.*$_\" \"C:\\\\Users\\\\dave.vera\\\\OneDrive - Autogroep Oostendorp\\\\Bureaublad\\\\PLANNER2\\\\admin\\\\admin-interface.php\")",
+      "Bash(BASE=\"/c/Users/dave.vera/OneDrive - Autogroep Oostendorp/Bureaublad/PLANNER2\")",
+      "Read(//c/Users/dave.vera/OneDrive - Autogroep Oostendorp/Bureaublad/PLANNER2/**)"
+    ]
+  },
+  "spinnerTipsEnabled": false
+}

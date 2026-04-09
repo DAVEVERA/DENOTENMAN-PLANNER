@@ -1,0 +1,74 @@
+<!-- Patterns Template — mirrors pages/patterns.tsx -->
+<link rel="stylesheet" href="/styles/globals.css" />
+
+<div>
+  <div class="page-header">
+    <h1>🔄 Dienst Patronen</h1>
+    <button class="button button-primary" id="detect-btn">🔍 Detecteer Patronen</button>
+  </div>
+
+  <!-- Status message -->
+  <div class="alert-success" id="pattern-msg" hidden>
+    <span id="pattern-msg-text"></span>
+  </div>
+
+  <!-- Empty state -->
+  <!-- {{^hasPatterns}} -->
+  <div class="empty-state">
+    Nog geen patronen. Klik op "Detecteer Patronen".
+  </div>
+  <!-- {{/hasPatterns}} -->
+
+  <!-- Patterns table -->
+  <!-- {{#hasPatterns}} -->
+  <div class="table-wrap">
+    <table class="pat-table">
+      <thead>
+        <tr>
+          <th>Medewerker</th>
+          <th>Dag</th>
+          <th>Type</th>
+          <th>Tijd</th>
+          <th>Zekerheid</th>
+          <th>Status</th>
+          <th>Acties</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- {{#patterns}} -->
+        <tr>
+          <td class="fw-bold">{{employee_name}}</td>
+          <td>{{day_of_week}}</td>
+          <td>{{shift_type}}</td>
+          <td class="text-muted text-small">{{timeDisplay}}</td>
+          <td>
+            <div class="confidence-bar-container">
+              <div class="confidence-bar-track">
+                <div class="confidence-bar-fill {{confidenceLevel}} w-{{confidenceRounded}}"></div>
+              </div>
+              <span class="text-xs text-muted">{{confidencePercent}}%</span>
+            </div>
+          </td>
+          <td>
+            <!-- {{#is_approved}} -->
+            <span class="badge badge-success">✓ Goedgekeurd</span>
+            <!-- {{/is_approved}} -->
+            <!-- {{^is_approved}} -->
+            <span class="badge badge-warning">⏳ In afwachting</span>
+            <!-- {{/is_approved}} -->
+          </td>
+          <td>
+            <div class="pat-actions">
+              <!-- {{^is_approved}} -->
+              <button class="pat-btn-approve" data-id="{{id}}">✓ Goedkeuren</button>
+              <!-- {{/is_approved}} -->
+              <button class="pat-btn-delete" data-id="{{id}}">✕ Verwijder</button>
+            </div>
+          </td>
+        </tr>
+        <!-- {{/patterns}} -->
+      </tbody>
+    </table>
+  </div>
+  <!-- {{/hasPatterns}} -->
+</div>
