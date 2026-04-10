@@ -5,6 +5,10 @@ export default function Document() {
     <Html lang="nl">
       <Head>
         <meta charSet="utf-8" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <meta name="theme-color" content="#C8882A" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

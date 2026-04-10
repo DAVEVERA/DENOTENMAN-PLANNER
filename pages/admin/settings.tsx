@@ -84,19 +84,23 @@ export default function SettingsPage({ user }: Props) {
           <h3 className="settings-section-title">Locatienamen</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Naam Markt-locatie</label>
+              <label className="form-label" htmlFor="location-markt-name">Naam Markt-locatie</label>
               <input
+                id="location-markt-name"
                 className="form-control"
                 value={form.location_markt_name}
                 onChange={e => set('location_markt_name', e.target.value)}
+                placeholder="De Notenkar (Markt)"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Naam Nootmagazijn-locatie</label>
+              <label className="form-label" htmlFor="location-noot-name">Naam Nootmagazijn-locatie</label>
               <input
+                id="location-noot-name"
                 className="form-control"
                 value={form.location_nootmagazijn_name}
                 onChange={e => set('location_nootmagazijn_name', e.target.value)}
+                placeholder="Het Nootmagazijn"
               />
             </div>
           </div>

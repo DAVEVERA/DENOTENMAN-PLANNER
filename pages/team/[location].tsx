@@ -116,7 +116,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                   onKeyDown={e => e.key === 'Enter' && setExpandDay(isExpanded ? null : day)}
                   role="button"
                   tabIndex={0}
-                  aria-expanded={isExpanded ? "true" : "false"}
+                  aria-expanded={Boolean(isExpanded)}
                   aria-label={`${day} ${date}: ${occ.total} medewerkers`}
                 >
                   <div className="day-card-head">

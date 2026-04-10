@@ -1,0 +1,9 @@
+[
+  {
+    "username": "admin",
+    "password_hash": "$2a$10$KqGTvYFSmBpK/pdVoVYMzO4dAKeeMpClXqHQLl0AiJ9wncfO1TcPO",
+    "role": "admin",
+    "employee_id": null,
+    "display_name": "Administrator"
+  }
+]
