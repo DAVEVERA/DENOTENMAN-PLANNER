@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 import type { GetServerSideProps } from 'next'
 import { getSession } from '@/lib/auth'
@@ -27,9 +28,12 @@ export default function LoginPage() {
 <div className="login-shell">
   <div className="login-card">
     <div className="login-brand">
-      <img 
+      <Image 
         src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo.png" 
         alt="Denotenman logo" 
+        width={200}
+        height={200}
+        style={{ width: 'auto', height: '80px', display: 'inline-block' }}
         className="login-logo"
       />
       <h1 className="login-title">Denotenman</h1>
