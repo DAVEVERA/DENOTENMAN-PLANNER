@@ -24,13 +24,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-shell">
-      <div className="login-card">
-        <div className="login-brand">
-          <div className="login-logo">🥜</div>
-          <h1 className="login-title">De Notenkar</h1>
-          <p className="login-subtitle">Roosterplanner</p>
-        </div>
+<div className="login-shell">
+  <div className="login-card">
+    <div className="login-brand">
+      <img 
+        src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo.png" 
+        alt="Denotenman logo" 
+        className="login-logo"
+      />
+      <h1 className="login-title">Denotenman</h1>
+      <p className="login-subtitle">Roosterplanner</p>
+    </div>
+  </div>
+</div>
 
         <form onSubmit={handleSubmit} className="login-form">
           {error && (
