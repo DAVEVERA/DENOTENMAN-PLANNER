@@ -35,8 +35,6 @@ export default function LoginPage() {
       <h1 className="login-title">Denotenman</h1>
       <p className="login-subtitle">Roosterplanner</p>
     </div>
-  </div>
-</div>
 
         <form onSubmit={handleSubmit} className="login-form">
           {error && (
@@ -44,8 +42,9 @@ export default function LoginPage() {
           )}
 
           <div className="form-group">
-            <label className="form-label">Gebruikersnaam</label>
+            <label htmlFor="username" className="form-label">Gebruikersnaam</label>
             <input
+              id="username"
               className="form-control"
               type="text"
               autoFocus
@@ -57,8 +56,9 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Wachtwoord</label>
+            <label htmlFor="password" className="form-label">Wachtwoord</label>
             <input
+              id="password"
               className="form-control"
               type="password"
               autoComplete="current-password"
