@@ -37,7 +37,7 @@ export default function LoginPage() {
         className="login-logo"
       />
       <h1 className="login-title">Denotenman</h1>
-      <p className="login-subtitle">Roosterplanner</p>
+      <p className="login-subtitle">Planner</p>
     </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -80,14 +80,6 @@ export default function LoginPage() {
             {loading ? <><span className="spinner" /> Bezig…</> : 'Inloggen'}
           </button>
         </form>
-
-        <div className="login-locations">
-          <span className="loc-dot markt-dot" />
-          <span>De Notenkar (Markt)</span>
-          <span className="loc-sep">·</span>
-          <span className="loc-dot noot-dot" />
-          <span>Het Nootmagazijn</span>
-        </div>
       </div>
 
       <style jsx>{`
