@@ -29,7 +29,7 @@ export default function LoginPage() {
   <div className="login-card">
     <div className="login-brand">
       <Image 
-        src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo.png" 
+        src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png" 
         alt="Denotenman logo" 
         width={200}
         height={200}
