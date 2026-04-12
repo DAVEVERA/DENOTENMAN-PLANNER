@@ -42,7 +42,6 @@
   /* ── Scroll snap for planning grid horizontal scroll ── */
   .plan-grid-wrap {
     scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
   }
 
   .plan-grid-wrap::-webkit-scrollbar {

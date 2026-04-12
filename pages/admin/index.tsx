@@ -107,7 +107,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
             <button
               key={l.value}
               role="tab"
-              aria-selected={location === l.value ? "true" : "false"}
+              {...(location === l.value ? { 'aria-selected': true } : { 'aria-selected': false })}
               className={`loc-tab${location === l.value ? ' active' : ''}`}
               data-loc={l.value}
               onClick={() => setLocation(l.value)}
