@@ -58,7 +58,7 @@
 
 /* ─── Reset ────────────────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px;-webkit-text-size-adjust:100%}
+html{font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
 img,svg{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
@@ -270,4 +270,48 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
   .page-header{flex-direction:column;align-items:flex-start}
   .toolbar{flex-direction:column;align-items:flex-start}
   .modal-body{padding:var(--s3);gap:var(--s3)}
+}
+
+/* ─── Login Page ───────────────────────────────────────────────────────────── */
+.login-shell {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  padding: var(--s6);
+}
+.login-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: var(--s8);
+  width: 100%; max-width: 380px;
+  box-shadow: 0 4px 24px rgba(26,20,18,.08);
+}
+.login-brand { text-align: center; margin-bottom: var(--s7); }
+.login-logo { font-size: 2.5rem; margin-bottom: var(--s2); }
+.login-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 4px; }
+.login-subtitle { font-size: .9375rem; color: var(--text-muted); margin: 0; }
+
+.login-error {
+  background: #FDE8E8; border: 1px solid #FBBABA; color: #B91C1C;
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: .875rem; margin-bottom: var(--s4);
+}
+.login-btn { width: 100%; justify-content: center; margin-top: var(--s2); height: 44px; font-size: 1rem; }
+
+.login-locations {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 6px; row-gap: 4px; margin-top: var(--s6);
+  font-size: .8125rem; color: var(--text-muted);
+}
+.loc-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.markt-dot { background: var(--markt); }
+.noot-dot  { background: var(--noot);  }
+.loc-sep   { color: var(--border); }
+
+@media (max-width: 480px) {
+  .login-card { padding: var(--s5); }
+  .login-shell { padding: var(--s4); }
+}
+@media (max-width: 360px) {
+  .login-card { padding: var(--s4); }
+  .login-shell { padding: var(--s3); }
+  .login-title { font-size: 1.25rem; }
 }
