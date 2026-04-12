@@ -8,8 +8,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="manifest" href="/manifest.json" />
-        {/* Apple PWA — also declared in _document for SSR completeness */}
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        {/* Apple PWA */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </Head>

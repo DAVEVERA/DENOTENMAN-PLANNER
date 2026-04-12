@@ -171,10 +171,8 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                         start.setDate(start.getDate() + dayIdx)
                         return start.toDateString() === now.toDateString()
                       })()
-                      const isWeekend = day === 'zaterdag' || day === 'zondag'
-
                       return (
-                        <div key={day} className={`day-slot${isWeekend ? ' weekend' : ''}${isToday ? ' today' : ''}${ds.length === 0 ? ' empty' : ''}`}
+                        <div key={day} className={`day-slot${isToday ? ' today' : ''}${ds.length === 0 ? ' empty' : ''}`}
                           aria-label={`${day} ${dateNum}`}>
                           <div className="day-slot-head">
                             <span className="slot-day">{DAY_SHORT[day]}</span>
@@ -258,7 +256,6 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
           border-radius: var(--radius-lg); padding: var(--s3);
           min-height: 80px;
         }
-        .day-slot.weekend { background: rgba(140,128,120,.04); }
         .day-slot.today { border-color: var(--brand); }
         .day-slot.empty { opacity: .6; }
 

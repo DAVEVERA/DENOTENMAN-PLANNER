@@ -58,7 +58,7 @@
 
 /* ─── Reset ────────────────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;-ms-text-size-adjust:100%;text-size-adjust:100%}
+html{font-size:16px;-webkit-text-size-adjust:100%}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
 img,svg{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
@@ -223,7 +223,7 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
 .planning-grid td{padding:var(--s2) var(--s3);border:1px solid var(--border);vertical-align:top;min-width:110px}
 .planning-grid td.emp-cell{font-weight:600;white-space:nowrap;background:var(--surface-alt);min-width:130px}
 .planning-grid td.day-cell{background:var(--surface);position:relative}
-.planning-grid td.weekend{background:#faf7f4}
+
 .add-shift-btn{display:block;width:100%;padding:var(--s1) var(--s2);margin-top:var(--s1);border:1.5px dashed var(--border-strong);border-radius:var(--r1);font-size:.75rem;color:var(--text-muted);text-align:center;transition:border-color .15s,color .15s}
 .add-shift-btn:hover{border-color:var(--brand);color:var(--brand)}
 
@@ -246,8 +246,9 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
 .page-actions{display:flex;gap:var(--s2);flex-wrap:wrap}
 .toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;padding:var(--s4) var(--s5);background:var(--surface);border:1px solid var(--border);border-radius:var(--r3);margin-bottom:var(--s5)}
 .section-title{font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:var(--s3);margin-top:var(--s6)}
-.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;will-change:transform}
-@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;line-height:1;animation:note-spin 1.2s ease-in-out infinite;will-change:transform,opacity;vertical-align:middle}
+.spinner::before{content:'♩'}
+@keyframes note-spin{0%,100%{transform:rotate(-20deg) scale(.85);opacity:.45}50%{transform:rotate(20deg) scale(1.15);opacity:1}}
 .divider{border:none;border-top:1px solid var(--border);margin:var(--s6) 0}
 
 /* ─── Responsive ───────────────────────────────────────────────────────────── */

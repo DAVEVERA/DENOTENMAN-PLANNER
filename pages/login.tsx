@@ -36,8 +36,7 @@ export default function LoginPage() {
         style={{ width: 'auto', height: '80px', display: 'inline-block' }}
         className="login-logo"
       />
-      <h1 className="login-title">Denotenman</h1>
-      <p className="login-subtitle">Planner</p>
+      <h1 className="login-title">Planner</h1>
     </div>
 
         <form onSubmit={handleSubmit} className="login-form">

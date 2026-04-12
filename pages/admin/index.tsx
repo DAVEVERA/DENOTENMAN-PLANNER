@@ -133,7 +133,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
               <tr>
                 <th scope="col" className="col-emp">Medewerker</th>
                 {DAYS.map((day, i) => (
-                  <th key={day} scope="col" className={`col-day${day === 'zaterdag' || day === 'zondag' ? ' weekend' : ''}`}>
+                  <th key={day} scope="col" className="col-day">
                     <div className="day-head">
                       <span className="day-short">{DAY_SHORT[day]}</span>
                       <span className="day-num">{dayDate(week, year, i)}</span>
@@ -156,7 +156,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                     return (
                       <td
                         key={day}
-                        className={`shift-cell${day === 'zaterdag' || day === 'zondag' ? ' weekend' : ''}`}
+                        className="shift-cell"
                       >
                         <div className="shifts-container">
                           {dayShifts.map(s => (
@@ -207,7 +207,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                   {DAYS.map(day => {
                     const open = openShiftsFor(day)
                     return (
-                      <td key={day} className={`shift-cell${day === 'zaterdag' || day === 'zondag' ? ' weekend' : ''}`}>
+                      <td key={day} className="shift-cell">
                         <div className="shifts-container">
                           {open.map(s => (
                             <div key={s.id} className="shift-chip open-chip"
@@ -258,9 +258,8 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
               <div className="mobile-days-strip">
                 {DAYS.map((day, i) => {
                   const dayShifts = shiftsFor(emp.id, day)
-                  const isWeekend = day === 'zaterdag' || day === 'zondag'
                   return (
-                    <div key={day} className={`mobile-day-col${isWeekend ? ' weekend' : ''}`}>
+                    <div key={day} className="mobile-day-col">
                       <div className="mobile-day-head">
                         <span className="mobile-day-short">{DAY_SHORT[day]}</span>
                         <span className="mobile-day-num">{dayDate(week, year, i)}</span>
@@ -356,8 +355,6 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         }
         .col-emp { width: 120px; min-width: 90px; }
         .col-day { width: calc((100% - 120px) / 7); min-width: 72px; }
-        .col-day.weekend { background: rgba(140,128,120,.06); }
-
         .day-head { display: flex; align-items: baseline; gap: 4px; }
         .day-short { font-weight: 700; }
         .day-num { font-size: .75rem; color: var(--text-muted); }
@@ -374,8 +371,6 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           padding: var(--s2); vertical-align: top;
           min-height: 48px; position: relative;
         }
-        .shift-cell.weekend { background: rgba(140,128,120,.04); }
-
         .shifts-container { display: flex; flex-direction: column; gap: 3px; }
         .shift-chip {
           display: flex; align-items: stretch; border-radius: 4px; border: 1px solid rgba(0,0,0,.05);
@@ -426,7 +421,6 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         .mobile-days-strip { display: grid; grid-template-columns: repeat(7, 1fr); }
         .mobile-day-col { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 64px; }
         .mobile-day-col:last-child { border-right: none; }
-        .mobile-day-col.weekend { background: rgba(140,128,120,.04); }
         .mobile-day-head { display: flex; flex-direction: column; align-items: center; padding: 4px 2px; background: var(--surface-alt); border-bottom: 1px solid var(--border); gap: 1px; }
         .mobile-day-short { font-size: .625rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .mobile-day-num { font-size: .75rem; font-weight: 600; }

@@ -106,17 +106,15 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
               const date = dayDate(week, year, i)
               const isExpanded = expandDay === day
               const dayShifts  = shiftsForDay(day)
-              const isWeekend  = day === 'zaterdag' || day === 'zondag'
-
               return (
                 <div
                   key={day}
-                  className={`day-card${isWeekend ? ' weekend' : ''}${isExpanded ? ' expanded' : ''}`}
+                  className={`day-card${isExpanded ? ' expanded' : ''}`}
                   onClick={() => setExpandDay(isExpanded ? null : day)}
                   onKeyDown={e => e.key === 'Enter' && setExpandDay(isExpanded ? null : day)}
                   role="button"
                   tabIndex={0}
-                  aria-expanded={Boolean(isExpanded)}
+                  aria-expanded={isExpanded}
                   aria-label={`${day} ${date}: ${occ.total} medewerkers`}
                 >
                   <div className="day-card-head">
@@ -168,7 +166,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                   <tr>
                     <th scope="col" className="col-emp">Medewerker</th>
                     {DAYS.map((day, i) => (
-                      <th key={day} scope="col" className={`col-day${day === 'zaterdag' || day === 'zondag' ? ' weekend' : ''}`}>
+                      <th key={day} scope="col" className="col-day">
                         <span className="day-short">{DAY_SHORT[day]}</span>
                         <span className="day-num"> {dayDate(week, year, i)}</span>
                       </th>
@@ -230,7 +228,6 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
           display: flex; flex-direction: column; gap: var(--s2); min-height: 72px;
         }
         .day-card:hover { transform: translateY(-2px); border-color: var(--brand); box-shadow: var(--shadow-md); }
-        .day-card.weekend { background: rgba(140,128,120,.04); }
         .day-card.expanded { box-shadow: var(--shadow-md); border-color: var(--brand); }
 
         .day-card-head { display: flex; align-items: center; justify-content: space-between; }
@@ -257,8 +254,6 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .team-grid th, .team-grid td { padding: var(--s2) var(--s3); text-align: left; border-bottom: 1px solid var(--border); }
         .team-grid thead th { background: var(--surface-alt); font-size: .75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         .col-emp { width: 160px; font-weight: 500; }
-        .col-day.weekend, .shift-cell.weekend { background: rgba(140,128,120,.03); }
-
         .shift-pill {
           display: inline-flex; align-items: center; gap: 4px;
           padding: 2px 6px; border-radius: 4px; margin-bottom: 2px;
