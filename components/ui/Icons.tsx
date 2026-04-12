@@ -1,153 +1,171 @@
-import React from 'react'
-
-// ════════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
 //  ICON REGISTRY  —  DENOTENMAN PLANNER
-// ════════════════════════════════════════════════════════════════════════════
-//
-//  HOE VERVANG IK EEN ICON?
-//  ─────────────────────────────────────────────────────────────────────────
-//  1. Ontwerp jouw icon als SVG-bestand (aanbevolen: gevulde vormen, donkere
-//     kleur of currentColor op transparante achtergrond, 24×24 viewBox).
-//
-//  2. Sla het op in:  public/icons/<bestandsnaam>.svg
-//     (De juiste bestandsnaam staat hieronder bij elk icon vermeld.)
-//
-//  3. Klaar! Het icon wordt automatisch bijgewerkt op ALLE pagina's.
-//
-//  KLEURGEDRAG:
-//  ─────────────────────────────────────────────────────────────────────────
-//  Icons erven automatisch de CSS tekstkleur van hun omgeving (currentColor).
-//  Actieve navigatie-items worden oranje (--brand), inactieve items grijs —
-//  dit werkt automatisch zonder extra code.
-//  Voor het beste resultaat: gebruik SVG-bestanden met gevulde vormen (fill).
-//
-// ════════════════════════════════════════════════════════════════════════════
-//
-//  ICON OVERZICHT — BESTANDSNAAM → PAGINA('S)
-//  ─────────────────────────────────────────────────────────────────────────
-//
-//  logo.svg           → Login-pagina (groot merk-logo)
-//                       Admin sidebar (bovenaan links)
-//                       Team header (bovenaan links)
-//
-//  schedule.svg       → Admin navigatie: "Rooster"
-//                       Team navigatie: "Rooster"
-//                       Mobiele bottom navigatie: Rooster-tab
-//
-//  employees.svg      → Admin navigatie: "Medewerkers"
-//
-//  leave.svg          → Admin navigatie: "Verlof"
-//                       Team navigatie: "Verlof"
-//                       Mobiele bottom navigatie: Verlof-tab
-//
-//  hours.svg          → Admin navigatie: "Uren"
-//
-//  export.svg         → Admin navigatie: "Export"
-//
-//  settings.svg       → Admin navigatie: "Instellingen"
-//                       Team navigatie: "Beheer" (admin-link)
-//                       Mobiele bottom navigatie: Beheer-tab (team)
-//
-//  my-schedule.svg    → Team navigatie: "Mijn rooster"
-//                       Mobiele bottom navigatie: Mijn rooster-tab
-//
-//  team-view.svg      → Admin sidebar footer: "Team view" link
-//
-//  close.svg          → ShiftModal: sluit-knop (×)
-//                       Admin uren-tabel: annuleer bewerkknop (×)
-//
-//  prev.svg           → Admin rooster: "Vorige week" knop (‹)
-//                       Mijn rooster (me/index): "Vorige periode" knop
-//                       Team rooster: "Vorige week" knop
-//
-//  next.svg           → Admin rooster: "Volgende week" knop (›)
-//                       Mijn rooster (me/index): "Volgende periode" knop
-//                       Team rooster: "Volgende week" knop
-//
-// ════════════════════════════════════════════════════════════════════════════
+//  Alle icons via lucide-react (inline SVG, altijd scherp, erft CSS-kleur).
+// ─────────────────────────────────────────────────────────────────────────────
+import {
+  CalendarDays,
+  Users,
+  Umbrella,
+  Clock,
+  FileDown,
+  SlidersHorizontal,
+  Eye,
+  UserRound,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Bean,
+} from 'lucide-react'
 
-interface IconProps {
+export interface IconProps {
   size?: number
   className?: string
+  strokeWidth?: number
 }
 
-/**
- * Interne helper — rendert een SVG-bestand uit public/icons/ als CSS-masker.
- * Hierdoor erft het icon automatisch de CSS-tekstkleur (currentColor).
- */
-function AppIcon({ file, size = 20, className = '' }: IconProps & { file: string }) {
+// Standaard stroke width voor alle icons
+const SW = 2
+
+/** Logo / merkicoon — pinda/bean silhouet */
+export function LogoIcon({ size = 24, className }: IconProps) {
   return (
-    <span
-      className={className || undefined}
-      style={{
-        display:    'inline-block',
-        width:      size,
-        height:     size,
-        minWidth:   size,
-        flexShrink: 0,
-        verticalAlign: 'middle',
-        backgroundColor: 'currentColor',
-        WebkitMaskImage: `url('/icons/${file}')`,
-        maskImage:       `url('/icons/${file}')`,
-        WebkitMaskRepeat:   'no-repeat',
-        maskRepeat:         'no-repeat',
-        WebkitMaskSize:     'contain',
-        maskSize:           'contain',
-        WebkitMaskPosition: 'center',
-        maskPosition:       'center',
-      } as React.CSSProperties}
+    <Bean
+      size={size}
+      strokeWidth={SW}
+      className={className}
       aria-hidden="true"
     />
   )
 }
 
-// ── Exporteerde icon-componenten ─────────────────────────────────────────────
-// Gebruik deze in de code. Voorbeeld: <ScheduleIcon size={20} />
+/** Rooster / kalender */
+export function ScheduleIcon({ size = 20, className }: IconProps) {
+  return (
+    <CalendarDays
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Logo / merkicoon  →  public/icons/logo.svg */
-export const LogoIcon = (p: IconProps) =>
-  <AppIcon file="logo.svg" size={p.size ?? 24} className={p.className} />
+/** Medewerkers / mensen */
+export function EmployeesIcon({ size = 20, className }: IconProps) {
+  return (
+    <Users
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Rooster / kalender  →  public/icons/schedule.svg */
-export const ScheduleIcon = (p: IconProps) =>
-  <AppIcon file="schedule.svg" size={p.size ?? 20} className={p.className} />
+/** Verlof / vakantie */
+export function LeaveIcon({ size = 20, className }: IconProps) {
+  return (
+    <Umbrella
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Medewerkers / personen  →  public/icons/employees.svg */
-export const EmployeesIcon = (p: IconProps) =>
-  <AppIcon file="employees.svg" size={p.size ?? 20} className={p.className} />
+/** Uren / klok */
+export function HoursIcon({ size = 20, className }: IconProps) {
+  return (
+    <Clock
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Verlof / vakantie  →  public/icons/leave.svg */
-export const LeaveIcon = (p: IconProps) =>
-  <AppIcon file="leave.svg" size={p.size ?? 20} className={p.className} />
+/** Export / downloaden */
+export function ExportIcon({ size = 20, className }: IconProps) {
+  return (
+    <FileDown
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Uren / klok  →  public/icons/hours.svg */
-export const HoursIcon = (p: IconProps) =>
-  <AppIcon file="hours.svg" size={p.size ?? 20} className={p.className} />
+/** Instellingen / schuifregelaars */
+export function SettingsIcon({ size = 20, className }: IconProps) {
+  return (
+    <SlidersHorizontal
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Export / uploaden  →  public/icons/export.svg */
-export const ExportIcon = (p: IconProps) =>
-  <AppIcon file="export.svg" size={p.size ?? 20} className={p.className} />
+/** Mijn rooster / profiel */
+export function MyScheduleIcon({ size = 20, className }: IconProps) {
+  return (
+    <UserRound
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Instellingen / tandwiel  →  public/icons/settings.svg */
-export const SettingsIcon = (p: IconProps) =>
-  <AppIcon file="settings.svg" size={p.size ?? 20} className={p.className} />
+/** Team view / oog */
+export function TeamViewIcon({ size = 20, className }: IconProps) {
+  return (
+    <Eye
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Mijn rooster / persoon  →  public/icons/my-schedule.svg */
-export const MyScheduleIcon = (p: IconProps) =>
-  <AppIcon file="my-schedule.svg" size={p.size ?? 20} className={p.className} />
+/** Sluiten / kruisje */
+export function CloseIcon({ size = 18, className }: IconProps) {
+  return (
+    <X
+      size={size}
+      strokeWidth={2.5}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Team view / oog  →  public/icons/team-view.svg */
-export const TeamViewIcon = (p: IconProps) =>
-  <AppIcon file="team-view.svg" size={p.size ?? 20} className={p.className} />
+/** Vorige */
+export function PrevIcon({ size = 18, className }: IconProps) {
+  return (
+    <ChevronLeft
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
-/** Sluiten / kruisje  →  public/icons/close.svg */
-export const CloseIcon = (p: IconProps) =>
-  <AppIcon file="close.svg" size={p.size ?? 18} className={p.className} />
-
-/** Vorige / links-pijl  →  public/icons/prev.svg */
-export const PrevIcon = (p: IconProps) =>
-  <AppIcon file="prev.svg" size={p.size ?? 18} className={p.className} />
-
-/** Volgende / rechts-pijl  →  public/icons/next.svg */
-export const NextIcon = (p: IconProps) =>
-  <AppIcon file="next.svg" size={p.size ?? 18} className={p.className} />
+/** Volgende */
+export function NextIcon({ size = 18, className }: IconProps) {
+  return (
+    <ChevronRight
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}

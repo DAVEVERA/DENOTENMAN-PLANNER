@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/router'
 import type { GetServerSideProps } from 'next'
 import { getSession } from '@/lib/auth'
+import Spinner from '@/components/ui/Spinner'
 
 export default function LoginPage() {
   const router  = useRouter()
@@ -76,7 +77,7 @@ export default function LoginPage() {
             className="btn btn-primary login-btn"
             disabled={loading}
           >
-            {loading ? <><span className="spinner" /> Bezig…</> : 'Inloggen'}
+            {loading ? <><Spinner /> Bezig…</> : 'Inloggen'}
           </button>
         </form>
       </div>

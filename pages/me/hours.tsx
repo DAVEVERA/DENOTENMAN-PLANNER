@@ -3,6 +3,7 @@ import TeamLayout from '@/components/layout/TeamLayout'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, TimeLog, Location } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -84,7 +85,7 @@ export default function MyHoursPage({ user }: Props) {
 
         {/* ── Log list ── */}
         {loading ? (
-          <div className="loading-row"><span className="spinner" /> Laden…</div>
+          <div className="loading-row"><Spinner /> Laden…</div>
         ) : logs.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">⏱️</div>

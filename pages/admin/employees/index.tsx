@@ -5,6 +5,7 @@ import LocationBadge from '@/components/ui/LocationBadge'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Employee, Location } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -134,7 +135,7 @@ export default function EmployeesPage({ user }: Props) {
             <div className="add-card-footer">
               <button type="button" className="btn btn-outline btn-sm" onClick={() => setAdding(false)}>Annuleren</button>
               <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                {saving ? <span className="spinner" aria-hidden="true" /> : 'Toevoegen'}
+                {saving ? <Spinner /> : 'Toevoegen'}
               </button>
             </div>
           </form>
@@ -143,7 +144,7 @@ export default function EmployeesPage({ user }: Props) {
 
       {/* Table */}
       {loading ? (
-        <div className="loading-row"><span className="spinner" aria-hidden="true" /> Laden…</div>
+        <div className="loading-row"><Spinner /> Laden…</div>
       ) : (
         <div className="table-wrap">
           <table className="data-table">

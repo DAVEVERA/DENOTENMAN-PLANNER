@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Shift, Employee, Location } from '@/types'
 import { SHIFT_TYPES, DAYS } from '@/types'
 import { CloseIcon } from '@/components/ui/Icons'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props {
   shift: Partial<Shift> | null
@@ -161,7 +162,7 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
           <div className="modal-footer">
             <button type="button" className="btn btn-outline btn-sm" onClick={onClose}>Annuleren</button>
             <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-              {saving ? <span className="spinner" aria-hidden="true" /> : isNew ? 'Toevoegen' : 'Opslaan'}
+              {saving ? <Spinner /> : isNew ? 'Toevoegen' : 'Opslaan'}
             </button>
           </div>
         </form>

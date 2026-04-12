@@ -6,6 +6,7 @@ import { currentWeekYear } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Location } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props {
   user: SessionUser
@@ -150,7 +151,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
 
           {/* ── Schedule ── */}
           {loading ? (
-            <div className="loading-row"><span className="spinner" aria-hidden="true" /> Laden…</div>
+            <div className="loading-row"><Spinner /> Laden…</div>
           ) : (
             <div className="schedule">
               {shiftsByWeek.map(wk => (

@@ -5,6 +5,7 @@ import { CloseIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, TimeLog, Employee, Location } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -243,7 +244,7 @@ export default function HoursPage({ user }: Props) {
             <div className="add-card-footer">
               <button type="button" className="btn btn-outline btn-sm" onClick={() => setAdding(false)}>Annuleren</button>
               <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                {saving ? <span className="spinner" aria-hidden="true" /> : 'Opslaan'}
+                {saving ? <Spinner /> : 'Opslaan'}
               </button>
             </div>
           </form>
@@ -252,7 +253,7 @@ export default function HoursPage({ user }: Props) {
 
       {/* ── Desktop Table ── */}
       {loading ? (
-        <div className="loading-row"><span className="spinner" aria-hidden="true" /> Laden…</div>
+        <div className="loading-row"><Spinner /> Laden…</div>
       ) : (
         <>
           {/* Desktop table */}

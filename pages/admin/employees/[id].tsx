@@ -7,6 +7,7 @@ import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Employee, Location, Shift } from '@/types'
 import { DAY_SHORT } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -56,7 +57,7 @@ export default function EmployeeDetailPage({ user }: Props) {
 
   if (loading) return (
     <AdminLayout user={user} title="Medewerker">
-      <div className="loading-row"><span className="spinner" /> Laden…</div>
+      <div className="loading-row"><Spinner /> Laden…</div>
     </AdminLayout>
   )
 
@@ -139,7 +140,7 @@ export default function EmployeeDetailPage({ user }: Props) {
 
             <div className="form-footer">
               <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                {saving ? <span className="spinner" aria-hidden="true" /> : 'Opslaan'}
+                {saving ? <Spinner /> : 'Opslaan'}
               </button>
             </div>
           </form>

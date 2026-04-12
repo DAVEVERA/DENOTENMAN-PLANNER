@@ -15,154 +15,322 @@ interface Props {
 }
 
 export default function TeamLayout({ user, children, location }: Props) {
-  const router = useRouter()
+  const router  = useRouter()
   const isAdmin = can(user, 'manage_shifts')
+  const locLabel = location ? LOCATION_LABELS[location] : 'Planner'
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
   }
 
-  const locLabel = location ? LOCATION_LABELS[location] : 'Planner'
+  const onTeam  = router.pathname.startsWith('/team')
+  const onMe    = router.pathname === '/me'
+  const onLeave = router.pathname === '/me/leave'
 
   return (
     <div className="team-shell">
-      <header className={`team-header ${location === 'nootmagazijn' ? 'is-nootmagazijn' : ''}`}>
-        <div className="team-header-inner">
+
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <header className={`team-header${location === 'nootmagazijn' ? ' is-noot' : ''}`}>
+        <div className="team-inner">
+
+          {/* Brand */}
           <div className="team-brand">
             <span className="team-brand-icon"><LogoIcon size={22} /></span>
             <span className="team-brand-name">{locLabel}</span>
           </div>
 
-          <nav className="team-nav" aria-label="Hoofdmenu">
-            {location && (
-              <>
-                <Link href={`/team/${location}`}
-                  className={`team-nav-link${router.pathname.startsWith('/team') ? ' active' : ''}`}
-                  aria-current={router.pathname.startsWith('/team') ? 'page' : undefined}>
-                  Rooster
-                </Link>
-                <Link href="/me"
-                  className={`team-nav-link${router.pathname === '/me' ? ' active' : ''}`}
-                  aria-current={router.pathname === '/me' ? 'page' : undefined}>
-                  Mijn rooster
-                </Link>
-                <Link href="/me/leave"
-                  className={`team-nav-link${router.pathname === '/me/leave' ? ' active' : ''}`}
-                  aria-current={router.pathname === '/me/leave' ? 'page' : undefined}>
-                  Verlof
-                </Link>
-              </>
-            )}
+          {/* Desktop nav */}
+          {location && (
+            <nav className="team-nav" aria-label="Hoofdmenu">
+              <Link href={`/team/${location}`}
+                className={`tn-link${onTeam ? ' active' : ''}`}
+                aria-current={onTeam ? 'page' : undefined}>
+                <ScheduleIcon size={17} />
+                Rooster
+              </Link>
+              <Link href="/me"
+                className={`tn-link${onMe ? ' active' : ''}`}
+                aria-current={onMe ? 'page' : undefined}>
+                <MyScheduleIcon size={17} />
+                Mijn rooster
+              </Link>
+              <Link href="/me/leave"
+                className={`tn-link${onLeave ? ' active' : ''}`}
+                aria-current={onLeave ? 'page' : undefined}>
+                <LeaveIcon size={17} />
+                Verlof
+              </Link>
+            </nav>
+          )}
+
+          {/* Right: user + admin link */}
+          <div className="team-header-right">
             {isAdmin && (
-              <Link href="/admin" className="team-nav-link admin-link">
-                Beheer ↗
+              <Link href="/admin" className="team-admin-link">
+                <SettingsIcon size={16} />
+                Beheer
               </Link>
             )}
-          </nav>
-
-          <div className="team-header-user">
-            <span className="team-user-name">{user.display_name}</span>
-            <button className="team-logout" onClick={logout} aria-label="Log uit">Uitloggen</button>
+            <div className="team-user">
+              <span className="team-user-name">{user.display_name}</span>
+              <button className="team-logout" onClick={logout} aria-label="Uitloggen">
+                Uitloggen
+              </button>
+            </div>
           </div>
+
         </div>
       </header>
 
+      {/* ── Content ─────────────────────────────────────────────────── */}
       <main className="team-main">
         {children}
       </main>
 
-      {/* Mobile bottom nav */}
-      <nav className="team-bottom-nav" aria-label="Mobiele navigatie">
+      {/* ── Mobile bottom nav ───────────────────────────────────────── */}
+      <nav className="team-bnav" aria-label="Mobiele navigatie">
         {location && (
           <Link href={`/team/${location}`}
-            className={`tbn-item${router.pathname.startsWith('/team') ? ' active' : ''}`}
-            aria-current={router.pathname.startsWith('/team') ? 'page' : undefined}>
-            <span className="tbn-icon"><ScheduleIcon /></span>
+            className={`tbn-item${onTeam ? ' active' : ''}`}
+            aria-current={onTeam ? 'page' : undefined}>
+            {onTeam && <span className="tbn-bar" aria-hidden="true" />}
+            <span className="tbn-icon"><ScheduleIcon size={22} /></span>
             <span className="tbn-label">Rooster</span>
           </Link>
         )}
         <Link href="/me"
-          className={`tbn-item${router.pathname === '/me' ? ' active' : ''}`}
-          aria-current={router.pathname === '/me' ? 'page' : undefined}>
-          <span className="tbn-icon"><MyScheduleIcon /></span>
+          className={`tbn-item${onMe ? ' active' : ''}`}
+          aria-current={onMe ? 'page' : undefined}>
+          {onMe && <span className="tbn-bar" aria-hidden="true" />}
+          <span className="tbn-icon"><MyScheduleIcon size={22} /></span>
           <span className="tbn-label">Mijn rooster</span>
         </Link>
         <Link href="/me/leave"
-          className={`tbn-item${router.pathname === '/me/leave' ? ' active' : ''}`}
-          aria-current={router.pathname === '/me/leave' ? 'page' : undefined}>
-          <span className="tbn-icon"><LeaveIcon /></span>
+          className={`tbn-item${onLeave ? ' active' : ''}`}
+          aria-current={onLeave ? 'page' : undefined}>
+          {onLeave && <span className="tbn-bar" aria-hidden="true" />}
+          <span className="tbn-icon"><LeaveIcon size={22} /></span>
           <span className="tbn-label">Verlof</span>
         </Link>
         {isAdmin && (
           <Link href="/admin" className="tbn-item">
-            <span className="tbn-icon"><SettingsIcon /></span>
+            <span className="tbn-icon"><SettingsIcon size={22} /></span>
             <span className="tbn-label">Beheer</span>
           </Link>
         )}
       </nav>
 
       <style jsx>{`
-        .team-shell { min-height: 100vh; display: flex; flex-direction: column; }
 
+        .team-shell {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* ─── Header ─────────────────────────────────── */
         .team-header {
           background: var(--surface);
-          border-bottom: 3px solid var(--markt);
-          position: sticky; top: 0; z-index: 50;
+          box-shadow: 0 1px 0 var(--border), 0 3px 0 var(--markt);
+          position: sticky;
+          top: 0;
+          z-index: 50;
         }
-        .team-header-inner {
-          max-width: 1100px; margin: 0 auto;
+        .team-header.is-noot {
+          box-shadow: 0 1px 0 var(--border), 0 3px 0 var(--noot);
+        }
+        .team-inner {
+          max-width: 1200px;
+          margin: 0 auto;
           padding: 0 var(--s6);
-          display: flex; align-items: center; gap: var(--s6); height: 60px;
+          display: flex;
+          align-items: center;
+          gap: var(--s5);
+          height: 58px;
         }
-        .team-brand { display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; }
-        .team-brand-icon { color: var(--brand); display: flex; align-items: center; }
-        .team-brand-name { font-size: 1rem; font-weight: 700; white-space: nowrap; }
 
-        .team-nav { display: flex; align-items: center; gap: 2px; flex: 1; }
-        .team-nav-link {
-          padding: 10px var(--s3); border-radius: var(--r1);
-          min-height: 44px; display: inline-flex; align-items: center;
-          font-size: .9375rem; font-weight: 500; color: var(--text-sub);
-          transition: background .15s, color .15s;
+        /* Brand */
+        .team-brand {
+          display: flex;
+          align-items: center;
+          gap: var(--s2);
+          flex-shrink: 0;
+          text-decoration: none;
         }
-        .team-nav-link:hover { background: var(--surface-alt); color: var(--text); }
-        .team-nav-link.active { color: var(--text); background: var(--surface-alt); }
-        .admin-link { margin-left: auto; font-size: .875rem; color: var(--text-muted); }
+        .team-brand-icon {
+          color: var(--brand);
+          display: flex;
+          align-items: center;
+        }
+        .team-brand-name {
+          font-size: 1.0625rem;
+          font-weight: 700;
+          color: var(--text);
+          white-space: nowrap;
+          letter-spacing: -.015em;
+        }
 
-        .team-header-user {
-          display: flex; align-items: center; gap: var(--s3); flex-shrink: 0;
+        /* Desktop nav */
+        .team-nav {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          flex: 1;
         }
-        .team-user-name { font-size: .875rem; color: var(--text-sub); }
-        .team-logout { font-size: .8125rem; color: var(--text-muted); }
+        .tn-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 12px;
+          border-radius: var(--r2);
+          min-height: 40px;
+          font-size: .9375rem;
+          font-weight: 500;
+          color: var(--text-muted);
+          transition: background .14s, color .14s;
+          text-decoration: none;
+        }
+        .tn-link:hover {
+          background: var(--surface-alt);
+          color: var(--text);
+        }
+        .tn-link.active {
+          background: var(--brand-subtle);
+          color: var(--brand-dark);
+          font-weight: 600;
+        }
+
+        /* Right side */
+        .team-header-right {
+          display: flex;
+          align-items: center;
+          gap: var(--s3);
+          flex-shrink: 0;
+          margin-left: auto;
+        }
+        .team-admin-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 10px;
+          border-radius: var(--r2);
+          font-size: .8125rem;
+          font-weight: 500;
+          color: var(--text-muted);
+          border: 1px solid var(--border);
+          transition: background .14s, color .14s, border-color .14s;
+          text-decoration: none;
+        }
+        .team-admin-link:hover {
+          background: var(--surface-alt);
+          color: var(--text);
+          border-color: var(--border-strong);
+        }
+        .team-user {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 1px;
+        }
+        .team-user-name {
+          font-size: .875rem;
+          font-weight: 500;
+          color: var(--text-sub);
+          white-space: nowrap;
+        }
+        .team-logout {
+          font-size: .75rem;
+          color: var(--text-muted);
+          padding: 0;
+          transition: color .14s;
+        }
         .team-logout:hover { color: var(--text); }
 
-        .team-main { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; padding: var(--s8) var(--s6); }
+        /* ─── Main ───────────────────────────────────── */
+        .team-main {
+          flex: 1;
+          max-width: 1200px;
+          margin: 0 auto;
+          width: 100%;
+          padding: var(--s8) var(--s6);
+        }
 
-        .team-bottom-nav { display: none; }
+        /* ─── Mobile bottom nav ──────────────────────── */
+        .team-bnav { display: none; }
 
+        /* ─── Responsive ─────────────────────────────── */
         @media (max-width: 768px) {
           .team-nav { display: none; }
-          .team-header-user { display: none; }
-          .team-header-inner { padding: 0 var(--s4); height: 52px; }
-          .team-brand-name { font-size: .9375rem; }
-          .team-main { padding: var(--s3) var(--s3) calc(64px + env(safe-area-inset-bottom, 0px)); }
+          .team-user { display: none; }
+          .team-admin-link { display: none; }
 
-          .team-bottom-nav {
-            display: flex; position: fixed; bottom: 0; left: 0; right: 0;
-            background: var(--surface); border-top: 1px solid var(--border);
-            z-index: 100; box-shadow: 0 -2px 8px rgba(26,20,18,.08);
+          .team-inner {
+            padding: 0 var(--s4);
+            height: 52px;
+          }
+          .team-brand-name { font-size: .9375rem; }
+
+          .team-main {
+            padding: var(--s4) var(--s3) calc(62px + env(safe-area-inset-bottom, 0px));
+          }
+
+          .team-bnav {
+            display: flex;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            z-index: 200;
             padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-shadow: 0 -4px 24px rgba(26,20,18,.1);
           }
           .tbn-item {
-            flex: 1; display: flex; flex-direction: column; align-items: center;
-            padding: 10px 2px 8px; min-height: 56px; gap: 3px; min-width: 0;
-            color: var(--text-muted); text-decoration: none;
-            transition: color .15s;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 2px;
+            min-height: 58px;
+            gap: 4px;
+            min-width: 0;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color .14s;
+            position: relative;
           }
           .tbn-item.active { color: var(--brand); }
-          .tbn-icon { display: flex; align-items: center; justify-content: center; }
-          .tbn-label { font-size: .6875rem; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+          .tbn-bar {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 3px;
+            border-radius: 0 0 3px 3px;
+            background: var(--brand);
+          }
+          .tbn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+          }
+          .tbn-label {
+            font-size: .625rem;
+            font-weight: 600;
+            letter-spacing: .02em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            padding: 0 2px;
+          }
+        }
+
+        @media (max-width: 390px) {
+          .team-main { padding: var(--s3) var(--s2) calc(62px + env(safe-area-inset-bottom, 0px)); }
         }
       `}</style>
     </div>

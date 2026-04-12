@@ -4,6 +4,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Employee, Location } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -163,7 +164,7 @@ export default function ExportPage({ user }: Props) {
               disabled={loading}
             >
               {loading ? (
-                <><span className="spinner" /> Genereren…</>
+                <><Spinner /> Genereren…</>
               ) : sendEmail ? (
                 '📤 Exporteren & verzenden'
               ) : (

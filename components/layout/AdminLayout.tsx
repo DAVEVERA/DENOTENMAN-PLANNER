@@ -10,13 +10,17 @@ import {
 interface Props { user: SessionUser; children: React.ReactNode; title?: string }
 
 const NAV = [
-  { href: '/admin',              icon: <ScheduleIcon />,  label: 'Rooster',      cap: 'read' as const },
-  { href: '/admin/employees',    icon: <EmployeesIcon />, label: 'Medewerkers',  cap: 'manage_employees' as const },
-  { href: '/admin/leave',        icon: <LeaveIcon />,     label: 'Verlof',       cap: 'approve_leave' as const },
-  { href: '/admin/hours',        icon: <HoursIcon />,     label: 'Uren',         cap: 'manage_hours' as const },
-  { href: '/admin/hours/export', icon: <ExportIcon />,    label: 'Export',       cap: 'export_data' as const },
-  { href: '/admin/settings',     icon: <SettingsIcon />,  label: 'Instellingen', cap: 'manage_settings' as const },
+  { href: '/admin',              icon: <ScheduleIcon size={20} />,  label: 'Rooster',      cap: 'read' as const },
+  { href: '/admin/employees',    icon: <EmployeesIcon size={20} />, label: 'Medewerkers',  cap: 'manage_employees' as const },
+  { href: '/admin/leave',        icon: <LeaveIcon size={20} />,     label: 'Verlof',       cap: 'approve_leave' as const },
+  { href: '/admin/hours',        icon: <HoursIcon size={20} />,     label: 'Uren',         cap: 'manage_hours' as const },
+  { href: '/admin/hours/export', icon: <ExportIcon size={20} />,    label: 'Export',       cap: 'export_data' as const },
+  { href: '/admin/settings',     icon: <SettingsIcon size={20} />,  label: 'Instellingen', cap: 'manage_settings' as const },
 ]
+
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+}
 
 export default function AdminLayout({ user, children, title }: Props) {
   const router = useRouter()
@@ -29,170 +33,409 @@ export default function AdminLayout({ user, children, title }: Props) {
 
   return (
     <div className="admin-shell">
-      {/* ── Sidebar (desktop) ─────────────────────────────────────────── */}
-      <aside className="admin-sidebar">
-        <div className="sidebar-logo">
-          <span className="sidebar-logo-icon"><LogoIcon size={22} /></span>
-          <span className="sidebar-logo-text">Planner</span>
-        </div>
 
-        <nav className="sidebar-nav" aria-label="Hoofdmenu">
-          {links.map(l => {
-            const isActive = router.pathname === l.href || (l.href !== '/admin' && router.pathname.startsWith(l.href))
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`sidebar-link${isActive ? ' active' : ''}`}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <span className="sidebar-link-icon">{l.icon}</span>
-                <span className="sidebar-link-label">{l.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
+      {/* ══════════════════ SIDEBAR ══════════════════ */}
+      <aside className="admin-sidebar" aria-label="Hoofdnavigatie">
 
-        <div className="sidebar-footer">
-          <Link href="/team/markt" className="sidebar-link sidebar-link-team">
-            <span className="sidebar-link-icon"><TeamViewIcon /></span>
-            <span className="sidebar-link-label">Team view</span>
-          </Link>
-          <div className="sidebar-user">
-            <div className="sidebar-user-name">{user.display_name}</div>
-            <button className="sidebar-logout" onClick={logout} aria-label="Log uit">Uitloggen</button>
+        {/* Logo */}
+        <div className="sb-logo">
+          <span className="sb-logo-icon"><LogoIcon size={26} /></span>
+          <div className="sb-logo-text">
+            <span className="sb-logo-name">Planner</span>
+            <span className="sb-logo-sub">Denotenman</span>
           </div>
         </div>
+
+        {/* Scrollable body */}
+        <div className="sb-body">
+
+          {/* Main nav */}
+          <div className="sb-section">
+            <span className="sb-section-label">Menu</span>
+            <nav className="sb-nav" aria-label="Beheer">
+              {links.map(l => {
+                const isActive = router.pathname === l.href ||
+                  (l.href !== '/admin' && router.pathname.startsWith(l.href))
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={`sb-link${isActive ? ' active' : ''}`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span className="sb-icon">{l.icon}</span>
+                    <span className="sb-label">{l.label}</span>
+                    {isActive && <span className="sb-dot" aria-hidden="true" />}
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
+
+          {/* Footer nav */}
+          <div className="sb-section sb-section--bottom">
+            <span className="sb-section-label">Weergave</span>
+            <nav className="sb-nav" aria-label="Weergave">
+              <Link href="/team/markt" className="sb-link">
+                <span className="sb-icon"><TeamViewIcon size={20} /></span>
+                <span className="sb-label">Team view</span>
+              </Link>
+            </nav>
+          </div>
+
+        </div>
+
+        {/* User area */}
+        <div className="sb-user">
+          <div className="sb-avatar" aria-hidden="true">{getInitials(user.display_name)}</div>
+          <div className="sb-user-info">
+            <span className="sb-user-name">{user.display_name}</span>
+            <button className="sb-logout" onClick={logout} aria-label="Uitloggen">
+              Uitloggen
+            </button>
+          </div>
+        </div>
+
       </aside>
 
-      {/* ── Main ──────────────────────────────────────────────────────── */}
+      {/* ══════════════════ MAIN ══════════════════ */}
       <main className="admin-main">
         {title && (
           <header className="admin-topbar">
             <h1 className="admin-topbar-title">{title}</h1>
-            <div className="admin-topbar-user">
-              <span className="text-sm text-muted">{user.display_name}</span>
-              <button className="topbar-logout-btn" onClick={logout}>Uitloggen</button>
+            <div className="admin-topbar-right">
+              <span className="topbar-user">{user.display_name}</span>
+              <button className="topbar-logout" onClick={logout}>Uitloggen</button>
             </div>
           </header>
         )}
         <div className="admin-content">{children}</div>
       </main>
 
-      {/* ── Bottom nav (mobile) ───────────────────────────────────────── */}
-      <nav className="admin-bottom-nav" aria-label="Mobiele navigatie" data-count={links.length}>
+      {/* ══════════════════ MOBILE BOTTOM NAV ══════════════════ */}
+      <nav className="admin-bnav" aria-label="Mobiele navigatie">
         {links.map(l => {
-          const isActive = router.pathname === l.href || (l.href !== '/admin' && router.pathname.startsWith(l.href))
+          const isActive = router.pathname === l.href ||
+            (l.href !== '/admin' && router.pathname.startsWith(l.href))
           return (
             <Link
               key={l.href}
               href={l.href}
-              className={`bottom-nav-item${isActive ? ' active' : ''}`}
+              className={`bn-item${isActive ? ' active' : ''}`}
               aria-current={isActive ? 'page' : undefined}
             >
-              <span className="bottom-nav-icon">{l.icon}</span>
-              <span className="bottom-nav-label">{l.label}</span>
+              {isActive && <span className="bn-bar" aria-hidden="true" />}
+              <span className="bn-icon">{l.icon}</span>
+              <span className="bn-label">{l.label}</span>
             </Link>
           )
         })}
       </nav>
 
       <style jsx>{`
+
+        /* ─── Shell ─────────────────────────────────────── */
         .admin-shell {
-          display: flex; min-height: 100vh;
+          display: flex;
+          min-height: 100vh;
         }
 
-        /* ── Sidebar ── */
+        /* ─── Sidebar ───────────────────────────────────── */
         .admin-sidebar {
-          width: var(--sidebar-w); flex-shrink: 0;
-          background: var(--text); color: var(--text-inv);
-          display: flex; flex-direction: column;
-          position: fixed; top: 0; left: 0; bottom: 0;
-          z-index: 100; overflow-y: auto;
+          width: 248px;
+          flex-shrink: 0;
+          background: #100C0A;
+          display: flex;
+          flex-direction: column;
+          position: fixed;
+          top: 0; left: 0; bottom: 0;
+          z-index: 100;
+          border-right: 1px solid rgba(255,255,255,.06);
         }
-        .sidebar-logo {
-          display: flex; align-items: center; gap: 10px;
-          padding: 20px var(--s5);
-          border-bottom: 1px solid rgba(255,255,255,.08);
-        }
-        .sidebar-logo-icon { color: var(--brand-light); display: flex; align-items: center; }
-        .sidebar-logo-text { font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
 
-        .sidebar-nav {
-          flex: 1; padding: var(--s3) 0;
-          display: flex; flex-direction: column; gap: 2px;
+        /* Logo */
+        .sb-logo {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 22px 20px 20px;
+          border-bottom: 1px solid rgba(255,255,255,.07);
+          flex-shrink: 0;
         }
-        .sidebar-link {
-          display: flex; align-items: center; gap: var(--s3);
-          padding: 10px var(--s5); border-radius: 0;
-          font-size: .9375rem; font-weight: 500;
-          color: rgba(255,255,255,.65);
-          transition: background .15s, color .15s;
+        .sb-logo-icon {
+          color: var(--brand);
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+          filter: drop-shadow(0 0 10px rgba(200,136,42,.5));
+        }
+        .sb-logo-text {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .sb-logo-name {
+          font-size: 1.0625rem;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -.02em;
+          line-height: 1;
+        }
+        .sb-logo-sub {
+          font-size: .625rem;
+          font-weight: 600;
+          color: rgba(255,255,255,.3);
+          text-transform: uppercase;
+          letter-spacing: .1em;
+          line-height: 1;
+        }
+
+        /* Scrollable body */
+        .sb-body {
+          flex: 1;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          padding: 8px 0;
+          scrollbar-width: none;
+        }
+        .sb-body::-webkit-scrollbar { display: none; }
+
+        /* Sections */
+        .sb-section {
+          padding: 12px 0 4px;
+        }
+        .sb-section--bottom {
+          margin-top: auto;
+          border-top: 1px solid rgba(255,255,255,.07);
+          padding-top: 16px;
+        }
+        .sb-section-label {
+          display: block;
+          font-size: .5625rem;
+          font-weight: 700;
+          letter-spacing: .14em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,.22);
+          padding: 0 20px 6px;
+        }
+
+        /* Nav */
+        .sb-nav {
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+          padding: 0 10px;
+        }
+        .sb-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 12px;
+          border-radius: 9px;
+          font-size: .9375rem;
+          font-weight: 500;
+          color: rgba(255,255,255,.45);
+          transition: background .14s, color .14s;
           text-decoration: none;
+          position: relative;
         }
-        .sidebar-link:hover { background: rgba(255,255,255,.06); color: #fff; }
-        .sidebar-link.active { background: rgba(200,136,42,.18); color: var(--brand-light); }
-        .sidebar-link-icon {
-          width: 22px; display: flex; align-items: center; justify-content: center;
-          color: rgba(255,255,255,.5);
+        .sb-link:hover {
+          background: rgba(255,255,255,.07);
+          color: rgba(255,255,255,.8);
         }
-        .sidebar-link:hover .sidebar-link-icon,
-        .sidebar-link.active .sidebar-link-icon { color: inherit; }
-        .sidebar-link-team { margin-top: var(--s2); border-top: 1px solid rgba(255,255,255,.08); padding-top: var(--s4); }
+        .sb-link:hover .sb-icon { color: rgba(255,255,255,.7); }
+        .sb-link.active {
+          background: rgba(200,136,42,.14);
+          color: #FFCF6B;
+        }
+        .sb-link.active .sb-icon { color: #FFCF6B; }
 
-        .sidebar-footer { padding: var(--s4) 0 var(--s4); }
-        .sidebar-user { padding: var(--s3) var(--s5); display: flex; flex-direction: column; gap: 4px; }
-        .sidebar-user-name { font-size: .875rem; color: rgba(255,255,255,.5); }
-        .sidebar-logout { font-size: .8125rem; color: rgba(255,255,255,.4); text-align: left; padding: 0; }
-        .sidebar-logout:hover { color: rgba(255,255,255,.8); }
+        .sb-icon {
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          color: rgba(255,255,255,.3);
+          transition: color .14s;
+        }
+        .sb-label { flex: 1; white-space: nowrap; }
+        .sb-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--brand);
+          flex-shrink: 0;
+          opacity: .9;
+        }
 
-        /* ── Main ── */
+        /* User area */
+        .sb-user {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          padding: 14px 18px 20px;
+          border-top: 1px solid rgba(255,255,255,.07);
+          flex-shrink: 0;
+        }
+        .sb-avatar {
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          background: var(--brand);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: .6875rem;
+          font-weight: 700;
+          letter-spacing: .02em;
+        }
+        .sb-user-info {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+        .sb-user-name {
+          font-size: .875rem;
+          font-weight: 500;
+          color: rgba(255,255,255,.65);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .sb-logout {
+          font-size: .75rem;
+          color: rgba(255,255,255,.28);
+          text-align: left;
+          padding: 0;
+          transition: color .14s;
+        }
+        .sb-logout:hover { color: rgba(255,255,255,.65); }
+
+        /* ─── Main content ──────────────────────────────── */
         .admin-main {
-          flex: 1; margin-left: var(--sidebar-w);
-          min-height: 100vh; display: flex; flex-direction: column;
+          flex: 1;
+          margin-left: 248px;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
         }
         .admin-topbar {
-          display: flex; align-items: center; justify-content: space-between;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
           padding: var(--s4) var(--s8);
-          background: var(--surface); border-bottom: 1px solid var(--border);
-          position: sticky; top: 0; z-index: 50;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
+          position: sticky;
+          top: 0;
+          z-index: 50;
         }
-        .admin-topbar-title { font-size: 1.0625rem; font-weight: 600; margin: 0; }
-        .admin-topbar-user { display: flex; align-items: center; gap: var(--s3); }
-        .topbar-logout-btn { font-size: .8125rem; color: var(--text-muted); display: none; min-height: 44px; padding: 0 var(--s2); }
-        .topbar-logout-btn:hover { color: var(--text); }
+        .admin-topbar-title {
+          font-size: 1.0625rem;
+          font-weight: 600;
+          margin: 0;
+        }
+        .admin-topbar-right {
+          display: flex;
+          align-items: center;
+          gap: var(--s3);
+        }
+        .topbar-user {
+          font-size: .875rem;
+          color: var(--text-muted);
+          display: none;
+        }
+        .topbar-logout {
+          font-size: .8125rem;
+          color: var(--text-muted);
+          display: none;
+          min-height: 44px;
+          padding: 0 var(--s2);
+          transition: color .14s;
+        }
+        .topbar-logout:hover { color: var(--text); }
         .admin-content {
-          flex: 1; padding: var(--s8);
+          flex: 1;
+          padding: var(--s8);
         }
 
-        /* ── Bottom Nav (mobile only) ── */
-        .admin-bottom-nav { display: none; }
+        /* ─── Mobile bottom nav ─────────────────────────── */
+        .admin-bnav { display: none; }
 
+        /* ─── Responsive ────────────────────────────────── */
         @media (max-width: 768px) {
           .admin-sidebar { display: none; }
-          .admin-main { margin-left: 0; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+          .admin-main {
+            margin-left: 0;
+            padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+          }
           .admin-content { padding: var(--s4) var(--s3); }
           .admin-topbar { padding: var(--s3) var(--s4); }
-          .topbar-logout-btn { display: inline-flex; }
+          .topbar-user { display: inline; }
+          .topbar-logout { display: inline-flex; align-items: center; }
 
-          .admin-bottom-nav {
+          .admin-bnav {
             display: flex;
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: var(--surface); border-top: 1px solid var(--border);
-            z-index: 100; box-shadow: 0 -2px 8px rgba(26,20,18,.08);
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            z-index: 200;
             padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-shadow: 0 -4px 24px rgba(26,20,18,.1);
           }
-          .bottom-nav-item {
-            flex: 1; display: flex; flex-direction: column; align-items: center;
-            padding: 10px 2px 8px; min-height: 56px; gap: 3px;
-            color: var(--text-muted); text-decoration: none;
-            transition: color .15s; min-width: 0;
+          .bn-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 2px;
+            min-height: 58px;
+            gap: 4px;
+            min-width: 0;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color .14s;
+            position: relative;
           }
-          .bottom-nav-item.active { color: var(--brand); }
-          .bottom-nav-icon { display: flex; align-items: center; justify-content: center; }
-          .bottom-nav-label { font-size: .6875rem; font-weight: 500; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-          .admin-bottom-nav[data-count="6"] .bottom-nav-label { display: none; }
-          .admin-bottom-nav[data-count="6"] .bottom-nav-item { padding: 16px 4px; }
+          .bn-item.active { color: var(--brand); }
+          .bn-bar {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 3px;
+            border-radius: 0 0 3px 3px;
+            background: var(--brand);
+          }
+          .bn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+          }
+          .bn-label {
+            font-size: .625rem;
+            font-weight: 600;
+            letter-spacing: .02em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            padding: 0 2px;
+          }
+        }
+
+        @media (max-width: 390px) {
+          .admin-content { padding: var(--s3) var(--s2); }
+          .bn-label { font-size: .5625rem; }
         }
       `}</style>
     </div>

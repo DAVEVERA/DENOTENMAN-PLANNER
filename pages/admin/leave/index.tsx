@@ -3,6 +3,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, LeaveRequest } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -69,7 +70,7 @@ export default function LeavePage({ user }: Props) {
       </div>
 
       {loading ? (
-        <div className="loading-row"><span className="spinner" /> Laden…</div>
+        <div className="loading-row"><Spinner /> Laden…</div>
       ) : requests.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">🏖️</div>
@@ -104,7 +105,7 @@ export default function LeavePage({ user }: Props) {
                       disabled={processing === req.id}
                       onClick={() => decide(req.id, 'approved')}
                     >
-                      {processing === req.id ? <span className="spinner" /> : 'Goedkeuren'}
+                      {processing === req.id ? <Spinner /> : 'Goedkeuren'}
                     </button>
                     <button
                       className="btn btn-danger btn-sm"

@@ -3,6 +3,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, AppSettings } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -135,7 +136,7 @@ export default function SettingsPage({ user }: Props) {
 
         <div className="form-footer">
           <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? <span className="spinner" /> : 'Opslaan'}
+            {saving ? <Spinner /> : 'Opslaan'}
           </button>
         </div>
       </form>

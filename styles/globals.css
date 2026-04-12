@@ -53,7 +53,7 @@
   --shadow-sm:0 1px 3px rgba(26,20,18,.08);
   --shadow-md:0 4px 12px rgba(26,20,18,.10);
   --shadow-lg:0 8px 24px rgba(26,20,18,.14);
-  --sidebar-w:220px;
+  --sidebar-w:248px;
 }
 
 /* ─── Reset ────────────────────────────────────────────────────────────────── */
@@ -246,9 +246,7 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
 .page-actions{display:flex;gap:var(--s2);flex-wrap:wrap}
 .toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;padding:var(--s4) var(--s5);background:var(--surface);border:1px solid var(--border);border-radius:var(--r3);margin-bottom:var(--s5)}
 .section-title{font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:var(--s3);margin-top:var(--s6)}
-.spinner{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;line-height:1;animation:note-spin 1.2s ease-in-out infinite;will-change:transform,opacity;vertical-align:middle}
-.spinner::before{content:'♩'}
-@keyframes note-spin{0%,100%{transform:rotate(-20deg) scale(.85);opacity:.45}50%{transform:rotate(20deg) scale(1.15);opacity:1}}
+/* spinner — zie components/ui/Spinner.tsx */
 .divider{border:none;border-top:1px solid var(--border);margin:var(--s6) 0}
 
 /* ─── Responsive ───────────────────────────────────────────────────────────── */

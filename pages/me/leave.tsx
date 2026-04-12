@@ -3,6 +3,7 @@ import TeamLayout from '@/components/layout/TeamLayout'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, LeaveRequest, Location } from '@/types'
+import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
@@ -114,7 +115,7 @@ export default function MyLeavePage({ user }: Props) {
               <div className="form-actions">
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowForm(false)}>Annuleren</button>
                 <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                  {saving ? <span className="spinner" /> : 'Indienen'}
+                  {saving ? <Spinner /> : 'Indienen'}
                 </button>
               </div>
             </form>
@@ -125,7 +126,7 @@ export default function MyLeavePage({ user }: Props) {
         <div className="history-section">
           <h2 className="history-title">Mijn aanvragen</h2>
           {loading ? (
-            <div className="loading-row"><span className="spinner" /> Laden…</div>
+            <div className="loading-row"><Spinner /> Laden…</div>
           ) : requests.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">🏖️</div>
