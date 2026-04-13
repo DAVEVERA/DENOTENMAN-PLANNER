@@ -3,7 +3,13 @@
     "allow": [
       "Bash(grep \"echo.*POST\\\\|echo.*GET\\\\|echo.*$_\" \"C:\\\\Users\\\\dave.vera\\\\OneDrive - Autogroep Oostendorp\\\\Bureaublad\\\\PLANNER2\\\\admin\\\\admin-interface.php\")",
       "Bash(BASE=\"/c/Users/dave.vera/OneDrive - Autogroep Oostendorp/Bureaublad/PLANNER2\")",
-      "Read(//c/Users/dave.vera/OneDrive - Autogroep Oostendorp/Bureaublad/PLANNER2/**)"
+      "Read(//c/Users/dave.vera/OneDrive - Autogroep Oostendorp/Bureaublad/PLANNER2/**)",
+      "Bash(node -e \"require\\('lucide-react'\\); console.log\\('OK'\\)\")",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); const icons = ['CalendarDays','Users','Umbrella','Clock','FileDown','SlidersHorizontal','Eye','UserRound','ChevronLeft','ChevronRight','X','LogOut','Nut','Bean','Leaf']; icons.forEach\\(i => console.log\\(i, !!l[i]\\)\\)\")",
+      "Bash(node -e ':*)",
+      "Bash(grep -n \"CloseIcon\\\\|PrevIcon\\\\|NextIcon\" pages/admin/index.tsx pages/team/[location].tsx pages/me/index.tsx components/ui/ShiftModal.tsx)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)"
     ]
   },
   "spinnerTipsEnabled": false

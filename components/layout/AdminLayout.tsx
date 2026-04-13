@@ -1,9 +1,10 @@
 import { useRouter } from 'next/router'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { SessionUser } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
-  LogoIcon, ScheduleIcon, EmployeesIcon, LeaveIcon,
+  ScheduleIcon, EmployeesIcon, LeaveIcon,
   HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon,
 } from '@/components/ui/Icons'
 
@@ -39,10 +40,15 @@ export default function AdminLayout({ user, children, title }: Props) {
 
         {/* Logo */}
         <div className="sb-logo">
-          <span className="sb-logo-icon"><LogoIcon size={26} /></span>
-          <div className="sb-logo-text">
-            <span className="sb-logo-name">Planner</span>
-            <span className="sb-logo-sub">Denotenman</span>
+          <div className="sb-logo-img-wrap">
+            <Image
+              src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
+              alt="DeNotenman"
+              width={180}
+              height={43}
+              style={{ width: 'auto', height: '36px', display: 'block' }}
+              priority
+            />
           </div>
         </div>
 
@@ -157,37 +163,15 @@ export default function AdminLayout({ user, children, title }: Props) {
         .sb-logo {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 22px 20px 20px;
+          padding: 20px 20px 18px;
           border-bottom: 1px solid rgba(255,255,255,.07);
           flex-shrink: 0;
         }
-        .sb-logo-icon {
-          color: var(--brand);
+        .sb-logo-img-wrap {
           display: flex;
           align-items: center;
-          flex-shrink: 0;
-          filter: drop-shadow(0 0 10px rgba(200,136,42,.5));
-        }
-        .sb-logo-text {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-        .sb-logo-name {
-          font-size: 1.0625rem;
-          font-weight: 700;
-          color: #fff;
-          letter-spacing: -.02em;
-          line-height: 1;
-        }
-        .sb-logo-sub {
-          font-size: .625rem;
-          font-weight: 600;
-          color: rgba(255,255,255,.3);
-          text-transform: uppercase;
-          letter-spacing: .1em;
-          line-height: 1;
+          /* Logo is zwart op transparant — invert maakt het wit */
+          filter: invert(1) brightness(2);
         }
 
         /* Scrollable body */
@@ -235,18 +219,18 @@ export default function AdminLayout({ user, children, title }: Props) {
           border-radius: 9px;
           font-size: .9375rem;
           font-weight: 500;
-          color: rgba(255,255,255,.45);
+          color: rgba(255,255,255,.75);
           transition: background .14s, color .14s;
           text-decoration: none;
           position: relative;
         }
         .sb-link:hover {
-          background: rgba(255,255,255,.07);
-          color: rgba(255,255,255,.8);
+          background: rgba(255,255,255,.09);
+          color: #fff;
         }
-        .sb-link:hover .sb-icon { color: rgba(255,255,255,.7); }
+        .sb-link:hover .sb-icon { color: #fff; }
         .sb-link.active {
-          background: rgba(200,136,42,.14);
+          background: rgba(200,136,42,.18);
           color: #FFCF6B;
         }
         .sb-link.active .sb-icon { color: #FFCF6B; }
@@ -258,7 +242,7 @@ export default function AdminLayout({ user, children, title }: Props) {
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          color: rgba(255,255,255,.3);
+          color: rgba(255,255,255,.85);
           transition: color .14s;
         }
         .sb-label { flex: 1; white-space: nowrap; }
@@ -382,6 +366,7 @@ export default function AdminLayout({ user, children, title }: Props) {
 
           .admin-bnav {
             display: flex;
+            justify-content: space-evenly;
             position: fixed;
             bottom: 0; left: 0; right: 0;
             background: var(--surface);
@@ -391,7 +376,7 @@ export default function AdminLayout({ user, children, title }: Props) {
             box-shadow: 0 -4px 24px rgba(26,20,18,.1);
           }
           .bn-item {
-            flex: 1;
+            flex: 1 1 0;
             display: flex;
             flex-direction: column;
             align-items: center;
