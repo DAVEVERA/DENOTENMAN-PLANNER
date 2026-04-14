@@ -5,7 +5,7 @@ import { LOCATION_LABELS } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
   LogoIcon, ScheduleIcon, LeaveIcon,
-  MyScheduleIcon, SettingsIcon,
+  MyScheduleIcon, SettingsIcon, ProfileIcon, DocumentIcon,
 } from '@/components/ui/Icons'
 
 interface Props {
@@ -24,9 +24,11 @@ export default function TeamLayout({ user, children, location }: Props) {
     router.push('/login')
   }
 
-  const onTeam  = router.pathname.startsWith('/team')
-  const onMe    = router.pathname === '/me'
-  const onLeave = router.pathname === '/me/leave'
+  const onTeam      = router.pathname.startsWith('/team')
+  const onMe        = router.pathname === '/me'
+  const onLeave     = router.pathname === '/me/leave'
+  const onProfile   = router.pathname === '/me/profile'
+  const onDocuments = router.pathname === '/me/documents'
 
   return (
     <div className="team-shell">
@@ -61,6 +63,18 @@ export default function TeamLayout({ user, children, location }: Props) {
                 aria-current={onLeave ? 'page' : undefined}>
                 <LeaveIcon size={17} />
                 Verlof
+              </Link>
+              <Link href="/me/profile"
+                className={`tn-link${onProfile ? ' active' : ''}`}
+                aria-current={onProfile ? 'page' : undefined}>
+                <ProfileIcon size={17} />
+                Mijn profiel
+              </Link>
+              <Link href="/me/documents"
+                className={`tn-link${onDocuments ? ' active' : ''}`}
+                aria-current={onDocuments ? 'page' : undefined}>
+                <DocumentIcon size={17} />
+                Documenten
               </Link>
             </nav>
           )}
@@ -113,6 +127,20 @@ export default function TeamLayout({ user, children, location }: Props) {
           {onLeave && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon"><LeaveIcon size={22} /></span>
           <span className="tbn-label">Verlof</span>
+        </Link>
+        <Link href="/me/profile"
+          className={`tbn-item${onProfile ? ' active' : ''}`}
+          aria-current={onProfile ? 'page' : undefined}>
+          {onProfile && <span className="tbn-bar" aria-hidden="true" />}
+          <span className="tbn-icon"><ProfileIcon size={22} /></span>
+          <span className="tbn-label">Profiel</span>
+        </Link>
+        <Link href="/me/documents"
+          className={`tbn-item${onDocuments ? ' active' : ''}`}
+          aria-current={onDocuments ? 'page' : undefined}>
+          {onDocuments && <span className="tbn-bar" aria-hidden="true" />}
+          <span className="tbn-icon"><DocumentIcon size={22} /></span>
+          <span className="tbn-label">Docs</span>
         </Link>
         {isAdmin && (
           <Link href="/admin" className="tbn-item">

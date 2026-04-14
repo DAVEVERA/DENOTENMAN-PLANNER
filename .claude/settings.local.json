@@ -10,7 +10,8 @@
       "Bash(grep -n \"CloseIcon\\\\|PrevIcon\\\\|NextIcon\" pages/admin/index.tsx pages/team/[location].tsx pages/me/index.tsx components/ui/ShiftModal.tsx)",
       "Bash(npx tsc:*)",
       "Bash(npx next:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
     ]
   },
   "spinnerTipsEnabled": false

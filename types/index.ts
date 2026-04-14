@@ -45,6 +45,8 @@ export interface Employee {
   team_group: string | null
   location: Location
   hourly_rate: number | null
+  invite_sent_at: string | null
+  invite_pending: boolean | null
 }
 
 export interface Shift {
@@ -152,6 +154,48 @@ export interface AppSettings {
   location_markt_name: string
   location_nootmagazijn_name: string
   [key: string]: unknown
+}
+
+// ─── Employee Profile (extended) ─────────────────────────────────────────────
+export interface VoorkeurPlanning {
+  dagen: Partial<Record<Day, boolean>>
+  tijdvoorkeur: 'ochtend' | 'middag' | 'avond' | 'geen' | null
+  notitie: string | null
+}
+
+export interface EmployeeProfile {
+  employee_id: number
+  voornaam:          string | null
+  achternaam:        string | null
+  adres:             string | null
+  postcode:          string | null
+  stad:              string | null
+  ice_contact:       string | null
+  geboortedatum:     string | null   // ISO date "YYYY-MM-DD"
+  geboorteplaats:    string | null
+  land_van_herkomst: string | null
+  bijzonderheden:    string | null
+  voorkeur_planning: VoorkeurPlanning | null
+  avatar_path:       string | null
+  avatar_url:        string | null   // signed URL, server-generated
+  updated_at:        string
+}
+
+// ─── Employee Documents ───────────────────────────────────────────────────────
+export type DocType = 'legitimatie' | 'arbeidsovereenkomst' | 'overig'
+
+export interface EmployeeDocument {
+  id:           number
+  employee_id:  number
+  doc_type:     DocType
+  filename:     string
+  storage_path: string
+  file_size:    number | null
+  mime_type:    string | null
+  uploaded_by:  string
+  uploaded_at:  string
+  notes:        string | null
+  download_url: string | null   // signed URL, server-generated
 }
 
 // ─── Utility Types ────────────────────────────────────────────────────────────

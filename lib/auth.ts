@@ -8,6 +8,8 @@ import { getIronSession } from 'iron-session'
 import { sessionOptions } from './session'
 import type { SessionUser, Capability } from '@/types'
 import { ROLE_CAPS } from '@/types'
+import { supabase, T } from './db'
+import { sendInviteEmail } from './email'
 export { can } from './capabilities'
 
 const USERS_FILE = path.join(process.cwd(), 'config', 'users.json')
@@ -110,4 +112,57 @@ export function upsertUser(data: Omit<StoredUser, 'password_hash'> & { password?
   if (idx >= 0) users[idx] = entry
   else users.push(entry)
   saveUsers(users)
+}
+
+export function deleteUser(username: string): boolean {
+  const users = loadUsers()
+  const idx   = users.findIndex(u => u.username === username)
+  if (idx < 0) return false
+  users.splice(idx, 1)
+  saveUsers(users)
+  return true
+}
+
+/**
+ * Genereer een tijdelijk wachtwoord, update de hash in users.json en stuur
+ * de uitnodigingsmail. Update ook het `invite_sent_at` veld in de DB.
+ *
+ * Retourneert het tijdelijke wachtwoord (voor logging — niet naar client sturen).
+ */
+export async function sendInviteForEmployee(employeeId: number): Promise<void> {
+  // Zoek de gebruiker die aan dit employee_id gekoppeld is
+  const users = loadUsers()
+  const user  = users.find(u => u.employee_id === employeeId)
+  if (!user) throw new Error(`Geen gebruikersaccount gevonden voor employee_id ${employeeId}`)
+
+  // Haal e-mailadres op uit employees tabel
+  const { data: emp, error } = await supabase
+    .from(T('employees'))
+    .select('email, name')
+    .eq('id', employeeId)
+    .maybeSingle()
+  if (error) throw error
+  if (!emp?.email) throw new Error('Medewerker heeft geen e-mailadres — voeg er één toe.')
+
+  // Genereer een leesbaar tijdelijk wachtwoord
+  const tempPw = crypto.randomBytes(5).toString('hex').toUpperCase().slice(0, 8)
+  //  bv. "A3F9D2B1"
+
+  // Sla de hash op
+  user.password_hash = bcrypt.hashSync(tempPw, 10)
+  saveUsers(users)
+
+  // Stuur de e-mail
+  await sendInviteEmail({
+    to:           emp.email,
+    toName:       emp.name,
+    username:     user.username,
+    tempPassword: tempPw,
+  })
+
+  // Update invite_sent_at in de database
+  await supabase
+    .from(T('employees'))
+    .update({ invite_sent_at: new Date().toISOString(), invite_pending: false })
+    .eq('id', employeeId)
 }

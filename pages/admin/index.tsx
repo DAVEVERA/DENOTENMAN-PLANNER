@@ -216,7 +216,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                               aria-label={`Open dienst: ${s.shift_type}`}>
                               <button
                                 className="open-chip-edit-btn"
-                                onClick={() => setModal({ shift: s, employee: { id: 0, name: '', email: null, phone: null, contract_hours: 0, is_active: 1, user_level: 'Medewerker', team_group: null, location, hourly_rate: null }, day })}
+                                onClick={() => setModal({ shift: s, employee: { id: 0, name: '', email: null, phone: null, contract_hours: 0, is_active: 1, user_level: 'Medewerker', team_group: null, location, hourly_rate: null, invite_sent_at: null, invite_pending: null }, day })}
                                 aria-label={`Bewerken: ${s.shift_type}`}
                               >
                                 <span className="chip-type">{s.shift_type}</span>

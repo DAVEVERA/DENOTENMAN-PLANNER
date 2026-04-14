@@ -15,6 +15,9 @@ import {
   ChevronRight,
   X,
   Bean,
+  Contact,
+  FileText,
+  Mail,
 } from 'lucide-react'
 
 export interface IconProps {
@@ -162,6 +165,42 @@ export function PrevIcon({ size = 18, className }: IconProps) {
 export function NextIcon({ size = 18, className }: IconProps) {
   return (
     <ChevronRight
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
+
+/** Profiel / contactkaart */
+export function ProfileIcon({ size = 20, className }: IconProps) {
+  return (
+    <Contact
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
+
+/** Document / bestand */
+export function DocumentIcon({ size = 20, className }: IconProps) {
+  return (
+    <FileText
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
+
+/** E-mail / uitnodiging */
+export function InviteIcon({ size = 20, className }: IconProps) {
+  return (
+    <Mail
       size={size}
       strokeWidth={SW}
       className={className}

@@ -5,5 +5,82 @@
     "role": "admin",
     "employee_id": null,
     "display_name": "Administrator"
+  },
+  {
+    "username": "j.smits",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 101,
+    "display_name": "Jens Smits"
+  },
+  {
+    "username": "j.lavrijsen",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 102,
+    "display_name": "Jip Lavrijsen"
+  },
+  {
+    "username": "j.vanhooft",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 103,
+    "display_name": "John van Hooft"
+  },
+  {
+    "username": "s.roosen",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 104,
+    "display_name": "Suus Roosen"
+  },
+  {
+    "username": "t.overbeek",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 105,
+    "display_name": "Tess Overbeek"
+  },
+  {
+    "username": "h.bruggeling",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 106,
+    "display_name": "Huub Bruggeling"
+  },
+  {
+    "username": "m.fransen",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 107,
+    "display_name": "Mayke Fransen"
+  },
+  {
+    "username": "t.vermeer",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 108,
+    "display_name": "Twan Vermeer"
+  },
+  {
+    "username": "g.vanhal",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 109,
+    "display_name": "Giel van Hal"
+  },
+  {
+    "username": "t.blommensteijn",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 110,
+    "display_name": "Troy Blommensteijn"
+  },
+  {
+    "username": "s.wolfs",
+    "password_hash": "$2a$10$ELOTkvS5AK9Zef8OBXNtMO.lG9g6u4SDOODjb1pWDbJbv7v7103Na",
+    "role": "employee",
+    "employee_id": 111,
+    "display_name": "Stijn Wolfs"
   }
 ]

@@ -6,6 +6,7 @@ import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Employee, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
+import { InviteIcon } from '@/components/ui/Icons'
 
 interface Props { user: SessionUser }
 
@@ -25,6 +26,8 @@ export default function EmployeesPage({ user }: Props) {
   const [newForm, setNewForm]       = useState({ name: '', email: '', phone: '', contract_hours: 24, user_level: 'Medewerker', location: 'markt' as Location, hourly_rate: '' })
   const [saving, setSaving]         = useState(false)
   const [error, setError]           = useState('')
+  const [invitingId, setInvitingId] = useState<number | null>(null)
+  const [inviteResult, setInviteResult] = useState<{ id: number; ok: boolean; msg: string } | null>(null)
 
   async function load() {
     setLoading(true)
@@ -65,6 +68,17 @@ export default function EmployeesPage({ user }: Props) {
       body: JSON.stringify({ ...emp, is_active: emp.is_active ? 0 : 1 }),
     })
     load()
+  }
+
+  async function sendInvite(emp: Employee) {
+    if (!emp.email) { setInviteResult({ id: emp.id, ok: false, msg: 'Geen e-mailadres' }); return }
+    setInvitingId(emp.id); setInviteResult(null)
+    const r = await fetch(`/api/admin/employees/${emp.id}/invite`, { method: 'POST' })
+    const d = await r.json()
+    setInvitingId(null)
+    setInviteResult({ id: emp.id, ok: d.success, msg: d.message ?? (d.success ? 'Verzonden' : 'Mislukt') })
+    if (d.success) load()  // herlaad om invite_sent_at bij te werken
+    setTimeout(() => setInviteResult(null), 5000)
   }
 
   return (
@@ -156,6 +170,7 @@ export default function EmployeesPage({ user }: Props) {
                 <th scope="col">Niveau</th>
                 <th scope="col">Contact</th>
                 <th scope="col">Status</th>
+                <th scope="col">Uitnodiging</th>
                 <th scope="col" aria-label="Acties"></th>
               </tr>
             </thead>
@@ -182,10 +197,34 @@ export default function EmployeesPage({ user }: Props) {
                     </span>
                   </td>
                   <td>
+                    {inviteResult?.id === emp.id ? (
+                      <span className={`invite-result ${inviteResult.ok ? 'ok' : 'err'}`}>{inviteResult.msg}</span>
+                    ) : emp.invite_sent_at ? (
+                      <span className="invite-sent" title={new Date(emp.invite_sent_at).toLocaleString('nl-NL')}>
+                        <span className="invite-dot sent" />
+                        {new Date(emp.invite_sent_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                      </span>
+                    ) : (
+                      <span className="invite-none">
+                        <span className="invite-dot pending" />
+                        Niet verzonden
+                      </span>
+                    )}
+                  </td>
+                  <td>
                     <div className="row-actions">
                       <Link href={`/admin/employees/${emp.id}`} className="btn btn-outline btn-xs">Bewerken</Link>
+                      <button
+                        className="btn btn-ghost btn-xs invite-btn-xs"
+                        onClick={() => sendInvite(emp)}
+                        disabled={invitingId === emp.id || !emp.email}
+                        title={!emp.email ? 'Geen e-mailadres' : emp.invite_sent_at ? 'Opnieuw uitnodigen' : 'Uitnodiging sturen'}
+                      >
+                        {invitingId === emp.id ? <Spinner /> : <InviteIcon size={13} />}
+                        {emp.invite_sent_at ? 'Opnieuw' : 'Uitnodigen'}
+                      </button>
                       <button className="btn btn-ghost btn-xs text-muted" onClick={() => toggleActive(emp)} title={emp.is_active ? 'Deactiveren' : 'Activeren'}>
-                        {emp.is_active ? 'Deactiveren' : 'Activeren'}
+                        {emp.is_active ? 'Deact.' : 'Activeer'}
                       </button>
                     </div>
                   </td>
@@ -237,8 +276,22 @@ export default function EmployeesPage({ user }: Props) {
         .empty-row { text-align: center; color: var(--text-muted); padding: var(--s8); }
         .loading-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
 
+        /* Invite status */
+        .invite-sent, .invite-none { display: flex; align-items: center; gap: 5px; font-size: .8125rem; white-space: nowrap; }
+        .invite-sent { color: var(--text-sub); }
+        .invite-none { color: var(--text-muted); }
+        .invite-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .invite-dot.sent    { background: #16a34a; }
+        .invite-dot.pending { background: #d97706; }
+        .invite-result { font-size: .8125rem; font-weight: 600; white-space: nowrap; }
+        .invite-result.ok  { color: #16a34a; }
+        .invite-result.err { color: #dc2626; }
+        .invite-btn-xs { display: inline-flex; align-items: center; gap: 4px; }
+
         @media (max-width: 768px) {
           .form-grid-3 { grid-template-columns: 1fr 1fr; }
+          .data-table thead th:nth-child(3),
+          .data-table tbody td:nth-child(3),
           .data-table thead th:nth-child(4),
           .data-table tbody td:nth-child(4),
           .data-table thead th:nth-child(5),
