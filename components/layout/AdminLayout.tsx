@@ -219,13 +219,13 @@ export default function AdminLayout({ user, children, title }: Props) {
           border-radius: 9px;
           font-size: .9375rem;
           font-weight: 500;
-          color: rgba(255,255,255,.75);
+          color: rgba(255, 255, 255, 0.75);
           transition: background .14s, color .14s;
           text-decoration: none;
           position: relative;
         }
         .sb-link:hover {
-          background: rgba(255,255,255,.09);
+          background: rgba(255, 255, 255, 0.09);
           color: #fff;
         }
         .sb-link:hover .sb-icon { color: #fff; }
@@ -324,6 +324,7 @@ export default function AdminLayout({ user, children, title }: Props) {
           font-size: 1.0625rem;
           font-weight: 600;
           margin: 0;
+          color: rgba(255, 255, 255, 0.75);
         }
         .admin-topbar-right {
           display: flex;
@@ -332,12 +333,12 @@ export default function AdminLayout({ user, children, title }: Props) {
         }
         .topbar-user {
           font-size: .875rem;
-          color: var(--text-muted);
+          color: rgba(255, 255, 255, 0.75);
           display: none;
         }
         .topbar-logout {
           font-size: .8125rem;
-          color: var(--text-muted);
+          color: rgba(255, 255, 255, 0.75);
           display: none;
           min-height: 44px;
           padding: 0 var(--s2);
@@ -373,7 +374,7 @@ export default function AdminLayout({ user, children, title }: Props) {
             border-top: 1px solid var(--border);
             z-index: 200;
             padding-bottom: env(safe-area-inset-bottom, 0px);
-            box-shadow: 0 -4px 24px rgba(26,20,18,.1);
+            box-shadow: 0 -4px 24px rgba(223, 215, 212, 0.1);
           }
           .bn-item {
             flex: 1 1 0;
@@ -384,7 +385,7 @@ export default function AdminLayout({ user, children, title }: Props) {
             min-height: 58px;
             gap: 4px;
             min-width: 0;
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.75);
             text-decoration: none;
             transition: color .14s;
             position: relative;
@@ -415,6 +416,7 @@ export default function AdminLayout({ user, children, title }: Props) {
             text-overflow: ellipsis;
             max-width: 100%;
             padding: 0 2px;
+            color: rgba(255, 255, 255, 0.75);
           }
         }
 

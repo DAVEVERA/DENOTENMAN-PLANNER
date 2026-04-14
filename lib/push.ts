@@ -5,9 +5,9 @@ import type { PushSubscriptionRow } from '@/types'
 function init() {
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT ?? 'mailto:admin@denotenkar.nl',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY,
+    process.env.VAPID_SUBJECT ?? 'mailto:info@mnrv.nl',
+    process.env.VAPID_PUBLIC_KEY,  // "BJDQKy354mNJnDJBJRGbGVVIUB6b9yBkvkoAB3u0tZ99QD4YsEdjwIyoUInwKh_ABXV0ytS-e_n20UuyzECJDfE"
+    process.env.VAPID_PRIVATE_KEY, // "italL8JYy1t748mCudE2N5FmEH6DXvOcx3pyoi9hzps"
   )
 }
 init()
