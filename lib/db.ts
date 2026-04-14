@@ -1,17 +1,30 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  if (process.env.NODE_ENV !== 'test') {
-    console.warn('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+/** Lazy singleton — only instantiated on first runtime access, not at build time. */
+let _supabase: SupabaseClient | null = null
+
+export function getSupabase(): SupabaseClient {
+  if (_supabase) return _supabase
+
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error(
+      'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variable.'
+    )
   }
+
+  _supabase = createClient(url, key, { auth: { persistSession: false } })
+  return _supabase
 }
 
-// Use the service role key server-side — bypasses Row Level Security
-export const supabase = createClient(
-  process.env.SUPABASE_URL ?? '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-  { auth: { persistSession: false } },
-)
+/** Backwards-compatible proxy — behaves like the old `supabase` export. */
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    return (getSupabase() as unknown as Record<string | symbol, unknown>)[prop]
+  },
+})
 
 const PREFIX = process.env.DB_PREFIX ?? 'planner20_'
 
