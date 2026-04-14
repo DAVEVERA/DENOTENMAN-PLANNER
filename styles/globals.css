@@ -246,7 +246,17 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
 .page-actions{display:flex;gap:var(--s2);flex-wrap:wrap}
 .toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;padding:var(--s4) var(--s5);background:var(--surface);border:1px solid var(--border);border-radius:var(--r3);margin-bottom:var(--s5)}
 .section-title{font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:var(--s3);margin-top:var(--s6)}
-/* spinner — zie components/ui/Spinner.tsx */
+/* ─── Spinner — zie components/ui/Spinner.tsx ──────────────────────────────── */
+.dn-spinner {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  animation: dn-spin 0.75s linear infinite;
+}
+@keyframes dn-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 .divider{border:none;border-top:1px solid var(--border);margin:var(--s6) 0}
 
 /* ─── Responsive ───────────────────────────────────────────────────────────── */
