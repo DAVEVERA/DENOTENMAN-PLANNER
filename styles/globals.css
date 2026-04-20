@@ -280,6 +280,158 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
   .modal-body{padding:var(--s3);gap:var(--s3)}
 }
 
+/* ─── Sidebar — volledig overschrijf (styled-jsx workaround) ──────────────── */
+
+/* Layout */
+.sb-link,
+.sb-link:visited,
+.sb-link:link {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 11px !important;
+  padding: 9px 12px !important;
+  border-radius: 10px !important;
+  font-size: .9375rem !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+  position: relative !important;
+  color: rgba(255,255,255,.88) !important;
+  transition: background .15s, color .15s !important;
+  letter-spacing: .01em !important;
+}
+.sb-link:hover {
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+}
+.sb-link.active,
+.sb-link.active:visited {
+  background: rgba(200,136,42,.20) !important;
+  color: #FFCF6B !important;
+}
+
+/* Icon */
+.sb-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  color: rgba(255,255,255,.75) !important;
+  transition: color .15s !important;
+}
+.sb-link:hover .sb-icon { color: #fff !important; }
+.sb-link.active .sb-icon { color: #FFCF6B !important; }
+
+/* Label */
+.sb-label {
+  flex: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1 !important;
+}
+
+/* Section label (MENU / WEERGAVE) */
+.sb-section-label {
+  display: block !important;
+  font-size: .6rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,.25) !important;
+  padding: 0 16px 6px !important;
+}
+
+/* Dot indicator (active) */
+.sb-dot {
+  width: 5px !important;
+  height: 5px !important;
+  border-radius: 50% !important;
+  background: #C8882A !important;
+  flex-shrink: 0 !important;
+  opacity: .9 !important;
+}
+
+/* User name & logout */
+.sb-user-name {
+  font-size: .875rem !important;
+  font-weight: 600 !important;
+  color: rgba(255,255,255,.88) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.sb-logout {
+  font-size: .75rem !important;
+  color: rgba(255,255,255,.32) !important;
+  text-align: left !important;
+  padding: 0 !important;
+  transition: color .15s !important;
+  cursor: pointer !important;
+}
+.sb-logout:hover { color: rgba(255,255,255,.7) !important; }
+
+/* ─── Team Header — volledig overschrijf (styled-jsx workaround) ─────────── */
+
+.team-header {
+  background: #100C0A !important;
+}
+
+.tn-link,
+.tn-link:visited,
+.tn-link:link {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  font-size: .9375rem !important;
+  font-weight: 500 !important;
+  color: #ffffff !important;
+  opacity: .75;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  transition: background .14s, opacity .14s !important;
+}
+.tn-link svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+.tn-link:hover svg {
+  stroke: #ffffff !important;
+}
+.tn-link.active svg {
+  stroke: #FFCF6B !important;
+  color: #FFCF6B !important;
+}
+
+.team-admin-link,
+.team-admin-link:visited,
+.team-admin-link:link {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  opacity: .7;
+}
+.team-admin-link:hover { opacity: 1 !important; }
+
+.team-user-name {
+  color: #ffffff !important;
+  opacity: .8;
+}
+.team-logout {
+  color: #ffffff !important;
+  opacity: .4;
+}
+.team-logout:hover { opacity: .85 !important; }
+
 /* ─── Login Page ───────────────────────────────────────────────────────────── */
 .login-shell {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;

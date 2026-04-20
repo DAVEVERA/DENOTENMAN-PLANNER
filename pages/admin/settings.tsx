@@ -107,32 +107,6 @@ export default function SettingsPage({ user }: Props) {
           </div>
         </div>
 
-        <div className="settings-section">
-          <h3 className="settings-section-title">Push notificaties (PWA)</h3>
-          <div className="settings-info-box">
-            <p>VAPID-sleutels worden ingesteld via omgevingsvariabelen in <code>.env.local</code>:</p>
-            <code className="env-block">
-              VAPID_PUBLIC_KEY=…{'\n'}
-              VAPID_PRIVATE_KEY=…{'\n'}
-              VAPID_SUBJECT=mailto:admin@denotenkar.nl
-            </code>
-            <p className="text-muted text-sm">Genereer sleutels met: <code>npx web-push generate-vapid-keys</code></p>
-          </div>
-        </div>
-
-        <div className="settings-section">
-          <h3 className="settings-section-title">E-mail (SMTP)</h3>
-          <div className="settings-info-box">
-            <p>SMTP-configuratie via omgevingsvariabelen in <code>.env.local</code>:</p>
-            <code className="env-block">
-              SMTP_HOST=smtp.gmail.com{'\n'}
-              SMTP_PORT=587{'\n'}
-              SMTP_USER=jouw@email.nl{'\n'}
-              SMTP_PASS=app-wachtwoord{'\n'}
-              SMTP_FROM=Planner &lt;planner@denotenkar.nl&gt;
-            </code>
-          </div>
-        </div>
 
         <div className="form-footer">
           <button type="submit" className="btn btn-primary" disabled={saving}>

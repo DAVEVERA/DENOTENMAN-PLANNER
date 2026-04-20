@@ -1,10 +1,11 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 import type { SessionUser } from '@/types'
 import { LOCATION_LABELS } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
-  LogoIcon, ScheduleIcon, LeaveIcon,
+  ScheduleIcon, LeaveIcon,
   MyScheduleIcon, SettingsIcon, ProfileIcon, DocumentIcon,
 } from '@/components/ui/Icons'
 
@@ -24,11 +25,12 @@ export default function TeamLayout({ user, children, location }: Props) {
     router.push('/login')
   }
 
-  const onTeam      = router.pathname.startsWith('/team')
-  const onMe        = router.pathname === '/me'
-  const onLeave     = router.pathname === '/me/leave'
-  const onProfile   = router.pathname === '/me/profile'
-  const onDocuments = router.pathname === '/me/documents'
+  const onTeam        = router.pathname.startsWith('/team')
+  const onMe          = router.pathname === '/me'
+  const onOpenShifts  = router.pathname === '/me/open-shifts'
+  const onLeave       = router.pathname === '/me/leave'
+  const onProfile     = router.pathname === '/me/profile'
+  const onDocuments   = router.pathname === '/me/documents'
 
   return (
     <div className="team-shell">
@@ -37,10 +39,16 @@ export default function TeamLayout({ user, children, location }: Props) {
       <header className={`team-header${location === 'nootmagazijn' ? ' is-noot' : ''}`}>
         <div className="team-inner">
 
-          {/* Brand */}
+          {/* Brand – logo afbeelding */}
           <div className="team-brand">
-            <span className="team-brand-icon"><LogoIcon size={22} /></span>
-            <span className="team-brand-name">{locLabel}</span>
+            <Image
+              src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
+              alt="DeNotenman"
+              width={160}
+              height={38}
+              style={{ width: 'auto', height: '32px', display: 'block', filter: 'invert(1) brightness(2)' }}
+              priority
+            />
           </div>
 
           {/* Desktop nav */}
@@ -49,31 +57,37 @@ export default function TeamLayout({ user, children, location }: Props) {
               <Link href={`/team/${location}`}
                 className={`tn-link${onTeam ? ' active' : ''}`}
                 aria-current={onTeam ? 'page' : undefined}>
-                <ScheduleIcon size={17} />
+                <ScheduleIcon size={20} />
                 Rooster
               </Link>
               <Link href="/me"
                 className={`tn-link${onMe ? ' active' : ''}`}
                 aria-current={onMe ? 'page' : undefined}>
-                <MyScheduleIcon size={17} />
+                <MyScheduleIcon size={20} />
                 Mijn rooster
               </Link>
               <Link href="/me/leave"
                 className={`tn-link${onLeave ? ' active' : ''}`}
                 aria-current={onLeave ? 'page' : undefined}>
-                <LeaveIcon size={17} />
+                <LeaveIcon size={20} />
                 Verlof
+              </Link>
+              <Link href="/me/open-shifts"
+                className={`tn-link${onOpenShifts ? ' active' : ''}`}
+                aria-current={onOpenShifts ? 'page' : undefined}>
+                <ScheduleIcon size={20} />
+                Open diensten
               </Link>
               <Link href="/me/profile"
                 className={`tn-link${onProfile ? ' active' : ''}`}
                 aria-current={onProfile ? 'page' : undefined}>
-                <ProfileIcon size={17} />
+                <ProfileIcon size={20} />
                 Mijn profiel
               </Link>
               <Link href="/me/documents"
                 className={`tn-link${onDocuments ? ' active' : ''}`}
                 aria-current={onDocuments ? 'page' : undefined}>
-                <DocumentIcon size={17} />
+                <DocumentIcon size={20} />
                 Documenten
               </Link>
             </nav>
@@ -83,7 +97,7 @@ export default function TeamLayout({ user, children, location }: Props) {
           <div className="team-header-right">
             {isAdmin && (
               <Link href="/admin" className="team-admin-link">
-                <SettingsIcon size={16} />
+                <SettingsIcon size={20} />
                 Beheer
               </Link>
             )}
@@ -160,14 +174,14 @@ export default function TeamLayout({ user, children, location }: Props) {
 
         /* ─── Header ─────────────────────────────────── */
         .team-header {
-          background: var(--surface);
-          box-shadow: 0 1px 0 var(--border), 0 3px 0 var(--markt);
+          background: #100C0A;
+          box-shadow: 0 3px 0 var(--markt);
           position: sticky;
           top: 0;
           z-index: 50;
         }
         .team-header.is-noot {
-          box-shadow: 0 1px 0 var(--border), 0 3px 0 var(--noot);
+          box-shadow: 0 3px 0 var(--noot);
         }
         .team-inner {
           max-width: 1200px;
@@ -183,50 +197,43 @@ export default function TeamLayout({ user, children, location }: Props) {
         .team-brand {
           display: flex;
           align-items: center;
-          gap: var(--s2);
           flex-shrink: 0;
           text-decoration: none;
-        }
-        .team-brand-icon {
-          color: var(--brand);
-          display: flex;
-          align-items: center;
-        }
-        .team-brand-name {
-          font-size: 1.0625rem;
-          font-weight: 700;
-          color: var(--text);
-          white-space: nowrap;
-          letter-spacing: -.015em;
         }
 
         /* Desktop nav */
         .team-nav {
           display: flex;
           align-items: center;
-          gap: 2px;
+          gap: 4px;
           flex: 1;
+          padding-left: var(--s4);
         }
         .tn-link {
-          display: inline-flex;
+          display: flex;
+          flex-direction: row;
           align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
+          gap: 8px;
+          padding: 8px 14px;
           border-radius: var(--r2);
           min-height: 40px;
           font-size: .9375rem;
           font-weight: 500;
-          color: var(--text-muted);
-          transition: background .14s, color .14s;
+          color: #fff;
+          opacity: .7;
+          transition: background .14s, opacity .14s;
           text-decoration: none;
+          white-space: nowrap;
         }
+        .tn-link svg { flex-shrink: 0; }
         .tn-link:hover {
-          background: var(--surface-alt);
-          color: var(--text);
+          background: rgba(255,255,255,.09);
+          opacity: 1;
         }
         .tn-link.active {
-          background: var(--brand-subtle);
-          color: var(--brand-dark);
+          background: rgba(200,136,42,.18);
+          color: #FFCF6B;
+          opacity: 1;
           font-weight: 600;
         }
 
@@ -239,22 +246,23 @@ export default function TeamLayout({ user, children, location }: Props) {
           margin-left: auto;
         }
         .team-admin-link {
-          display: inline-flex;
+          display: flex;
           align-items: center;
-          gap: 5px;
-          padding: 6px 10px;
+          gap: 6px;
+          padding: 6px 14px;
           border-radius: var(--r2);
           font-size: .8125rem;
           font-weight: 500;
-          color: var(--text-muted);
-          border: 1px solid var(--border);
-          transition: background .14s, color .14s, border-color .14s;
+          color: #fff;
+          opacity: .7;
+          border: 1px solid rgba(255,255,255,.2);
+          transition: background .14s, opacity .14s, border-color .14s;
           text-decoration: none;
         }
         .team-admin-link:hover {
-          background: var(--surface-alt);
-          color: var(--text);
-          border-color: var(--border-strong);
+          background: rgba(255,255,255,.09);
+          opacity: 1;
+          border-color: rgba(255,255,255,.4);
         }
         .team-user {
           display: flex;
@@ -265,16 +273,18 @@ export default function TeamLayout({ user, children, location }: Props) {
         .team-user-name {
           font-size: .875rem;
           font-weight: 500;
-          color: var(--text-sub);
+          color: #fff;
+          opacity: .75;
           white-space: nowrap;
         }
         .team-logout {
           font-size: .75rem;
-          color: var(--text-muted);
+          color: #fff;
+          opacity: .4;
           padding: 0;
-          transition: color .14s;
+          transition: opacity .14s;
         }
-        .team-logout:hover { color: var(--text); }
+        .team-logout:hover { opacity: .85; }
 
         /* ─── Main ───────────────────────────────────── */
         .team-main {

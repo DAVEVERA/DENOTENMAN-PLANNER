@@ -8,6 +8,7 @@ import type { SessionUser, Shift, Location } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 
+
 interface Props {
   user: SessionUser
   initialWeek: number
@@ -42,6 +43,9 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
   const [year, setYear]   = useState(initialYear)
   const [shifts, setShifts] = useState<Shift[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedShift, setSelectedShift] = useState<Shift | null>(null)
+  const [offering, setOffering] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
   const numWeeks = view === 'week' ? 1 : view === 'month' ? 4 : 13
 
@@ -79,6 +83,28 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
     setWeek(cw); setYear(cy)
   }
 
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  async function offerShift(shift: Shift) {
+    setOffering(true)
+    const r = await fetch('/api/shifts/offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shift_id: shift.id }),
+    }).then(r => r.json())
+    setOffering(false)
+    setSelectedShift(null)
+    if (r.success) {
+      showToast('✅ Dienst aangeboden! Collega\'s ontvangen een melding.')
+      load()
+    } else {
+      showToast('❌ ' + (r.message ?? 'Er ging iets mis'))
+    }
+  }
+
   const weeks = weeksInRange(week, year, numWeeks)
 
   const shiftsByWeek = weeks.map(wk => ({
@@ -96,6 +122,36 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
 
   return (
     <TeamLayout user={user} location={locProp}>
+      {toast && (
+        <div className="me-toast" role="alert">{toast}</div>
+      )}
+
+      {/* ── Offer confirm modal ── */}
+      {selectedShift && (
+        <div className="offer-overlay" onClick={e => e.target === e.currentTarget && setSelectedShift(null)}>
+          <div className="offer-modal" role="dialog" aria-modal="true">
+            <div className="offer-modal-head">
+              <span className="offer-modal-icon">🔄</span>
+              <div>
+                <div className="offer-modal-title">Dienst aanbieden</div>
+                <div className="offer-modal-sub">
+                  {selectedShift.shift_type} · {selectedShift.day_of_week} · week {selectedShift.week_number}
+                </div>
+              </div>
+            </div>
+            <p className="offer-modal-body">
+              Wil je deze dienst aanbieden aan je collega's? Ze ontvangen een melding en kunnen hem overnemen.
+              De beheerder keurt de overname goed.
+            </p>
+            <div className="offer-modal-actions">
+              <button className="btn btn-outline" onClick={() => setSelectedShift(null)}>Annuleren</button>
+              <button className="btn btn-primary" disabled={offering} onClick={() => offerShift(selectedShift)}>
+                {offering ? <Spinner /> : '📢 Ja, bied aan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {!user.employee_id ? (
         <div className="no-emp-msg">
           <div className="no-emp-icon">👤</div>
@@ -179,24 +235,35 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                             <span className="slot-day">{DAY_SHORT[day]}</span>
                             <span className={`slot-num${isToday ? ' today-num' : ''}`}>{dateNum}</span>
                           </div>
-                          {ds.length > 0 ? ds.map(s => (
-                            <div
-                              key={s.id}
-                              className="slot-shift"
-                              data-type={s.shift_type.toLowerCase()}
-                              aria-label={`${s.shift_type} dienst`}
-                            >
-                              <span className="slot-type">{s.shift_type}</span>
-                              {s.start_time && (
-                                <span className="slot-time">{s.start_time.slice(0,5)}–{s.end_time?.slice(0,5)}</span>
-                              )}
-                              {s.location && (
-                                <span className={`slot-loc loc-${s.location}`}>
-                                  {s.location === 'markt' ? 'M' : 'N'}
-                                </span>
-                              )}
-                            </div>
-                          )) : (
+                          {ds.length > 0 ? ds.map(s => {
+                            const isOffered = s.is_open === 1 && s.employee_id === user.employee_id
+                            return (
+                              <div
+                                key={s.id}
+                                className={`slot-shift${isOffered ? ' is-offered' : ''}`}
+                                data-type={s.shift_type.toLowerCase()}
+                                aria-label={`${s.shift_type} dienst`}
+                                role={!isOffered ? 'button' : undefined}
+                                tabIndex={!isOffered ? 0 : undefined}
+                                title={!isOffered ? 'Klik om aan te bieden' : 'Aangeboden aan collega\'s'}
+                                onClick={() => !isOffered && setSelectedShift(s)}
+                                onKeyDown={e => !isOffered && e.key === 'Enter' && setSelectedShift(s)}
+                              >
+                                <span className="slot-type">{s.shift_type}</span>
+                                {s.start_time && (
+                                  <span className="slot-time">{s.start_time.slice(0,5)}–{s.end_time?.slice(0,5)}</span>
+                                )}
+                                {s.location && (
+                                  <span className={`slot-loc loc-${s.location}`}>
+                                    {s.location === 'markt' ? 'M' : 'N'}
+                                  </span>
+                                )}
+                                {isOffered && (
+                                  <span className="slot-offered-badge">aangeboden</span>
+                                )}
+                              </div>
+                            )
+                          }) : (
                             <div className="slot-empty" aria-hidden="true">–</div>
                           )}
                         </div>
@@ -268,8 +335,17 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-shift {
           padding: 4px 6px; border-radius: 5px; margin-bottom: 3px;
           display: flex; flex-direction: column; gap: 2px;
+          cursor: pointer; transition: background .13s, box-shadow .13s;
         }
+        .slot-shift:hover:not(.is-offered) { box-shadow: 0 0 0 2px var(--brand); }
+        .slot-shift.is-offered { opacity: .65; cursor: default; }
         .slot-shift:not([data-type]) { background: var(--surface-alt); }
+        .slot-offered-badge {
+          font-size: .6rem; font-weight: 700; letter-spacing: .04em;
+          text-transform: uppercase; color: #6D28D9;
+          background: rgba(124,58,237,.1); padding: 1px 5px; border-radius: 3px;
+          margin-top: 2px; align-self: flex-start;
+        }
 
         .slot-type { font-size: .75rem; font-weight: 700; }
         .slot-time { font-size: .6875rem; color: var(--text-sub); }
@@ -280,6 +356,38 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-loc.loc-markt        { background: rgba(44,110,73,.15); color: var(--markt); }
         .slot-loc.loc-nootmagazijn { background: rgba(123,79,46,.15); color: var(--noot); }
         .slot-empty { font-size: .875rem; color: var(--text-muted); padding: 2px 0; }
+
+        /* ── Offer modal ── */
+        .offer-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,.5);
+          display: flex; align-items: center; justify-content: center;
+          z-index: 1000; padding: var(--s4); backdrop-filter: blur(3px);
+        }
+        .offer-modal {
+          background: var(--surface); border-radius: var(--radius-xl);
+          padding: var(--s6); max-width: 400px; width: 100%;
+          box-shadow: 0 24px 64px rgba(0,0,0,.25);
+          animation: modal-in .2s ease;
+        }
+        @keyframes modal-in { from { opacity:0; transform:scale(.95) } to { opacity:1; transform:none } }
+        .offer-modal-head { display: flex; align-items: flex-start; gap: var(--s3); margin-bottom: var(--s4); }
+        .offer-modal-icon { font-size: 2rem; flex-shrink: 0; }
+        .offer-modal-title { font-size: 1.125rem; font-weight: 700; }
+        .offer-modal-sub { font-size: .875rem; color: var(--text-muted); margin-top: 2px; }
+        .offer-modal-body { font-size: .9375rem; color: var(--text-sub); margin: 0 0 var(--s5); line-height: 1.5; }
+        .offer-modal-actions { display: flex; gap: var(--s3); justify-content: flex-end; }
+
+        /* ── Toast ── */
+        .me-toast {
+          position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+          background: var(--text); color: #fff;
+          padding: 12px 24px; border-radius: 999px;
+          font-size: .9375rem; font-weight: 500;
+          box-shadow: 0 8px 24px rgba(0,0,0,.25);
+          z-index: 9999; white-space: nowrap;
+          animation: toast-in .2s ease;
+        }
+        @keyframes toast-in { from { opacity:0; transform:translateX(-50%) translateY(-8px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
 
         /* ── Responsive ── */
         @media (max-width: 1024px) {

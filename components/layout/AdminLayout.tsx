@@ -5,18 +5,19 @@ import type { SessionUser } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
   ScheduleIcon, EmployeesIcon, LeaveIcon,
-  HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon,
+  HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon, LeaveIcon as OpenIcon,
 } from '@/components/ui/Icons'
 
 interface Props { user: SessionUser; children: React.ReactNode; title?: string }
 
 const NAV = [
-  { href: '/admin',              icon: <ScheduleIcon size={20} />,  label: 'Rooster',      cap: 'read' as const },
-  { href: '/admin/employees',    icon: <EmployeesIcon size={20} />, label: 'Medewerkers',  cap: 'manage_employees' as const },
-  { href: '/admin/leave',        icon: <LeaveIcon size={20} />,     label: 'Verlof',       cap: 'approve_leave' as const },
-  { href: '/admin/hours',        icon: <HoursIcon size={20} />,     label: 'Uren',         cap: 'manage_hours' as const },
-  { href: '/admin/hours/export', icon: <ExportIcon size={20} />,    label: 'Export',       cap: 'export_data' as const },
-  { href: '/admin/settings',     icon: <SettingsIcon size={20} />,  label: 'Instellingen', cap: 'manage_settings' as const },
+  { href: '/admin',              icon: <ScheduleIcon size={20} />,  label: 'Rooster',        cap: 'read' as const },
+  { href: '/admin/employees',    icon: <EmployeesIcon size={20} />, label: 'Medewerkers',    cap: 'manage_employees' as const },
+  { href: '/admin/open-shifts',  icon: <HoursIcon size={20} />,    label: 'Open diensten',  cap: 'manage_shifts' as const },
+  { href: '/admin/leave',        icon: <LeaveIcon size={20} />,     label: 'Verlof',         cap: 'approve_leave' as const },
+  { href: '/admin/hours',        icon: <HoursIcon size={20} />,     label: 'Uren',           cap: 'manage_hours' as const },
+  { href: '/admin/hours/export', icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
+  { href: '/admin/settings',     icon: <SettingsIcon size={20} />,  label: 'Instellingen',  cap: 'manage_settings' as const },
 ]
 
 function getInitials(name: string) {
@@ -219,7 +220,7 @@ export default function AdminLayout({ user, children, title }: Props) {
           border-radius: 9px;
           font-size: .9375rem;
           font-weight: 500;
-          color: rgba(255, 255, 255, 0.75);
+          color: #fff;
           transition: background .14s, color .14s;
           text-decoration: none;
           position: relative;
