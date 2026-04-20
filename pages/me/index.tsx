@@ -140,7 +140,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
               </div>
             </div>
             <p className="offer-modal-body">
-              Wil je deze dienst aanbieden aan je collega's? Ze ontvangen een melding en kunnen hem overnemen.
+              Wil je deze dienst aanbieden aan je collega&apos;s? Ze ontvangen een melding en kunnen hem overnemen.
               De beheerder keurt de overname goed.
             </p>
             <div className="offer-modal-actions">
