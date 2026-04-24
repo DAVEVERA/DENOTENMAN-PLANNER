@@ -2,13 +2,19 @@ import webpush from 'web-push'
 import { supabase, T, unwrap } from './db'
 import type { PushSubscriptionRow } from '@/types'
 
+let vapidReady = false
+
 function init() {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    console.warn('[push] VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY niet geconfigureerd — push-notificaties uitgeschakeld')
+    return
+  }
   webpush.setVapidDetails(
     process.env.VAPID_SUBJECT ?? 'mailto:info@mnrv.nl',
-    process.env.VAPID_PUBLIC_KEY,  // "BJDQKy354mNJnDJBJRGbGVVIUB6b9yBkvkoAB3u0tZ99QD4YsEdjwIyoUInwKh_ABXV0ytS-e_n20UuyzECJDfE"
-    process.env.VAPID_PRIVATE_KEY, // "italL8JYy1t748mCudE2N5FmEH6DXvOcx3pyoi9hzps"
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
   )
+  vapidReady = true
 }
 init()
 
@@ -30,6 +36,7 @@ export async function sendPushToEmployee(
   employeeId: number,
   payload: { title: string; body: string; url?: string },
 ): Promise<void> {
+  if (!vapidReady) return
   const subs = unwrap<PushSubscriptionRow[]>(
     await supabase.from(T('push_subscriptions')).select('*').eq('employee_id', employeeId),
   )
@@ -42,6 +49,7 @@ export async function sendPushToEmployee(
 }
 
 export async function sendPushToAll(payload: { title: string; body: string; url?: string }): Promise<void> {
+  if (!vapidReady) return
   const subs = unwrap<PushSubscriptionRow[]>(await supabase.from(T('push_subscriptions')).select('*'))
   await Promise.allSettled(subs.map(s =>
     webpush.sendNotification(
@@ -49,4 +57,12 @@ export async function sendPushToAll(payload: { title: string; body: string; url?
       JSON.stringify(payload),
     ),
   ))
+}
+
+/** Aantal actieve push-abonnementen (voor diagnostiek in admin dashboard) */
+export async function getPushSubscriptionCount(): Promise<number> {
+  const { count } = await supabase
+    .from(T('push_subscriptions'))
+    .select('*', { count: 'exact', head: true })
+  return count ?? 0
 }

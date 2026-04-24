@@ -62,6 +62,8 @@ export interface Shift {
   full_day: number
   buddy: string | null
   note: string | null
+  admin_note: string | null      // AM-002: admin-only notitie, gefilterd uit medewerker-responses
+  break_minutes: number          // AM-004: pauzeminuten (default 0; 60 = "-1 uur" toggle)
   location: Location
   is_open: number
   open_invite_emp_id: number | null
@@ -215,4 +217,27 @@ export interface HoursSummary {
   contract_hours: number
   logged_hours: number
   overtime_hours: number
+}
+
+// ─── AM-001: Declaraties ──────────────────────────────────────────────────────
+
+export const CLAIM_TYPES = ['reiskosten', 'overuren', 'overig'] as const
+export type ClaimType = typeof CLAIM_TYPES[number]
+
+export interface ExpenseClaim {
+  id:             number
+  employee_id:    number
+  employee_name:  string
+  claim_type:     ClaimType
+  amount:         number
+  description:    string
+  claim_date:     string          // ISO date string YYYY-MM-DD
+  reference_date: string | null   // datum van de gewerkte dag / rit
+  shift_id:       number | null
+  status:         'pending' | 'approved' | 'rejected'
+  reviewed_by:    string | null
+  reviewed_at:    string | null
+  review_note:    string | null
+  submitted_by:   string
+  created_at:     string
 }

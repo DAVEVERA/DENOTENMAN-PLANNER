@@ -164,12 +164,12 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
           <div className="me-controls">
             <div className="view-tabs" role="tablist" aria-label="Weergave">
               {(['week', 'month', '3months'] as ViewMode[]).map(v => (
-                <button
+                <button 
                   key={v}
-                  role="tab"
-                  aria-selected={view === v ? "true" : "false"}
-                  className={`view-tab${view === v ? ' active' : ''}`}
-                  onClick={() => setView(v)}
+                  role="tab" 
+                  aria-selected={view === v} // True/false afhankelijk van de huidige view
+                  className={`view-tab${view === v ? ' active' : ''}`} 
+                  onClick={() => setView(v)} 
                 >
                   {v === 'week' ? 'Week' : v === 'month' ? 'Maand' : '3 mnd'}
                 </button>
@@ -243,8 +243,9 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                                 className={`slot-shift${isOffered ? ' is-offered' : ''}`}
                                 data-type={s.shift_type.toLowerCase()}
                                 aria-label={`${s.shift_type} dienst`}
-                                role={!isOffered ? 'button' : undefined}
-                                tabIndex={!isOffered ? 0 : undefined}
+                                role="button"
+                                aria-disabled={isOffered}
+                                tabIndex={!isOffered ? 0 : -1}
                                 title={!isOffered ? 'Klik om aan te bieden' : 'Aangeboden aan collega\'s'}
                                 onClick={() => !isOffered && setSelectedShift(s)}
                                 onKeyDown={e => !isOffered && e.key === 'Enter' && setSelectedShift(s)}

@@ -12,12 +12,14 @@ interface Props {
   week: number
   year: number
   location: Location
+  userRole?: 'admin' | 'manager' | 'employee'  // AM-002: voor admin_note zichtbaarheid
   onClose: () => void
   onSaved: () => void
 }
 
-export default function ShiftModal({ shift, employeeId, employeeName, day, week, year, location, onClose, onSaved }: Props) {
+export default function ShiftModal({ shift, employeeId, employeeName, day, week, year, location, userRole, onClose, onSaved }: Props) {
   const isNew = !shift?.id
+  const isAdmin = userRole === 'admin' || userRole === 'manager'
   const [form, setForm] = useState<Partial<Shift>>({
     employee_id:    employeeId,
     employee_name:  employeeName,
@@ -29,6 +31,8 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
     end_time:       shift?.end_time       ?? '',
     full_day:       shift?.full_day       ?? 0,
     note:           shift?.note           ?? '',
+    admin_note:     shift?.admin_note     ?? '',   // AM-002
+    break_minutes:  shift?.break_minutes  ?? 0,    // AM-004
     buddy:          shift?.buddy          ?? '',
     location:       shift?.location       ?? location,
     shift_category: shift?.shift_category ?? 'regular',
@@ -118,16 +122,50 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
             </div>
 
             {!fullDay && (
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="start_time">Begintijd</label>
-                  <input id="start_time" type="time" className="form-control" value={form.start_time ?? ''} onChange={e => set('start_time', e.target.value)} title="Begintijd" />
+              <>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="start_time">Begintijd</label>
+                    <input id="start_time" type="time" className="form-control" value={form.start_time ?? ''} onChange={e => set('start_time', e.target.value)} title="Begintijd" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="end_time">Eindtijd</label>
+                    <input id="end_time" type="time" className="form-control" value={form.end_time ?? ''} onChange={e => set('end_time', e.target.value)} title="Eindtijd" />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="end_time">Eindtijd</label>
-                  <input id="end_time" type="time" className="form-control" value={form.end_time ?? ''} onChange={e => set('end_time', e.target.value)} title="Eindtijd" />
-                </div>
-              </div>
+                {/* AM-006: max duur waarschuwing + AM-004: pauze toggle */}
+                {(() => {
+                  const st = form.start_time, et = form.end_time
+                  if (!st || !et) return null
+                  const [sh, sm] = st.split(':').map(Number)
+                  const [eh, em] = et.split(':').map(Number)
+                  const durH = (eh * 60 + em - (sh * 60 + sm)) / 60
+                  return (
+                    <>
+                      {durH > 15.5 && (
+                        <div className="alert alert-danger" role="alert" style={{marginBottom: 0}}>
+                          ⚠️ Maximale shiftduur is 15,5 uur (huidige duur: {durH.toFixed(1)} uur)
+                        </div>
+                      )}
+                      {durH > 0 && (
+                        <label htmlFor="shift_break" className="form-checkbox-label break-toggle">
+                          <input
+                            id="shift_break"
+                            type="checkbox"
+                            checked={(form.break_minutes ?? 0) >= 60}
+                            onChange={e => set('break_minutes', e.target.checked ? 60 : 0)}
+                            title="Trek 1 uur pauze af van de totaaltijd"
+                          />
+                          <span>－ 1 uur pauze</span>
+                          {(form.break_minutes ?? 0) >= 60 && (
+                            <span className="break-badge">netto {Math.max(0, durH - 1).toFixed(1)} uur</span>
+                          )}
+                        </label>
+                      )}
+                    </>
+                  )
+                })()}
+              </>
             )}
 
             <div className="form-grid">
@@ -147,9 +185,19 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="note">Notitie</label>
+              <label className="form-label" htmlFor="note">Notitie (zichtbaar voor medewerker)</label>
               <textarea id="note" className="form-control" rows={2} value={form.note ?? ''} onChange={e => set('note', e.target.value)} placeholder="Optionele opmerking" title="Notitie" />
             </div>
+
+            {/* AM-002: admin-only notitie, nooit getoond aan medewerkers */}
+            {isAdmin && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="admin_note">
+                  🔒 Admin-opmerking <span className="label-hint">(alleen zichtbaar voor admin/manager)</span>
+                </label>
+                <textarea id="admin_note" className="form-control admin-note-field" rows={2} value={form.admin_note ?? ''} onChange={e => set('admin_note', e.target.value)} placeholder="Interne opmerking voor beheerders…" title="Admin-opmerking" />
+              </div>
+            )}
 
             {isNew && (
               <label htmlFor="shift_open" className="form-checkbox-label">

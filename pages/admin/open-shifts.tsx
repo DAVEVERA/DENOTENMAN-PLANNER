@@ -158,7 +158,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
               role="tab"
               className={`os-tab${tab === key ? ' active' : ''}`}
               onClick={() => setTab(key)}
-              aria-selected={tab === key}
+              aria-selected={tab === key ? 'true' : 'false'}
             >
               {label}
               {count > 0 && (
@@ -184,25 +184,29 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                 <div className="form-group">
                   <label className="form-label">Week</label>
                   <input type="number" className="form-control" min={1} max={53}
+                    title="Weeknummer (1–53)" placeholder="Week"
                     value={form.week_number} onChange={e => setForm(f => ({ ...f, week_number: +e.target.value }))} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Jaar</label>
                   <input type="number" className="form-control" min={2024} max={2030}
+                    title="Jaar" placeholder="Jaar"
                     value={form.year} onChange={e => setForm(f => ({ ...f, year: +e.target.value }))} />
                 </div>
               </div>
               <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Dag</label>
-                  <select className="form-control" value={form.day_of_week}
+                  <select className="form-control" title="Dag van de week"
+                    value={form.day_of_week}
                     onChange={e => setForm(f => ({ ...f, day_of_week: e.target.value as Day }))}>
                     {DAYS.map(d => <option key={d} value={d}>{DAY_NL[d]}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Type dienst</label>
-                  <select className="form-control" value={form.shift_type}
+                  <select className="form-control" title="Type dienst"
+                    value={form.shift_type}
                     onChange={e => setForm(f => ({ ...f, shift_type: e.target.value as ShiftType }))}>
                     {WORK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -211,12 +215,12 @@ export default function OpenShiftsAdminPage({ user }: Props) {
               <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Starttijd</label>
-                  <input type="time" className="form-control"
+                  <input type="time" className="form-control" title="Starttijd"
                     value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Eindtijd</label>
-                  <input type="time" className="form-control"
+                  <input type="time" className="form-control" title="Eindtijd"
                     value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} />
                 </div>
               </div>
@@ -317,6 +321,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                     <div className="invite-select">
                       <select
                         className="form-control form-control-sm"
+                        title="Nodig specifiek een medewerker uit"
                         defaultValue=""
                         onChange={e => {
                           if (e.target.value) {

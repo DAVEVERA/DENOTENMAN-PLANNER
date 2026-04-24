@@ -15,6 +15,7 @@ const NAV = [
   { href: '/admin/employees',    icon: <EmployeesIcon size={20} />, label: 'Medewerkers',    cap: 'manage_employees' as const },
   { href: '/admin/open-shifts',  icon: <HoursIcon size={20} />,    label: 'Open diensten',  cap: 'manage_shifts' as const },
   { href: '/admin/leave',        icon: <LeaveIcon size={20} />,     label: 'Verlof',         cap: 'approve_leave' as const },
+  { href: '/admin/expenses',     icon: <ExportIcon size={20} />,    label: 'Declaraties',    cap: 'manage_hours' as const },
   { href: '/admin/hours',        icon: <HoursIcon size={20} />,     label: 'Uren',           cap: 'manage_hours' as const },
   { href: '/admin/hours/export', icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
   { href: '/admin/settings',     icon: <SettingsIcon size={20} />,  label: 'Instellingen',  cap: 'manage_settings' as const },

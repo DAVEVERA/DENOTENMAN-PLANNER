@@ -20,12 +20,14 @@ export function fmtTime(t: unknown): string | null {
   return s.length === 5 ? s + ':00' : s
 }
 
-export function shiftHours(s: Pick<Shift, 'full_day' | 'start_time' | 'end_time'>): number {
+export function shiftHours(s: Pick<Shift, 'full_day' | 'start_time' | 'end_time' | 'break_minutes'>): number {
   if (s.full_day) return 8
   if (s.start_time && s.end_time) {
     const [sh, sm] = s.start_time.split(':').map(Number)
     const [eh, em] = s.end_time.split(':').map(Number)
-    return (eh * 60 + em - (sh * 60 + sm)) / 60
+    const rawMin = eh * 60 + em - (sh * 60 + sm)
+    const netMin = rawMin - (s.break_minutes ?? 0)
+    return Math.max(0, netMin / 60)
   }
   return 0
 }
@@ -99,6 +101,16 @@ export async function saveShift(
   if (!data.full_day && st && et && st >= et)
     return { error: 'Eindtijd moet na starttijd zijn' }
 
+  // AM-006: maximale shiftduur 15,5 uur
+  const MAX_SHIFT_HOURS = 15.5
+  if (!data.full_day && st && et) {
+    const [sh, sm] = st.split(':').map(Number)
+    const [eh, em] = et.split(':').map(Number)
+    const durationH = (eh * 60 + em - (sh * 60 + sm)) / 60
+    if (durationH > MAX_SHIFT_HOURS)
+      return { error: `Maximale shiftduur is ${MAX_SHIFT_HOURS} uur` }
+  }
+
   const fields = {
     employee_id:         data.employee_id   ?? null,
     employee_name:       data.employee_name ?? '',
@@ -111,6 +123,8 @@ export async function saveShift(
     full_day:            data.full_day       ?? 0,
     buddy:               data.buddy          ?? null,
     note:                data.note           ?? null,
+    admin_note:          data.admin_note     ?? null,    // AM-002
+    break_minutes:       data.break_minutes  ?? 0,       // AM-004
     location:            data.location       ?? 'markt',
     is_open:             data.is_open        ?? 0,
     open_invite_emp_id:  data.open_invite_emp_id  ?? null,

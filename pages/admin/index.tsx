@@ -310,6 +310,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           week={week}
           year={year}
           location={location}
+          userRole={user.role as 'admin' | 'manager' | 'employee'}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); load() }}
         />

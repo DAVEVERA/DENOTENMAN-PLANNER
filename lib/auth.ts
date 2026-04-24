@@ -98,6 +98,11 @@ export function listUsers(): Omit<StoredUser, 'password_hash'>[] {
   return loadUsers().map(({ password_hash: _, ...u }) => u)
 }
 
+/** Controleert of een medewerker al een gebruikersaccount heeft in users.json */
+export function checkEmployeeHasAccount(employeeId: number): boolean {
+  return loadUsers().some(u => u.employee_id === employeeId)
+}
+
 export function upsertUser(data: Omit<StoredUser, 'password_hash'> & { password?: string }): void {
   const users = loadUsers()
   const idx   = users.findIndex(u => u.username === data.username)
@@ -130,31 +135,51 @@ export function deleteUser(username: string): boolean {
  * Retourneert het tijdelijke wachtwoord (voor logging — niet naar client sturen).
  */
 export async function sendInviteForEmployee(employeeId: number): Promise<void> {
-  // Zoek de gebruiker die aan dit employee_id gekoppeld is
-  const users = loadUsers()
-  const user  = users.find(u => u.employee_id === employeeId)
-  if (!user) throw new Error(`Geen gebruikersaccount gevonden voor employee_id ${employeeId}`)
-
-  // Haal e-mailadres op uit employees tabel
+  // Haal e-mailadres op uit employees tabel — vereist vóór account-check
   const { data: emp, error } = await supabase
     .from(T('employees'))
     .select('email, name')
     .eq('id', employeeId)
     .maybeSingle()
   if (error) throw error
-  if (!emp?.email) throw new Error('Medewerker heeft geen e-mailadres — voeg er één toe.')
+  if (!emp?.email) throw new Error('Medewerker heeft geen e-mailadres — voeg er eerst een toe onder Gegevens.')
 
-  // Genereer een leesbaar tijdelijk wachtwoord
+  // Zoek of er al een users.json-account bestaat voor dit employee_id
+  const users = loadUsers()
+  let user = users.find(u => u.employee_id === employeeId)
+
+  // AM-003 fix: als er geen account is, maak er automatisch één aan op basis van het e-mailadres.
+  // Controleer ook of het e-mailadres al in gebruik is als username (andere medewerker).
+  if (!user) {
+    const existingByEmail = users.find(u => u.username === emp.email)
+    if (existingByEmail) {
+      // Account bestaat al op dit e-mailadres maar is niet gekoppeld — koppel het
+      existingByEmail.employee_id = employeeId
+      user = existingByEmail
+    } else {
+      // Maak nieuw account aan
+      const newUser: StoredUser = {
+        username:      emp.email!,
+        password_hash: '',          // wordt hieronder ingevuld
+        role:          'employee',
+        employee_id:   employeeId,
+        display_name:  emp.name,
+      }
+      users.push(newUser)
+      user = newUser
+    }
+  }
+
+  // Genereer een leesbaar tijdelijk wachtwoord (bv. "A3F9D2B1")
   const tempPw = crypto.randomBytes(5).toString('hex').toUpperCase().slice(0, 8)
-  //  bv. "A3F9D2B1"
 
   // Sla de hash op
   user.password_hash = bcrypt.hashSync(tempPw, 10)
   saveUsers(users)
 
-  // Stuur de e-mail
+  // Stuur de uitnodigingsmail
   await sendInviteEmail({
-    to:           emp.email,
+    to:           emp.email!,
     toName:       emp.name,
     username:     user.username,
     tempPassword: tempPw,

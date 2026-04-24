@@ -17,7 +17,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const shifts   = empId
       ? await getEmployeeShifts(empId, week || undefined, year)
       : await getWeekShifts(week || currentWeekYear().week, year, location)
-    return res.json({ success: true, data: shifts })
+
+    // AM-002: verberg admin_note voor medewerkers
+    const isEmployee = session.user.role === 'employee'
+    const data = isEmployee
+      ? shifts.map(({ admin_note: _an, ...s }) => s)
+      : shifts
+
+    return res.json({ success: true, data })
   }
 
   if (req.method === 'POST') {

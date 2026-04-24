@@ -475,3 +475,38 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
   .login-shell { padding: var(--s3); }
   .login-title { font-size: 1.25rem; }
 }
+
+/* ─── AM-004: Pauze toggle ─────────────────────────────────────────────────── */
+.break-toggle {
+  padding: var(--s2) var(--s3);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  font-size: .875rem;
+  gap: var(--s3);
+}
+.break-badge {
+  margin-left: auto;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--brand-subtle);
+  color: var(--brand-dark);
+}
+
+/* ─── AM-002: Admin-notitie veld ──────────────────────────────────────────── */
+.admin-note-field {
+  border-color: #e0c97f;
+  background: #fffef5;
+}
+.admin-note-field:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(200,136,42,.15);
+}
+.label-hint {
+  font-size: .75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
