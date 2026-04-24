@@ -12,7 +12,21 @@ function getTransport() {
   })
 }
 
-const FROM = process.env.SMTP_FROM ?? 'Planner De Notenman <planner@denotenkar.nl>'
+/**
+ * Controleer of SMTP correct is geconfigureerd.
+ * Gooit een leesbare fout als dat niet het geval is.
+ */
+function assertSmtpConfigured(): void {
+  const host = process.env.SMTP_HOST
+  if (!host || host === 'localhost' || host === '127.0.0.1') {
+    throw new Error(
+      'E-mail is niet geconfigureerd. Stel SMTP_HOST, SMTP_USER en SMTP_PASS in als Vercel Environment Variables. ' +
+      'Gebruik een externe SMTP-provider zoals Brevo (smtp-relay.brevo.com), Gmail, of SendGrid.'
+    )
+  }
+}
+
+const FROM    = process.env.SMTP_FROM    ?? 'Planner De Notenman <planner@denotenkar.nl>'
 const APP_URL = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
 
 /** Stuur een uitnodigingsemail naar een nieuwe medewerker. */
@@ -22,13 +36,15 @@ export async function sendInviteEmail(opts: {
   username:     string
   tempPassword: string
 }): Promise<void> {
+  assertSmtpConfigured()
+
   const transport = getTransport()
   const loginUrl  = `${APP_URL}/login`
 
   await transport.sendMail({
     from:    FROM,
     to:      `${opts.toName} <${opts.to}>`,
-    subject: 'Welkom bij de Planner — jouw inloggegevens',
+    subject: 'Welkom bij de Planner – jouw inloggegevens',
     text: `Hallo ${opts.toName},
 
 Je bent uitgenodigd voor de personeelsplanner van De Notenman.
@@ -43,7 +59,7 @@ Wijzig je wachtwoord na je eerste inlog.
 Vul ook je profiel in zodat de planner altijd up-to-date is.
 
 Groeten,
-De Notenman — Administratie
+De Notenman – Administratie
 `,
     html: `
 <!DOCTYPE html>
@@ -57,7 +73,7 @@ De Notenman — Administratie
         <!-- Header -->
         <tr><td style="background:#2C6E49;padding:28px 32px;text-align:center">
           <p style="margin:0;font-size:22px;font-weight:700;color:#fff;letter-spacing:-.02em">
-            De Notenman — Planner
+            De Notenman – Planner
           </p>
         </td></tr>
 
@@ -103,7 +119,7 @@ De Notenman — Administratie
 
         <!-- Footer -->
         <tr><td style="background:#f9f5f1;padding:16px 32px;text-align:center">
-          <p style="margin:0;font-size:12px;color:#9e8070">De Notenman — Personeelsplanner</p>
+          <p style="margin:0;font-size:12px;color:#9e8070">De Notenman – Personeelsplanner</p>
         </td></tr>
 
       </table>
@@ -124,6 +140,7 @@ export async function sendExportEmail(opts: {
   content:  Buffer
   mimeType: string
 }): Promise<void> {
+  assertSmtpConfigured()
   const transport = getTransport()
   await transport.sendMail({
     from:    process.env.SMTP_FROM ?? 'Planner <planner@denotenkar.nl>',
