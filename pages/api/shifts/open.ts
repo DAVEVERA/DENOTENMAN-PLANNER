@@ -15,9 +15,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     if (!can(session.user, 'read')) return res.status(403).json({ success: false })
-    const location = req.query.location as Location | undefined
-    const shifts = await getOpenShifts(location)
-    return res.json({ success: true, data: shifts })
+    try {
+      const location = req.query.location as Location | undefined
+      const shifts = await getOpenShifts(location)
+      return res.json({ success: true, data: shifts })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[shifts/open GET]', msg)
+      return res.status(500).json({ success: false, message: msg })
+    }
   }
 
   if (req.method === 'POST') {

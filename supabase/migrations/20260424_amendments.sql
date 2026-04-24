@@ -40,3 +40,39 @@ CREATE INDEX IF NOT EXISTS planner20_expense_claims_status
 -- Verificatie queries (optioneel, uitvoeren na migratie)
 -- SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'planner20_shifts' ORDER BY ordinal_position;
 -- SELECT COUNT(*) FROM planner20_expense_claims;
+
+-- ============================================================
+-- AM-FIX: Gebruikersaccounts naar Supabase (serverless-fix)
+-- Vervangt config/users.json volledig.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS planner20_users (
+  username      text PRIMARY KEY,
+  password_hash text NOT NULL DEFAULT '',
+  role          text NOT NULL DEFAULT 'employee',  -- 'admin' | 'manager' | 'employee'
+  employee_id   integer REFERENCES planner20_employees(id) ON DELETE SET NULL,
+  display_name  text NOT NULL DEFAULT ''
+);
+
+-- ⚠️ VERPLICHT: Seed bestaande accounts vanuit users.json
+-- Voer voor elke gebruiker de volgende INSERT uit (pas waarden aan):
+--
+-- INSERT INTO planner20_users (username, password_hash, role, employee_id, display_name)
+-- VALUES ('admin', '<hash_uit_users_json>', 'admin', NULL, 'Administrator')
+-- ON CONFLICT (username) DO NOTHING;
+--
+-- ALTERNATIEF: Als je de hash niet weet, gebruik dan een tijdelijk wachtwoord:
+-- (De hash hieronder is voor wachtwoord 'admin123')
+INSERT INTO planner20_users (username, password_hash, role, employee_id, display_name)
+VALUES (
+  'admin',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'admin',
+  NULL,
+  'Administrator'
+)
+ON CONFLICT (username) DO NOTHING;
+
+-- Verificatie
+-- SELECT username, role, display_name FROM planner20_users;
+

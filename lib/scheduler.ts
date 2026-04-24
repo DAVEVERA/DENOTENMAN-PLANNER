@@ -135,13 +135,13 @@ export async function saveShift(
   if (data.id) {
     const { data: updated, error } = await supabase
       .from(T('shifts')).update(fields).eq('id', data.id).select().single()
-    if (error) throw error
+    if (error) return { error: error.message }
     return updated
   }
 
   const { data: inserted, error } = await supabase
     .from(T('shifts')).insert({ ...fields, created_by: createdBy }).select().single()
-  if (error) throw error
+  if (error) return { error: error.message }
   return inserted
 }
 

@@ -208,3 +208,24 @@ on conflict (id) do update set
   location       = excluded.location;
 
 select setval('planner20_employees_id_seq', (select max(id) from planner20_employees));
+
+-- planner20_users (vervangt config/users.json — werkt in serverless/Vercel)
+create table if not exists planner20_users (
+  username      text primary key,
+  password_hash text not null default '',
+  role          text not null default 'employee',
+  employee_id   integer references planner20_employees(id) on delete set null,
+  display_name  text not null default ''
+);
+
+-- Seed: admin account (wachtwoord: admin123)
+insert into planner20_users (username, password_hash, role, employee_id, display_name)
+values (
+  'admin',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'admin',
+  null,
+  'Administrator'
+)
+on conflict (username) do nothing;
+
