@@ -263,7 +263,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
               role="tab"
               className={`os-tab${tab === key ? ' active' : ''}`}
               onClick={() => setTab(key)}
-              aria-selected={tab === key}
+              aria-selected={tab === key ? true : false}
             >
               {label}
               {count > 0 && (

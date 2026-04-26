@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import AdminLayout from '@/components/layout/AdminLayout'
@@ -60,26 +60,27 @@ export default function EmployeeDetailPage({ user }: Props) {
     })
   }, [id])
 
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     setProfileLoading(true)
     const r = await fetch(`/api/admin/employees/${id}/profile`)
     const d = await r.json()
     if (d.success) setProfile(d.data)
     setProfileLoading(false)
-  }
+  }, [id])
 
-  async function loadDocs() {
+  const loadDocs = useCallback(async () => {
     setDocsLoading(true)
     const r = await fetch(`/api/admin/employees/${id}/documents`)
     const d = await r.json()
     if (d.success) setDocs(d.data)
     setDocsLoading(false)
-  }
+  }, [id])
 
   useEffect(() => {
     if (tab === 'profiel' && !profile) loadProfile()
     if (tab === 'documenten' && docs.length === 0) loadDocs()
-  }, [tab])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, loadProfile, loadDocs])
 
   async function handleInvite() {
     setInviting(true); setInviteMsg(''); setInviteError('')
@@ -182,7 +183,7 @@ export default function EmployeeDetailPage({ user }: Props) {
       {/* ── Tabs ── */}
       <div className="tabs" role="tablist">
         {(['gegevens', 'profiel', 'documenten'] as Tab[]).map(t => (
-          <button key={t} role="tab" aria-selected={tab === t}
+          <button key={t} role="tab" aria-selected={tab === t ? true : false}
             className={`tab-btn${tab === t ? ' active' : ''}`}
             onClick={() => setTab(t)}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -289,6 +290,7 @@ export default function EmployeeDetailPage({ user }: Props) {
             <div className="profile-view">
               {profile.avatar_url && (
                 <div className="avatar-admin">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={profile.avatar_url} alt="Profielfoto" className="avatar-img" />
                 </div>
               )}

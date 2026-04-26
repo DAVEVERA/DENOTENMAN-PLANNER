@@ -19,6 +19,7 @@ const NAV = [
   { href: '/admin/hours',        icon: <HoursIcon size={20} />,     label: 'Uren',           cap: 'manage_hours' as const },
   { href: '/admin/hours/export', icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
   { href: '/admin/settings',     icon: <SettingsIcon size={20} />,  label: 'Instellingen',  cap: 'manage_settings' as const },
+  { href: '/admin/backup',       icon: <ExportIcon size={20} />,    label: 'Backup',         cap: 'manage_settings' as const },
 ]
 
 function getInitials(name: string) {

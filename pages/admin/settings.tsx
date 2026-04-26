@@ -188,10 +188,10 @@ export default function SettingsPage({ user }: Props) {
       </form>
 
       {/* ══════════════════ GEBRUIKERSACCOUNTS ══════════════════ */}
-      <div className="settings-form" style={{ marginTop: '2rem' }}>
+      <div className="settings-form settings-accounts-section">
         <div className="settings-section">
           <div className="section-header">
-            <h3 className="settings-section-title" style={{ marginBottom: 0, borderBottom: 'none', paddingBottom: 0 }}>
+            <h3 className="settings-section-title section-title-inline">
               Gebruikersaccounts
             </h3>
             <button
@@ -203,8 +203,8 @@ export default function SettingsPage({ user }: Props) {
             </button>
           </div>
 
-          {userSuccess && <div className="alert alert-success" style={{ marginTop: 'var(--s3)' }}>{userSuccess}</div>}
-          {userError && <div className="alert alert-danger" style={{ marginTop: 'var(--s3)' }}>{userError}</div>}
+          {userSuccess && <div className="alert alert-success alert-spaced">{userSuccess}</div>}
+          {userError && <div className="alert alert-danger alert-spaced">{userError}</div>}
 
           {/* Add user form */}
           {showAddUser && (
@@ -330,6 +330,9 @@ export default function SettingsPage({ user }: Props) {
           color: var(--text-muted); margin: 0 0 var(--s4);
           padding-bottom: var(--s2); border-bottom: 1px solid var(--border);
         }
+        .settings-accounts-section { margin-top: 2rem; }
+        .section-title-inline { margin-bottom: 0 !important; border-bottom: none !important; padding-bottom: 0 !important; }
+        .alert-spaced { margin-top: var(--s3); }
         .section-header {
           display: flex; align-items: center; justify-content: space-between;
           gap: var(--s3); margin-bottom: var(--s4);

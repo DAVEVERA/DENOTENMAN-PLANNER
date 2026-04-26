@@ -23,6 +23,8 @@ function formatTime(t: string | null) {
   return t.slice(0, 5)
 }
 
+interface InsightCard { id: string; icon: string; title: string; message: string; severity: string }
+
 export default function AdminPlanning({ user, initialWeek, initialYear }: Props) {
   const [week, setWeek]         = useState(initialWeek)
   const [year, setYear]         = useState(initialYear)
@@ -35,6 +37,21 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     employee: Employee
     day: Day
   } | null>(null)
+
+  // ── Automation state ──
+  const [showCopy, setShowCopy]   = useState(false)
+  const [copyTarget, setCopyTarget] = useState({ week: 0, year: 0 })
+  const [copyBusy, setCopyBusy]   = useState(false)
+  const [copyMsg, setCopyMsg]     = useState('')
+  const [showFill, setShowFill]   = useState(false)
+  const [fillWeeks, setFillWeeks] = useState(4)
+  const [fillBusy, setFillBusy]   = useState(false)
+  const [fillMsg, setFillMsg]     = useState('')
+
+  // ── Insights state ──
+  const [insights, setInsights]     = useState<InsightCard[]>([])
+  const [insightsOpen, setInsightsOpen] = useState(true)
+  const [insightsLoaded, setInsightsLoaded] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -49,6 +66,15 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   }, [week, year, location])
 
   useEffect(() => { load() }, [load])
+
+  // Load insights async after main data
+  useEffect(() => {
+    setInsightsLoaded(false)
+    fetch(`/api/admin/insights?week=${week}&year=${year}&location=${location}`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setInsights(d.data); setInsightsLoaded(true) })
+      .catch(() => setInsightsLoaded(true))
+  }, [week, year, location])
 
   function prevWeek() {
     if (week === 1) { setWeek(52); setYear(y => y - 1) }
@@ -87,6 +113,53 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     return start.getDate()
   }
 
+  // ── Copy week handler ──
+  function openCopyModal() {
+    const tw = week < 52 ? week + 1 : 1
+    const ty = week < 52 ? year : year + 1
+    setCopyTarget({ week: tw, year: ty })
+    setCopyMsg(''); setShowCopy(true)
+  }
+
+  async function executeCopy() {
+    setCopyBusy(true); setCopyMsg('')
+    try {
+      const res = await fetch('/api/admin/planning-automation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'copy', sourceWeek: week, sourceYear: year, targetWeek: copyTarget.week, targetYear: copyTarget.year, location }),
+      })
+      const d = await res.json()
+      if (d.success) {
+        const r = d.data
+        setCopyMsg(`✅ ${r.copied} diensten gekopieerd, ${r.skipped} overgeslagen${r.warnings?.length ? ` (${r.warnings.length} waarschuwing${r.warnings.length !== 1 ? 'en' : ''})` : ''}`)
+        load()
+      } else setCopyMsg(`❌ ${d.error}`)
+    } catch { setCopyMsg('❌ Fout bij kopiëren') }
+    setCopyBusy(false)
+  }
+
+  // ── Auto-fill handler ──
+  function openFillModal() {
+    setFillWeeks(4); setFillMsg(''); setShowFill(true)
+  }
+
+  async function executeFill() {
+    setFillBusy(true); setFillMsg('')
+    try {
+      const res = await fetch('/api/admin/planning-automation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'autofill', sourceWeek: week, sourceYear: year, numberOfWeeks: fillWeeks, location }),
+      })
+      const d = await res.json()
+      if (d.success) {
+        const r = d.data
+        setFillMsg(`✅ ${r.weeksProcessed} weken verwerkt: ${r.totalCopied} diensten aangemaakt, ${r.totalSkipped} overgeslagen`)
+        load()
+      } else setFillMsg(`❌ ${d.error}`)
+    } catch { setFillMsg('❌ Fout bij auto-fill') }
+    setFillBusy(false)
+  }
+
   const openShiftCount = shifts.filter(s => s.is_open === 1).length
 
   return (
@@ -123,6 +196,73 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           <span className="badge badge-warning">{openShiftCount} open dienst{openShiftCount !== 1 ? 'en' : ''}</span>
         )}
       </div>
+
+      {/* ── Action Toolbar ── */}
+      <div className="action-toolbar">
+        <button className="btn btn-outline btn-sm" onClick={openCopyModal} title="Kopieer deze week naar een andere week">
+          📋 Kopieer week
+        </button>
+        <button className="btn btn-outline btn-sm" onClick={openFillModal} title="Automatisch X weken vooruit plannen">
+          🔁 Auto-fill
+        </button>
+        {insightsLoaded && insights.length > 0 && (
+          <button className="btn btn-outline btn-sm" onClick={() => setInsightsOpen(!insightsOpen)}>
+            {insightsOpen ? '▼' : '▶'} Inzichten ({insights.length})
+          </button>
+        )}
+      </div>
+
+      {/* ── Insights Panel ── */}
+      {insightsOpen && insightsLoaded && insights.length > 0 && (
+        <div className="insights-panel">
+          {insights.map(card => (
+            <div key={card.id} className={`insight-card severity-${card.severity}`}>
+              <span className="insight-icon">{card.icon}</span>
+              <div className="insight-body">
+                <span className="insight-title">{card.title}</span>
+                <span className="insight-msg">{card.message}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Copy Week Modal ── */}
+      {showCopy && (
+        <div className="modal-overlay" onClick={() => setShowCopy(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <h3>📋 Week kopiëren</h3>
+            <p className="modal-desc">Kopieer alle diensten van week {week} ({year}) naar:</p>
+            <div className="modal-fields">
+              <label>Week: <input type="number" min={1} max={52} value={copyTarget.week} onChange={e => setCopyTarget(t => ({ ...t, week: +e.target.value }))} /></label>
+              <label>Jaar: <input type="number" min={2024} max={2030} value={copyTarget.year} onChange={e => setCopyTarget(t => ({ ...t, year: +e.target.value }))} /></label>
+            </div>
+            {copyMsg && <p className="modal-msg">{copyMsg}</p>}
+            <div className="modal-actions">
+              <button className="btn btn-outline btn-sm" onClick={() => setShowCopy(false)}>Annuleren</button>
+              <button className="btn btn-primary btn-sm" onClick={executeCopy} disabled={copyBusy}>{copyBusy ? 'Bezig…' : 'Kopiëren'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Auto-fill Modal ── */}
+      {showFill && (
+        <div className="modal-overlay" onClick={() => setShowFill(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <h3>🔁 Auto-fill</h3>
+            <p className="modal-desc">Herhaal week {week} ({year}) voor de volgende X weken:</p>
+            <div className="modal-fields">
+              <label>Aantal weken: <input type="number" min={1} max={12} value={fillWeeks} onChange={e => setFillWeeks(+e.target.value)} /></label>
+            </div>
+            {fillMsg && <p className="modal-msg">{fillMsg}</p>}
+            <div className="modal-actions">
+              <button className="btn btn-outline btn-sm" onClick={() => setShowFill(false)}>Annuleren</button>
+              <button className="btn btn-primary btn-sm" onClick={executeFill} disabled={fillBusy}>{fillBusy ? 'Bezig…' : `${fillWeeks} weken vullen`}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Grid ── */}
       {loading ? (
@@ -317,6 +457,56 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
       )}
 
       <style jsx>{`
+        /* ── Action Toolbar ── */
+        .action-toolbar {
+          display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3);
+          flex-wrap: wrap;
+        }
+
+        /* ── Insights Panel ── */
+        .insights-panel {
+          display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: var(--s2); margin-bottom: var(--s4);
+        }
+        .insight-card {
+          display: flex; align-items: flex-start; gap: var(--s2);
+          padding: var(--s3); border-radius: var(--radius); border: 1px solid var(--border);
+          background: var(--surface); transition: transform .15s;
+        }
+        .insight-card:hover { transform: translateY(-1px); }
+        .severity-success { border-left: 3px solid #2E7D32; }
+        .severity-warning { border-left: 3px solid #E65100; }
+        .severity-danger  { border-left: 3px solid #dc3545; }
+        .severity-info    { border-left: 3px solid var(--brand); }
+        .insight-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
+        .insight-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .insight-title { font-size: .8125rem; font-weight: 700; }
+        .insight-msg { font-size: .75rem; color: var(--text-sub); line-height: 1.4; }
+
+        /* ── Modal ── */
+        .modal-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 999;
+          display: flex; align-items: center; justify-content: center; padding: var(--s4);
+        }
+        .modal-box {
+          background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+          padding: var(--s5); max-width: 420px; width: 100%;
+          display: flex; flex-direction: column; gap: var(--s3);
+        }
+        .modal-box h3 { font-size: 1.125rem; font-weight: 600; margin: 0; }
+        .modal-desc { font-size: .875rem; color: var(--text-sub); margin: 0; }
+        .modal-fields { display: flex; flex-wrap: wrap; gap: var(--s3); }
+        .modal-fields label {
+          display: flex; flex-direction: column; gap: 4px;
+          font-size: .8125rem; font-weight: 500;
+        }
+        .modal-fields input {
+          padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+          background: var(--surface-alt); color: var(--text); font-size: .875rem; width: 100px;
+        }
+        .modal-msg { font-size: .8125rem; margin: 0; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: var(--s2); }
+
         .plan-controls {
           display: flex; align-items: center; flex-wrap: wrap; gap: var(--s3);
           margin-bottom: var(--s5);

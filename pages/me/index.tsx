@@ -167,7 +167,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                 <button
                   key={v}
                   role="tab"
-                  aria-selected={view === v}
+                  aria-selected={view === v ? true : false}
                   className={`view-tab${view === v ? ' active' : ''}`}
                   onClick={() => setView(v)}
                 >
@@ -244,7 +244,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                                 data-type={s.shift_type.toLowerCase()}
                                 aria-label={`${s.shift_type} dienst`}
                                 role="button"
-                                aria-disabled={isOffered ? true : undefined}
+                                aria-disabled={isOffered || undefined}
                                 tabIndex={!isOffered ? 0 : -1}
                                 title={!isOffered ? 'Klik om aan te bieden' : 'Aangeboden aan collega\'s'}
                                 onClick={() => !isOffered && setSelectedShift(s)}
