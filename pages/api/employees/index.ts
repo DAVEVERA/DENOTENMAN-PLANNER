@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from(T('employees'))
       .insert({
         name, email: email ?? null, phone: phone ?? null,
-        contract_hours: contract_hours ?? 24,
+        contract_hours: contract_hours ?? 0,
         is_active: is_active ?? 1,
         user_level: user_level ?? 'Medewerker',
         team_group: team_group ?? null,
