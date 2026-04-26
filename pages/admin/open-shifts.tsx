@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Employee, Location, Day, ShiftType } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES, WORK_TYPES } from '@/types'
-import Spinner from '@/components/ui/Spinner'
+import Spinner from '@/components/ui/Spinner' 
 
 type Tab = 'open' | 'offered'
 
@@ -257,23 +257,33 @@ export default function OpenShiftsAdminPage({ user }: Props) {
 
         {/* Tabs */}
         <div className="os-tabs" role="tablist">
-          {([['open', 'Open diensten', adminOpen.length], ['offered', 'Aangeboden', offered.length]] as const).map(([key, label, count]) => (
-            <button
-              key={key}
-              role="tab"
-              className={`os-tab${tab === key ? ' active' : ''}`}
-              onClick={() => setTab(key)}
-              aria-selected={tab === key ? true : false}
-            >
-              {label}
-              {count > 0 && (
-                <span className={`os-tab-badge${pendingCount > 0 && key === tab ? ' urgent' : ''}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+          <button
+            role="tab"
+            className={`os-tab${tab === 'open' ? ' active' : ''}`}
+            onClick={() => setTab('open')}
+            {...(tab === 'open' ? { 'aria-current': 'true' } : {})}
+          >
+            Open diensten
+            {adminOpen.length > 0 && (
+              <span className={`os-tab-badge${pendingCount > 0 && tab === 'open' ? ' urgent' : ''}`}>
+                {adminOpen.length}
+              </span>
+            )}
+          </button>
+          <button
+            role="tab"
+            className={`os-tab${tab === 'offered' ? ' active' : ''}`}
+            onClick={() => setTab('offered')}
+            {...(tab === 'offered' ? { 'aria-current': 'true' } : {})}
+          >
+            Aangeboden
+            {offered.length > 0 && (
+              <span className={`os-tab-badge${pendingCount > 0 && tab === 'offered' ? ' urgent' : ''}`}>
+                {offered.length}
+              </span>
+            )}
+          </button>
+         </div>
       </div>
 
       {/* ── Create modal ── */}

@@ -167,9 +167,9 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                 <button
                   key={v}
                   role="tab"
-                  aria-selected={view === v ? true : false}
                   className={`view-tab${view === v ? ' active' : ''}`}
                   onClick={() => setView(v)}
+                  {...(view === v ? { 'aria-current': 'true' } : {})}
                 >
                   {v === 'week' ? 'Week' : v === 'month' ? 'Maand' : '3 mnd'}
                 </button>
@@ -238,13 +238,13 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                           {ds.length > 0 ? ds.map(s => {
                             const isOffered = s.is_open === 1 && s.employee_id === user.employee_id
                             return (
-                              <div 
+                              <div
                                 key={s.id}
                                 className={`slot-shift${isOffered ? ' is-offered' : ''}`}
                                 data-type={s.shift_type.toLowerCase()}
                                 aria-label={`${s.shift_type} dienst`}
                                 role="button"
-                                aria-disabled={isOffered || undefined}
+                                {...(isOffered ? { 'aria-disabled': 'true' } : {})}
                                 tabIndex={!isOffered ? 0 : -1}
                                 title={!isOffered ? 'Klik om aan te bieden' : 'Aangeboden aan collega\'s'}
                                 onClick={() => !isOffered && setSelectedShift(s)}

@@ -183,7 +183,7 @@ export default function EmployeeDetailPage({ user }: Props) {
       {/* ── Tabs ── */}
       <div className="tabs" role="tablist">
         {(['gegevens', 'profiel', 'documenten'] as Tab[]).map(t => (
-          <button key={t} role="tab" aria-selected={tab === t ? true : false}
+          <button key={t} role="tab" 
             className={`tab-btn${tab === t ? ' active' : ''}`}
             onClick={() => setTab(t)}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
