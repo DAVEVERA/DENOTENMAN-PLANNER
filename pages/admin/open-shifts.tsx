@@ -6,6 +6,8 @@ import type { SessionUser, Shift, Employee, Location, Day, ShiftType } from '@/t
 import { DAYS, DAY_SHORT, SHIFT_TYPES, WORK_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 
+type Tab = 'open' | 'offered'
+
 interface Props { user: SessionUser }
 
 const LOCATION_LABELS = { markt: 'De Notenkar', nootmagazijn: 'Nootmagazijn' }
@@ -14,7 +16,7 @@ const DAY_NL: Record<Day, string> = {
   donderdag: 'Donderdag', vrijdag: 'Vrijdag', zaterdag: 'Zaterdag', zondag: 'Zondag',
 }
 
-type Tab = 'open' | 'offered'
+
 
 interface NewShiftForm {
   day_of_week: Day
@@ -48,7 +50,14 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   const [showCreate, setShowCreate] = useState(false)
   const [saving, setSaving]     = useState(false)
   const [actionId, setActionId] = useState<number | null>(null)
+  const [toast, setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
+  const [editShift, setEditShift] = useState<Shift | null>(null)
   const { week: cw, year: cy } = currentWeek()
+
+  function showToast(msg: string, ok = true) {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const [form, setForm] = useState<NewShiftForm>({
     day_of_week:  'maandag',
@@ -84,29 +93,114 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   async function createOpenShift(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    await fetch('/api/shifts/open', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        employee_id:   null,
-        employee_name: 'Open dienst',
-        full_day:      0,
-        is_open:       1,
-      }),
-    })
+    try {
+      const r = await fetch('/api/shifts/open', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          employee_id:   null,
+          employee_name: 'Open dienst',
+          full_day:      0,
+          is_open:       1,
+        }),
+      }).then(r => r.json())
+      if (!r.success) {
+        showToast('❌ ' + (r.message ?? 'Fout bij aanmaken'), false)
+        setSaving(false)
+        return
+      }
+      showToast('✅ Open dienst geplaatst!')
+      setShowCreate(false)
+      setForm({ day_of_week: 'maandag', week_number: cw, year: cy, shift_type: 'Ochtend', start_time: '', end_time: '', location: 'markt', note: '' })
+      load()
+    } catch (err: any) {
+      showToast('❌ Netwerkfout: ' + (err.message ?? 'Probeer opnieuw'), false)
+    }
     setSaving(false)
-    setShowCreate(false)
+  }
+
+  async function editOpenShift(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editShift) return
+    setSaving(true)
+    try {
+      const r = await fetch('/api/shifts/open', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shift_id: editShift.id,
+          day_of_week: form.day_of_week,
+          week_number: form.week_number,
+          year: form.year,
+          shift_type: form.shift_type,
+          start_time: form.start_time || null,
+          end_time: form.end_time || null,
+          location: form.location,
+          note: form.note || null,
+        }),
+      }).then(r => r.json())
+      if (!r.success) {
+        showToast('❌ ' + (r.message ?? 'Fout bij wijzigen'), false)
+        setSaving(false)
+        return
+      }
+      showToast('✅ Open dienst gewijzigd!')
+      setEditShift(null)
+      load()
+    } catch (err: any) {
+      showToast('❌ Netwerkfout: ' + (err.message ?? 'Probeer opnieuw'), false)
+    }
+    setSaving(false)
+  }
+
+  async function withdrawShift(shiftId: number) {
+    if (!confirm('Open dienst intrekken?')) return
+    setActionId(shiftId)
+    try {
+      const r = await fetch('/api/shifts/open', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shift_id: shiftId }),
+      }).then(r => r.json())
+      if (r.success) {
+        showToast('✅ Dienst ingetrokken')
+      } else {
+        showToast('❌ ' + (r.message ?? 'Fout bij intrekken'), false)
+      }
+    } catch { showToast('❌ Netwerkfout', false) }
+    setActionId(null)
     load()
+  }
+
+  function openEditModal(shift: Shift) {
+    setForm({
+      day_of_week: shift.day_of_week,
+      week_number: shift.week_number,
+      year: shift.year,
+      shift_type: shift.shift_type,
+      start_time: shift.start_time?.slice(0, 5) ?? '',
+      end_time: shift.end_time?.slice(0, 5) ?? '',
+      location: (shift.location === 'both' ? 'markt' : shift.location) as Exclude<Location, 'both'>,
+      note: shift.note ?? '',
+    })
+    setEditShift(shift)
   }
 
   async function approve(shiftId: number, approved: boolean) {
     setActionId(shiftId)
-    await fetch('/api/shifts/approve', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shift_id: shiftId, approved }),
-    })
+    try {
+      const r = await fetch('/api/shifts/approve', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shift_id: shiftId, approved }),
+      }).then(r => r.json())
+      if (r.success) {
+        showToast(approved ? '✅ Claim goedgekeurd' : '❌ Claim afgewezen')
+      } else {
+        showToast('❌ ' + (r.message ?? 'Fout bij verwerken'), false)
+      }
+    } catch { showToast('❌ Netwerkfout', false) }
     setActionId(null)
     load()
   }
@@ -114,7 +208,10 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   async function deleteShift(shiftId: number) {
     if (!confirm('Open dienst verwijderen?')) return
     setActionId(shiftId)
-    await fetch(`/api/shifts/${shiftId}`, { method: 'DELETE' })
+    try {
+      await fetch(`/api/shifts/${shiftId}`, { method: 'DELETE' })
+      showToast('✅ Dienst verwijderd')
+    } catch { showToast('❌ Fout bij verwijderen', false) }
     setActionId(null)
     load()
   }
@@ -138,6 +235,11 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   return (
     <AdminLayout user={user} title="Open diensten">
 
+      {/* ── Toast ── */}
+      {toast && (
+        <div className={`os-toast ${toast.ok ? '' : 'os-toast-err'}`} role="alert">{toast.msg}</div>
+      )}
+
       {/* ── Header ── */}
       <div className="os-header">
         <div className="os-title-row">
@@ -145,7 +247,10 @@ export default function OpenShiftsAdminPage({ user }: Props) {
             <h1 className="os-h1">Open diensten</h1>
             <p className="os-sub">Beheer open diensten en aangeboden diensten van medewerkers.</p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+          <button className="btn btn-primary" onClick={() => {
+            setForm({ day_of_week: 'maandag', week_number: cw, year: cy, shift_type: 'Ochtend', start_time: '', end_time: '', location: 'markt', note: '' })
+            setShowCreate(true)
+          }}>
             + Nieuwe open dienst
           </button>
         </div>
@@ -158,7 +263,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
               role="tab"
               className={`os-tab${tab === key ? ' active' : ''}`}
               onClick={() => setTab(key)}
-              aria-selected={tab === key ? 'true' : 'false'}
+              aria-selected={tab === key}
             >
               {label}
               {count > 0 && (
@@ -252,6 +357,87 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         </div>
       )}
 
+      {/* ── Edit modal ── */}
+      {editShift && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditShift(null)}>
+          <div className="modal-panel" role="dialog" aria-modal="true" aria-label="Open dienst bewerken">
+            <div className="modal-head">
+              <h2 className="modal-title">Open dienst bewerken</h2>
+              <button className="modal-close" onClick={() => setEditShift(null)} aria-label="Sluiten">✕</button>
+            </div>
+            <form onSubmit={editOpenShift} className="modal-body">
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label className="form-label">Week</label>
+                  <input type="number" className="form-control" min={1} max={53}
+                    title="Weeknummer" placeholder="Week"
+                    value={form.week_number} onChange={e => setForm(f => ({ ...f, week_number: +e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Jaar</label>
+                  <input type="number" className="form-control" min={2024} max={2030}
+                    title="Jaar" placeholder="Jaar"
+                    value={form.year} onChange={e => setForm(f => ({ ...f, year: +e.target.value }))} />
+                </div>
+              </div>
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label className="form-label">Dag</label>
+                  <select className="form-control" title="Dag van de week"
+                    value={form.day_of_week}
+                    onChange={e => setForm(f => ({ ...f, day_of_week: e.target.value as Day }))}>
+                    {DAYS.map(d => <option key={d} value={d}>{DAY_NL[d]}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Type dienst</label>
+                  <select className="form-control" title="Type dienst"
+                    value={form.shift_type}
+                    onChange={e => setForm(f => ({ ...f, shift_type: e.target.value as ShiftType }))}>
+                    {WORK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label className="form-label">Starttijd</label>
+                  <input type="time" className="form-control" title="Starttijd"
+                    value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Eindtijd</label>
+                  <input type="time" className="form-control" title="Eindtijd"
+                    value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Locatie</label>
+                <div className="loc-toggle">
+                  {(['markt', 'nootmagazijn'] as const).map(loc => (
+                    <button type="button" key={loc}
+                      className={`loc-btn ${form.location === loc ? 'active-' + loc : ''}`}
+                      onClick={() => setForm(f => ({ ...f, location: loc }))}>
+                      {LOCATION_LABELS[loc]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Notitie (optioneel)</label>
+                <textarea className="form-control" rows={2} placeholder="Extra info…"
+                  value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setEditShift(null)}>Annuleren</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? <Spinner /> : '💾 Opslaan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ── List ── */}
       {loading ? (
         <div className="os-loading"><Spinner /> Laden…</div>
@@ -338,6 +524,23 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                     </div>
                   ) : null}
                   <button
+                    className="btn btn-ghost btn-sm btn-edit"
+                    onClick={() => openEditModal(shift)}
+                    title="Bewerken"
+                    aria-label="Dienst bewerken"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm btn-withdraw"
+                    onClick={() => withdrawShift(shift.id)}
+                    title="Intrekken"
+                    aria-label="Dienst intrekken"
+                    disabled={isActioning}
+                  >
+                    ⏹
+                  </button>
+                  <button
                     className="btn btn-ghost btn-sm btn-del"
                     onClick={() => deleteShift(shift.id)}
                     title="Verwijderen"
@@ -353,6 +556,19 @@ export default function OpenShiftsAdminPage({ user }: Props) {
       )}
 
       <style jsx>{`
+        /* ── Toast ── */
+        .os-toast {
+          position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+          background: #065F46; color: #fff;
+          padding: 12px 24px; border-radius: 999px;
+          font-size: .9375rem; font-weight: 500;
+          box-shadow: 0 8px 24px rgba(0,0,0,.25);
+          z-index: 9999; white-space: nowrap;
+          animation: toast-in .2s ease;
+        }
+        .os-toast-err { background: #991B1B; }
+        @keyframes toast-in { from { opacity:0; transform:translateX(-50%) translateY(-8px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+
         /* ── Page header ── */
         .os-header { margin-bottom: var(--s6); }
         .os-title-row {
@@ -436,8 +652,12 @@ export default function OpenShiftsAdminPage({ user }: Props) {
           background: #059669; color: #fff; border: none;
         }
         .btn-success:hover:not(:disabled) { background: #047857; }
+        .btn-edit { opacity: .5; }
+        .btn-edit:hover { opacity: 1; color: var(--brand); }
+        .btn-withdraw { opacity: .5; }
+        .btn-withdraw:hover { opacity: 1; color: #B45309; }
         .btn-del { opacity: .5; }
-        .btn-del:hover { opacity: 1; }
+        .btn-del:hover { opacity: 1; color: #DC2626; }
 
         /* ── Modal ── */
         .modal-overlay {

@@ -172,6 +172,98 @@ export async function getOpenShifts(location?: Location): Promise<Shift[]> {
   return data ?? []
 }
 
+/**
+ * Update an open shift's properties (admin only).
+ * Only updates the fields that are provided.
+ */
+export async function updateOpenShift(
+  shiftId: number,
+  fields: Partial<Pick<Shift, 'day_of_week' | 'week_number' | 'year' | 'shift_type' | 'start_time' | 'end_time' | 'location' | 'note'>>,
+): Promise<Shift | { error: string }> {
+  const update: Record<string, unknown> = {}
+  if (fields.day_of_week !== undefined)  update.day_of_week = fields.day_of_week
+  if (fields.week_number !== undefined)  update.week_number = fields.week_number
+  if (fields.year !== undefined)         update.year        = fields.year
+  if (fields.shift_type !== undefined)   update.shift_type  = fields.shift_type
+  if (fields.start_time !== undefined)   update.start_time  = fmtTime(fields.start_time)
+  if (fields.end_time !== undefined)     update.end_time    = fmtTime(fields.end_time)
+  if (fields.location !== undefined)     update.location    = fields.location
+  if (fields.note !== undefined)         update.note        = fields.note
+
+  const { data, error } = await supabase
+    .from(T('shifts'))
+    .update(update)
+    .eq('id', shiftId)
+    .eq('is_open', 1)
+    .select()
+    .single()
+  if (error) return { error: error.message }
+  return data
+}
+
+/**
+ * Withdraw (intrekken) an open shift — sets is_open = 0 and clears invite state.
+ * If the shift had no employee_id (admin-created), delete it instead.
+ */
+export async function withdrawOpenShift(shiftId: number): Promise<boolean> {
+  const shift = await getShift(shiftId)
+  if (!shift) return false
+
+  // Admin-created open shifts (no employee) → delete entirely
+  if (!shift.employee_id) {
+    return deleteShift(shiftId)
+  }
+
+  // Employee-offered shifts → revert to regular
+  const { error } = await supabase.from(T('shifts')).update({
+    is_open: 0,
+    open_invite_emp_id: null,
+    open_invite_status: null,
+    shift_category: 'regular',
+  }).eq('id', shiftId)
+  return !error
+}
+
+/**
+ * After a claim is approved, check if there are remaining open shifts
+ * for the same day/week/year and close them if they should be auto-closed.
+ * The logic: count how many open shifts remain for that slot.
+ * If maxOpen is provided (e.g. 1), close when filled.
+ */
+export async function closeRemainingOpenShifts(
+  day: string, weekNumber: number, year: number, shiftType: string,
+): Promise<number> {
+  // Find remaining open shifts that match the same day/week/year/type
+  const { data: remaining, error } = await supabase
+    .from(T('shifts'))
+    .select('id')
+    .eq('is_open', 1)
+    .eq('day_of_week', day)
+    .eq('week_number', weekNumber)
+    .eq('year', year)
+    .eq('shift_type', shiftType)
+    .is('employee_id', null) // only admin-created open shifts
+
+  if (error || !remaining || remaining.length === 0) return 0
+
+  // Close all remaining duplicates for this slot
+  const ids = remaining.map(r => r.id)
+  const { error: closeErr } = await supabase
+    .from(T('shifts'))
+    .update({
+      is_open: 0,
+      open_invite_status: 'accepted',
+      note: (new Date().toLocaleDateString('nl-NL')) + ' — automatisch gesloten (alle plekken gevuld)',
+    })
+    .in('id', ids)
+
+  if (closeErr) {
+    console.error('[scheduler] closeRemainingOpenShifts error:', closeErr.message)
+    return 0
+  }
+  return ids.length
+}
+
 export async function inviteEmployeeToShift(
   shiftId: number, employeeId: number,
 ): Promise<boolean> {

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
 import { supabase, T } from '@/lib/db'
-import { getShift, getEmployee } from '@/lib/scheduler'
+import { getShift, getEmployee, closeRemainingOpenShifts } from '@/lib/scheduler'
 import { sendPushToEmployee } from '@/lib/push'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -32,6 +32,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           open_invite_emp_id: null,
         }).eq('id', parseInt(shift_id))
         if (error) throw error
+
+        // ── Auto-close: sluit overige open diensten voor dezelfde slot ──
+        try {
+          const closed = await closeRemainingOpenShifts(
+            shift.day_of_week,
+            shift.week_number,
+            shift.year,
+            shift.shift_type,
+          )
+          if (closed > 0) {
+            console.log(`[approve] Auto-closed ${closed} remaining open shift(s) for ${shift.day_of_week} week ${shift.week_number}`)
+          }
+        } catch (err) {
+          console.error('[approve] Auto-close error (non-fatal):', err)
+        }
 
         // Notify claimer
         try {
@@ -77,6 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.status(405).json({ success: false })
   } catch (err: any) {
+    console.error('[shifts/approve]', err.message)
     res.status(500).json({ success: false, message: err.message })
   }
 }
