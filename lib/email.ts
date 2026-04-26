@@ -27,7 +27,13 @@ function assertSmtpConfigured(): void {
 }
 
 const FROM    = process.env.SMTP_FROM    ?? 'Planner De Notenman <planner@denotenkar.nl>'
-const APP_URL = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+function resolveAppUrl(): string {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/+$/, '')
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL.replace(/\/+$/, '')
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return 'http://localhost:3000'
+}
+const APP_URL = resolveAppUrl()
 
 /** Stuur een uitnodigingsemail naar een nieuwe medewerker. */
 export async function sendInviteEmail(opts: {

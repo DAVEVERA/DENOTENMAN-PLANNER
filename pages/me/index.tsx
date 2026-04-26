@@ -238,7 +238,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                           {ds.length > 0 ? ds.map(s => {
                             const isOffered = s.is_open === 1 && s.employee_id === user.employee_id
                             return (
-                              <div
+                              <div 
                                 key={s.id}
                                 className={`slot-shift${isOffered ? ' is-offered' : ''}`}
                                 data-type={s.shift_type.toLowerCase()}

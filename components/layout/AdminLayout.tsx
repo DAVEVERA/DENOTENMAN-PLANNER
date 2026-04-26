@@ -5,7 +5,7 @@ import type { SessionUser } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
   ScheduleIcon, EmployeesIcon, LeaveIcon,
-  HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon, LeaveIcon as OpenIcon,
+  HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon, MyScheduleIcon, LeaveIcon as OpenIcon,
 } from '@/components/ui/Icons'
 
 interface Props { user: SessionUser; children: React.ReactNode; title?: string }
@@ -84,9 +84,18 @@ export default function AdminLayout({ user, children, title }: Props) {
           <div className="sb-section sb-section--bottom">
             <span className="sb-section-label">Weergave</span>
             <nav className="sb-nav" aria-label="Weergave">
-              <Link href="/team/markt" className="sb-link">
+              <Link href="/team/markt" className={`sb-link${router.pathname === '/team/[location]' && router.query.location === 'markt' ? ' active' : ''}`}>
                 <span className="sb-icon"><TeamViewIcon size={20} /></span>
-                <span className="sb-label">Team view</span>
+                <span className="sb-label">Team Markt</span>
+              </Link>
+              <Link href="/team/nootmagazijn" className={`sb-link${router.pathname === '/team/[location]' && router.query.location === 'nootmagazijn' ? ' active' : ''}`}>
+                <span className="sb-icon"><TeamViewIcon size={20} /></span>
+                <span className="sb-label">Team Nootmagazijn</span>
+              </Link>
+              <Link href="/admin/view" className={`sb-link${router.pathname.startsWith('/admin/view') ? ' active' : ''}`}>
+                <span className="sb-icon"><MyScheduleIcon size={20} /></span>
+                <span className="sb-label">Individueel</span>
+                {router.pathname.startsWith('/admin/view') && <span className="sb-dot" aria-hidden="true" />}
               </Link>
             </nav>
           </div>
