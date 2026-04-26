@@ -110,11 +110,34 @@ De Notenman – Administratie
             </tr>
           </table>
 
-          <!-- CTA -->
-          <p style="margin:0 0 24px;text-align:center">
-            <a href="${loginUrl}" style="display:inline-block;background:#2C6E49;color:#fff;font-size:15px;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none">
-              Inloggen &rarr;
-            </a>
+          <!-- CTA — bulletproof button (tabel-gebaseerd, werkt op alle mobile clients) -->
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px">
+            <tr><td align="center">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                href="${loginUrl}" style="height:48px;v-text-anchor:middle;width:200px" arcsize="17%" stroke="f" fillcolor="#2C6E49">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold">Inloggen &#8594;</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate">
+                <tr>
+                  <td style="background:#2C6E49;border-radius:8px;text-align:center">
+                    <a href="${loginUrl}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       style="display:block;background:#2C6E49;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;border:1px solid #2C6E49;-webkit-text-size-adjust:none;mso-hide:all"
+                    >Inloggen &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td></tr>
+          </table>
+          <!-- Fallback plain link voor clients die knoppen niet tonen -->
+          <p style="margin:0 0 24px;font-size:12px;color:#9e8070;text-align:center">
+            Knop werkt niet? <a href="${loginUrl}" target="_blank" rel="noopener" style="color:#2C6E49;text-decoration:underline">Klik hier om in te loggen</a>
           </p>
 
           <p style="margin:0;font-size:13px;color:#7B4F2E;line-height:1.5">
