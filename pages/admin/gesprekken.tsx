@@ -143,7 +143,7 @@ export default function ChatLogsPage({ user }: Props) {
                   key={s.session_id}
                   className={`session-item${activeSession === s.session_id ? ' active' : ''}`}
                   role="option"
-                  aria-selected={activeSession === s.session_id}
+                  aria-selected={activeSession === s.session_id ? 'true' : 'false'}
                   tabIndex={0}
                   onClick={() => loadMessages(s.session_id)}
                   onKeyDown={e => {

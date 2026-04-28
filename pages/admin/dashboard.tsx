@@ -40,12 +40,13 @@ function weekDateRange(w: number, y: number) {
 
 function UtilBar({ pct }: { pct: number }) {
   const clamped = Math.min(pct, 130)
-  const color = pct > 110 ? '#dc3545' : pct < 60 ? '#E65100' : '#2E7D32'
+  const fillPct = Math.min(clamped / 130 * 100, 100)
+  const colorClass = pct > 110 ? 'util-over' : pct < 60 ? 'util-under' : 'util-ok'
   return (
     <div className="util-bar-track" aria-label={`${pct}%`}>
       <div
-        className="util-bar-fill"
-        style={{ width: `${Math.min(clamped / 130 * 100, 100)}%`, background: color }}
+        className={`util-bar-fill ${colorClass}`}
+        style={{ width: `${fillPct}%` }}
       />
     </div>
   )
@@ -105,7 +106,7 @@ export default function AdminDashboard({ user, week, year }: Props) {
             <button
               key={l}
               role="tab"
-              aria-selected={loc === l}
+              aria-selected={loc === l ? 'true' : 'false'}
               className={`db-loc-tab${loc === l ? ' active' : ''}`}
               data-loc={l}
               onClick={() => setLoc(l)}
@@ -340,6 +341,9 @@ export default function AdminDashboard({ user, week, year }: Props) {
           height: 100%; border-radius: 99px;
           transition: width .4s cubic-bezier(.4,0,.2,1);
         }
+        .util-bar-fill.util-ok    { background: #2E7D32; }
+        .util-bar-fill.util-under { background: #E65100; }
+        .util-bar-fill.util-over  { background: #dc3545; }
 
         .db-load-legend {
           display: flex; flex-wrap: wrap; gap: var(--s3);

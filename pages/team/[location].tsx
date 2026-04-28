@@ -21,6 +21,26 @@ function fmtTime(t: string | null) {
   return t ? t.slice(0, 5) : ''
 }
 
+const MONTHS_NL = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec']
+
+function weekDateRange(w: number, y: number) {
+  const jan4 = new Date(y, 0, 4)
+  const dow = jan4.getDay() || 7
+  const mon = new Date(jan4)
+  mon.setDate(jan4.getDate() - dow + 1 + (w - 1) * 7)
+  const sun = new Date(mon)
+  sun.setDate(mon.getDate() + 6)
+  const fmt = (d: Date) => `${d.getDate()} ${MONTHS_NL[d.getMonth()]}`
+  return `${fmt(mon)} – ${fmt(sun)}`
+}
+
+function getFullDayDate(w: number, y: number, dayIndex: number): Date {
+  const jan4 = new Date(y, 0, 4)
+  const dow = jan4.getDay() || 7
+  const start = new Date(jan4)
+  start.setDate(jan4.getDate() - dow + 1 + (w - 1) * 7 + dayIndex)
+  return start
+}
 
 export default function TeamView({ user, location, initialWeek, initialYear }: Props) {
   const [week, setWeek]   = useState(initialWeek)
@@ -53,18 +73,10 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
     else setWeek(w => w + 1)
   }
 
-  function weekStartDate(w: number, y: number) {
-    const jan4 = new Date(y, 0, 4)
-    const dow = jan4.getDay() || 7
-    const start = new Date(jan4)
-    start.setDate(jan4.getDate() - dow + 1 + (w - 1) * 7)
-    return start
-  }
 
   function dayDate(w: number, y: number, dayIndex: number) {
-    const start = weekStartDate(w, y)
-    start.setDate(start.getDate() + dayIndex)
-    return start.getDate()
+    const d = getFullDayDate(w, y, dayIndex)
+    return d.getDate()
   }
 
   const shiftsForDay = (day: string) => shifts.filter(s => s.day_of_week === day && !s.is_open)
@@ -86,7 +98,10 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
           <button className="btn btn-outline btn-sm btn-icon" onClick={prevWeek} title="Vorige week" aria-label="Vorige week">
             <PrevIcon />
           </button>
-          <span className="week-label">Week {week} · {year}</span>
+          <div className="week-label-wrap">
+            <span className="week-label">Week {week} · {year}</span>
+            <span className="week-date-sub">{weekDateRange(week, year)}</span>
+          </div>
           <button className="btn btn-outline btn-sm btn-icon" onClick={nextWeek} title="Volgende week" aria-label="Volgende week">
             <NextIcon />
           </button>
@@ -122,6 +137,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                     <div className="day-info">
                       <span className="day-short">{DAY_SHORT[day]}</span>
                       <span className="day-num">{date}</span>
+                      <span className="day-mon">{MONTHS_NL[getFullDayDate(week, year, i).getMonth()]}</span>
                     </div>
                     <span className="day-count">{occ.total}</span>
                   </div>
@@ -170,6 +186,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                       <th key={day} scope="col" className="col-day">
                         <span className="day-short">{DAY_SHORT[day]}</span>
                         <span className="day-num"> {dayDate(week, year, i)}</span>
+                        <span className="day-col-mon"> {MONTHS_NL[getFullDayDate(week, year, i).getMonth()]}</span>
                       </th>
                     ))}
                   </tr>
@@ -216,7 +233,9 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
           flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s5);
         }
         .week-nav { display: flex; align-items: center; gap: var(--s2); }
-        .week-label { font-size: .9375rem; font-weight: 600; min-width: 140px; text-align: center; }
+        .week-label-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 150px; }
+        .week-label { font-size: .9375rem; font-weight: 600; text-align: center; }
+        .week-date-sub { font-size: .6875rem; color: var(--text-muted); text-align: center; }
         .loc-label { font-size: .9375rem; font-weight: 600; }
         .loc-label[data-location="nootmagazijn"] { color: var(--noot); }
         .loc-label[data-location="markt"]        { color: var(--markt); }
@@ -235,6 +254,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .day-info { display: flex; align-items: baseline; gap: 4px; }
         .day-short { font-size: .75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .day-num { font-size: 1.125rem; font-weight: 700; color: var(--text); }
+        .day-mon { font-size: .6875rem; color: var(--text-muted); }
         .day-count { font-size: .8125rem; font-weight: 600; color: var(--text-sub); background: var(--surface-alt); padding: 1px 6px; border-radius: 4px; }
 
         .day-expand { margin-top: var(--s3); border-top: 1px solid var(--border); padding-top: var(--s2); }
@@ -255,6 +275,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .team-grid th, .team-grid td { padding: var(--s2) var(--s3); text-align: left; border-bottom: 1px solid var(--border); }
         .team-grid thead th { background: var(--surface-alt); font-size: .75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         .col-emp { width: 160px; font-weight: 500; }
+        .day-col-mon { font-size: .6875rem; font-weight: 400; color: var(--text-muted); text-transform: lowercase; }
         .shift-pill {
           display: inline-flex; align-items: center; gap: 4px;
           padding: 2px 6px; border-radius: 4px; margin-bottom: 2px;

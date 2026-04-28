@@ -18,6 +18,19 @@ function fmtTime(t: string | null) {
   return t ? t.slice(0, 5) : ''
 }
 
+const MONTHS_NL = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec']
+
+function weekDateRange(w: number, y: number) {
+  const jan4 = new Date(y, 0, 4)
+  const dow = jan4.getDay() || 7
+  const mon = new Date(jan4)
+  mon.setDate(jan4.getDate() - dow + 1 + (w - 1) * 7)
+  const sun = new Date(mon)
+  sun.setDate(mon.getDate() + 6)
+  const fmt = (d: Date) => `${d.getDate()} ${MONTHS_NL[d.getMonth()]}`
+  return `${fmt(mon)} – ${fmt(sun)}`
+}
+
 export default function IndividualView({ user, initialWeek, initialYear }: Props) {
   const [week, setWeek]             = useState(initialWeek)
   const [year, setYear]             = useState(initialYear)
@@ -108,7 +121,10 @@ export default function IndividualView({ user, initialWeek, initialYear }: Props
           <button className="btn btn-outline btn-sm btn-icon" onClick={prevWeek} title="Vorige week" aria-label="Vorige week">
             <PrevIcon />
           </button>
-          <span className="week-label">Week {week} · {year}</span>
+          <div className="week-label-wrap">
+            <span className="week-label">Week {week} · {year}</span>
+            <span className="week-date-sub">{weekDateRange(week, year)}</span>
+          </div>
           <button className="btn btn-outline btn-sm btn-icon" onClick={nextWeek} title="Volgende week" aria-label="Volgende week">
             <NextIcon />
           </button>
@@ -167,6 +183,7 @@ export default function IndividualView({ user, initialWeek, initialYear }: Props
                   <div className="iv-day-head">
                     <span className="iv-day-short">{DAY_SHORT[day]}</span>
                     <span className="iv-day-num">{d.getDate()}</span>
+                    <span className="iv-day-mon">{MONTHS_NL[d.getMonth()]}</span>
                   </div>
                   <div className="iv-day-body">
                     {dayShifts.length === 0 && (
@@ -207,7 +224,9 @@ export default function IndividualView({ user, initialWeek, initialYear }: Props
         .iv-label { font-size: .8125rem; font-weight: 600; color: var(--text-sub); }
         .iv-select { min-width: 260px; }
         .week-nav { display: flex; align-items: center; gap: var(--s2); }
-        .week-label { font-size: .9375rem; font-weight: 600; min-width: 130px; text-align: center; }
+        .week-label-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 150px; }
+        .week-label { font-size: .9375rem; font-weight: 600; text-align: center; }
+        .week-date-sub { font-size: .6875rem; color: var(--text-muted); text-align: center; }
 
         .iv-empty {
           background: var(--surface); border: 1px solid var(--border);
@@ -247,6 +266,7 @@ export default function IndividualView({ user, initialWeek, initialYear }: Props
         }
         .iv-day-short { font-size: .6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .iv-day-num { font-size: 1rem; font-weight: 700; }
+        .iv-day-mon { font-size: .6875rem; color: var(--text-muted); margin-left: auto; }
         .iv-day-body { flex: 1; padding: var(--s2) var(--s3); display: flex; flex-direction: column; gap: 4px; }
         .iv-no-shift { font-size: .8125rem; color: var(--text-muted); font-style: italic; }
 
