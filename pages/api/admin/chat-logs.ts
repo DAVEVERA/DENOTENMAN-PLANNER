@@ -1,7 +1,7 @@
 /**
  * pages/api/admin/chat-logs.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * D'n Dave — Admin chat-log beheer API
+ * Support — Admin chat-log beheer API 
  *
  * GET  /api/admin/chat-logs            — alle sessies (gegroepeerd per gebruiker)
  * GET  /api/admin/chat-logs?session=X  — berichten van één sessie

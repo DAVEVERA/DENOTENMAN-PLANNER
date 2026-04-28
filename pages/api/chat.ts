@@ -5,7 +5,7 @@
  *
  * POST /api/chat  — stuur een bericht, ontvang antwoord (+ tool-uitvoer)
  * GET  /api/chat  — haal chatgeschiedenis op
- * DELETE /api/chat — wis chatgeschiedenis van huidige sessie
+ * DELETE /api/chat — wis chatgeschiedenis van huidige sessie  
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -61,7 +61,7 @@ function buildMessages(history: Awaited<ReturnType<typeof loadHistory>>, newUser
     // tool-resultaten worden niet apart toegevoegd — zitten al in assistant-berichten
   }
 
-  // Voeg het nieuwe bericht toe
+  // Voeg het nieuwe bericht toe 
   msgs.push({ role: 'user', content: newUserMessage })
   return msgs
 }

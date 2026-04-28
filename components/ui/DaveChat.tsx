@@ -274,7 +274,7 @@ export default function DaveChat() {
                 </div>
                 <div className="dave-welcome-title">Hé! Ik ben {DAVE_NAME}</div>
                 <div className="dave-welcome-sub">
-                  Stel me een vraag over de planner, of geef me een opdracht. Gewoon in normaal Nederlands — ik snap het vanzelf wel.
+                  Stel me een vraag over de planner, of geef me een opdracht.
                 </div>
               </div>
             )}
