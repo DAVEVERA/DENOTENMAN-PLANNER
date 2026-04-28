@@ -1,4 +1,4 @@
-export const DAVE_AVATAR_URL = '/support-avatar.png'
+export const DAVE_AVATAR_URL = '/support-avatar.jpg'
 
 export const DAVE_NAME = "Support"
 
