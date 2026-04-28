@@ -38,11 +38,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.json({ success: true, data: data ?? [] })
     }
 
-    // Alle sessies ophalen (gegroepeerd + stats)
+    // Alle sessies ophalen (gegroepeerd + stats) — capped at 5 000 rows
     const { data, error } = await supabase
       .from(T('chat_messages'))
       .select('session_id, role, created_at')
       .order('created_at', { ascending: false })
+      .limit(5_000)
 
     if (error) return res.status(500).json({ success: false, message: error.message })
 

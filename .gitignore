@@ -1,7 +1,27 @@
+# Dependencies & Build
 node_modules/
 .next/
+.vercel
+
+# Environment variables
 .env.local
 .env*.local
-.vscode/
 
-.vercel
+# Editor / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Build & lint artifacts
+*.log
+lint_*.txt
+eslint_output.txt
+build.log
+
+# Scratch / dev utilities (never commit)
+scratch/
+
+# Local DB dumps / exports
+*.sql
+*.csv.local

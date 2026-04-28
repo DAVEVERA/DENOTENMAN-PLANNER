@@ -1,7 +1,7 @@
 /**
  * lib/dave-tools.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * D'n Dave — Anthropic Tool Use implementaties
+ * Support — Anthropic Tool Use implementaties
  *
  * Elke tool = een echte actie in de planner.
  * Admin/manager krijgen alle tools; medewerkers alleen de "employee_tools".

@@ -85,10 +85,14 @@ export default function ChatLogsPage({ user }: Props) {
     if (!confirm(`Gesprek van "${sid}" wissen? Dit kan niet ongedaan gemaakt worden.`)) return
     setDeleting(sid)
     try {
-      await fetch(`/api/admin/chat-logs?session=${encodeURIComponent(sid)}`, { method: 'DELETE' })
-      setSessions(prev => prev.filter(s => s.session_id !== sid))
-      if (activeSession === sid) { setActiveSession(null); setMessages([]) }
-    } catch {}
+      const r = await fetch(`/api/admin/chat-logs?session=${encodeURIComponent(sid)}`, { method: 'DELETE' })
+      if (r.ok) {
+        setSessions(prev => prev.filter(s => s.session_id !== sid))
+        if (activeSession === sid) { setActiveSession(null); setMessages([]) }
+      }
+    } catch (err) {
+      console.error('[gesprekken] delete failed:', err)
+    }
     setDeleting(null)
   }
 
@@ -135,13 +139,19 @@ export default function ChatLogsPage({ user }: Props) {
           ) : (
             <ul className="session-list" role="listbox" aria-label="Gesprekken">
               {filteredSessions.map(s => (
-                // eslint-disable-next-line jsx-a11y/aria-proptypes
                 <li
                   key={s.session_id}
                   className={`session-item${activeSession === s.session_id ? ' active' : ''}`}
                   role="option"
                   aria-selected={activeSession === s.session_id}
+                  tabIndex={0}
                   onClick={() => loadMessages(s.session_id)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      loadMessages(s.session_id)
+                    }
+                  }}
                   id={`session-${s.session_id}`}
                 >
                   <div className="session-avatar">

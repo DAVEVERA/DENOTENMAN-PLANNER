@@ -20,6 +20,33 @@ import { DAVE_MAX_CONTEXT_MESSAGES } from '@/lib/dave-config'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// ── Per-user rate limiting ────────────────────────────────────────────────────
+// Allows up to MAX_MSG messages per WINDOW_MS per user_id (in-memory).
+const chatRateMap = new Map<string, { count: number; resetAt: number }>()
+const CHAT_MAX_MSG  = 20
+const CHAT_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
+
+function isChatRateLimited(userId: string): boolean {
+  const now   = Date.now()
+  const entry = chatRateMap.get(userId)
+  if (!entry || now > entry.resetAt) return false
+  return entry.count >= CHAT_MAX_MSG
+}
+
+function recordChatMessage(userId: string): void {
+  const now   = Date.now()
+  const entry = chatRateMap.get(userId)
+  if (!entry || now > entry.resetAt) {
+    chatRateMap.set(userId, { count: 1, resetAt: now + CHAT_WINDOW_MS })
+  } else {
+    entry.count++
+  }
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const MAX_MESSAGE_LENGTH = 2_000  // chars per user message
+const MAX_TOOL_RESULT_LEN = 8_000 // chars stored per tool-result in DB
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function loadHistory(sessionId: string, limit = DAVE_MAX_CONTEXT_MESSAGES) {
@@ -101,7 +128,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ success: false, message: 'Geen bericht ontvangen.' })
     }
 
-    const trimmed = message.trim()
+    // Rate limit per user
+    if (isChatRateLimited(user.user_id)) {
+      return res.status(429).json({
+        success: false,
+        message: 'Je stuurt te snel berichten. Wacht even en probeer opnieuw.',
+      })
+    }
+    recordChatMessage(user.user_id)
+
+    // Length guard
+    const trimmed = message.trim().slice(0, MAX_MESSAGE_LENGTH)
+    if (!trimmed) {
+      return res.status(400).json({ success: false, message: 'Geen bericht ontvangen.' })
+    }
 
     // Sla gebruikersbericht op
     await saveMessage(sessionId, 'user', trimmed)
@@ -157,11 +197,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const tb = block as Anthropic.ToolUseBlock
           const result = await executeTool(tb.name, tb.input as Record<string, unknown>, user)
           const resultStr = JSON.stringify(result)
+          // Truncate for DB storage to avoid bloat; full result goes to Anthropic
+          const resultDb = resultStr.length > MAX_TOOL_RESULT_LEN
+            ? resultStr.slice(0, MAX_TOOL_RESULT_LEN) + '…'
+            : resultStr
 
           toolCalls.push({ name: tb.name, input: tb.input, result })
 
           // Sla tool-aanroep op in DB
-          await saveMessage(sessionId, 'tool', resultStr, {
+          await saveMessage(sessionId, 'tool', resultDb, {
             tool_name:   tb.name,
             tool_input:  tb.input,
             tool_result: result,
@@ -170,7 +214,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           toolResults.push({
             type:        'tool_result',
             tool_use_id: tb.id,
-            content:     resultStr,
+            content:     resultStr, // volledige resultaat naar Anthropic
           })
         }
 
@@ -193,8 +237,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         tool_calls: toolCalls,
       })
 
-    } catch (err: any) {
-      console.error('[dave] Anthropic error:', err)
+    } catch (err: unknown) {
+      console.error('[chat] Anthropic error:', err)
       return res.status(500).json({
         success: false,
         message: 'Da ging ff mis bij Support. Probeer nog eens.',
