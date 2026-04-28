@@ -20,7 +20,7 @@ const NAV = [
   { href: '/admin/hours/export',  icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
   { href: '/admin/settings',      icon: <SettingsIcon size={20} />,  label: 'Instellingen',   cap: 'manage_settings' as const },
   { href: '/admin/backup',        icon: <ExportIcon size={20} />,    label: 'Backup',         cap: 'manage_settings' as const },
-  { href: '/admin/gesprekken',    icon: <span className="sb-dave-icon">🎩</span>, label: "D'n Dave",   cap: 'manage_settings' as const },
+  { href: '/admin/gesprekken',    icon: <span className="sb-dave-icon">🎩</span>, label: "Support",   cap: 'manage_settings' as const },
 ]
 
 function getInitials(name: string) {

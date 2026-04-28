@@ -9,6 +9,7 @@ export default function Document() {
         <meta name={"theme-color"} content="#C8882A" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link rel={"apple-touch-icon"} href="/icon-192.png" />
+        <meta name={"mobile-web-app-capable"} content="yes" />
         <meta name={"apple-mobile-web-app-capable"} content="yes" />
         <meta name={"apple-mobile-web-app-status-bar-style"} content="default" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

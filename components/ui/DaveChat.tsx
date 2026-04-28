@@ -1,7 +1,7 @@
 /**
  * components/ui/DaveChat.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * D'n Dave — floating AI-chat component
+ * Support — floating AI-chat component
  *
  * Floating knop rechts onderin → klikken opent het chat-paneel.
  * Berichten worden opgeslagen in Supabase en herladen bij open.
@@ -232,7 +232,7 @@ export default function DaveChat() {
       <button
         className="dave-fab"
         onClick={togglePanel}
-        aria-label={open ? "Sluit d'n Dave" : "Open d'n Dave"}
+        aria-label={open ? "Sluit Support" : "Open Support"}
         title={DAVE_NAME}
         id="dave-fab-btn"
       >
@@ -241,7 +241,7 @@ export default function DaveChat() {
 
       {/* Chat paneel */}
       {open && (
-        <div className={`dave-panel${closing ? ' closing' : ''}`} role="dialog" aria-label="D'n Dave chat" id="dave-chat-panel">
+        <div className={`dave-panel${closing ? ' closing' : ''}`} role="dialog" aria-label="Support chat" id="dave-chat-panel">
 
           {/* Header */}
           <div className="dave-header">
@@ -380,7 +380,7 @@ export default function DaveChat() {
               onKeyDown={handleKeyDown}
               rows={1}
               disabled={loading}
-              aria-label="Bericht aan D'n Dave"
+              aria-label="Bericht aan Support"
               id="dave-input"
             />
             <button

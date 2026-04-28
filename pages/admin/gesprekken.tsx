@@ -96,7 +96,7 @@ export default function ChatLogsPage({ user }: Props) {
   )
 
   return (
-    <AdminLayout user={user} title="D'n Dave — Gesprekken">
+    <AdminLayout user={user} title="Support — Gesprekken">
 
       <div className="chat-logs-layout">
 

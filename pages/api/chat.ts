@@ -1,7 +1,7 @@
 /**
  * pages/api/chat.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * D'n Dave — hoofd-chat API
+ * Support — hoofd-chat API
  *
  * POST /api/chat  — stuur een bericht, ontvang antwoord (+ tool-uitvoer)
  * GET  /api/chat  — haal chatgeschiedenis op
@@ -131,7 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         iterations++
 
         const response = await anthropic.messages.create({
-          model:      'claude-sonnet-4-5',
+          model:      'claude-3-5-sonnet-20241022',
           max_tokens: 1024,
           system:     systemPrompt,
           tools,
@@ -197,7 +197,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('[dave] Anthropic error:', err)
       return res.status(500).json({
         success: false,
-        message: 'Da ging ff mis bij D\'n Dave. Probeer nog eens.',
+        message: 'Da ging ff mis bij Support. Probeer nog eens.',
       })
     }
   }
