@@ -1,4 +1,4 @@
-export const DAVE_AVATAR_URL = 'https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/sign/employee-avatars/Support.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mZjExMDUyZC01Yzc2LTQ3MzgtYmYxMC1hNzFlNmQxNmRlYzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJlbXBsb3llZS1hdmF0YXJzL1N1cHBvcnQucG5nIiwiaWF0IjoxNzc3MzgyMzMxLCJleHAiOjE4MDg5MTgzMzF9.AnyKUW6YcjK-rRclTti5qn-aZxxBWMJ9DN5aigG5A8g'
+export const DAVE_AVATAR_URL = '/support-avatar.png'
 
 export const DAVE_NAME = "Support"
 

@@ -99,6 +99,8 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     load()
   }
 
+  const MONTHS_NL = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec']
+
   function weekStartDate(w: number, y: number) {
     const jan4 = new Date(y, 0, 4)
     const dayOfWeek = jan4.getDay() || 7
@@ -107,10 +109,26 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     return weekStart
   }
 
+  /** Returns { date, month } for a given week + day index (0=Mon … 6=Sun). */
+  function dayInfo(w: number, y: number, dayIndex: number) {
+    const d = weekStartDate(w, y)
+    d.setDate(d.getDate() + dayIndex)
+    return { date: d.getDate(), month: MONTHS_NL[d.getMonth()] }
+  }
+
+  /** Returns the ISO week date range formatted as "28 apr – 4 mei 2026". */
+  function weekDateRange(w: number, y: number) {
+    const mon = weekStartDate(w, y)
+    const sun = new Date(mon)
+    sun.setDate(mon.getDate() + 6)
+    const fmt = (d: Date) => `${d.getDate()} ${MONTHS_NL[d.getMonth()]}`
+    const yearSuffix = sun.getFullYear() !== y ? ` ${sun.getFullYear()}` : ''
+    return `${fmt(mon)} – ${fmt(sun)}${yearSuffix}`
+  }
+
+  /** @deprecated use dayInfo() */
   function dayDate(w: number, y: number, dayIndex: number) {
-    const start = weekStartDate(w, y)
-    start.setDate(start.getDate() + dayIndex)
-    return start.getDate()
+    return dayInfo(w, y, dayIndex).date
   }
 
   // ── Copy week handler ──
@@ -170,7 +188,10 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           <button className="btn btn-outline btn-sm btn-icon" onClick={prevWeek} title="Vorige week" aria-label="Vorige week">
             <PrevIcon />
           </button>
-          <span className="week-label">Week {week} · {year}</span>
+          <div className="week-label-wrap">
+            <span className="week-label">Week {week} · {year}</span>
+            <span className="week-date-range">{weekDateRange(week, year)}</span>
+          </div>
           <button className="btn btn-outline btn-sm btn-icon" onClick={nextWeek} title="Volgende week" aria-label="Volgende week">
             <NextIcon />
           </button>
@@ -273,14 +294,18 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
             <thead>
               <tr>
                 <th scope="col" className="col-emp">Medewerker</th>
-                {DAYS.map((day, i) => (
-                  <th key={day} scope="col" className="col-day">
-                    <div className="day-head">
-                      <span className="day-short">{DAY_SHORT[day]}</span>
-                      <span className="day-num">{dayDate(week, year, i)}</span>
-                    </div>
-                  </th>
-                ))}
+                {DAYS.map((day, i) => {
+                  const { date, month } = dayInfo(week, year, i)
+                  return (
+                    <th key={day} scope="col" className="col-day">
+                      <div className="day-head">
+                        <span className="day-short">{DAY_SHORT[day]}</span>
+                        <span className="day-num">{date}</span>
+                        <span className="day-month">{month}</span>
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
@@ -514,8 +539,16 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         .week-nav {
           display: flex; align-items: center; gap: var(--s2);
         }
+        .week-label-wrap {
+          display: flex; flex-direction: column; align-items: center; gap: 1px;
+          min-width: 155px; text-align: center;
+        }
         .week-label {
-          font-size: .9375rem; font-weight: 600; min-width: 130px; text-align: center;
+          font-size: .9375rem; font-weight: 700; line-height: 1.2;
+        }
+        .week-date-range {
+          font-size: .6875rem; color: var(--text-muted); font-weight: 400; line-height: 1;
+          white-space: nowrap;
         }
         .loc-tabs {
           display: flex; gap: 4px;
@@ -547,9 +580,10 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         }
         .col-emp { width: 120px; min-width: 90px; }
         .col-day { width: calc((100% - 120px) / 7); min-width: 72px; }
-        .day-head { display: flex; align-items: baseline; gap: 4px; }
+        .day-head { display: flex; align-items: baseline; gap: 3px; flex-wrap: wrap; }
         .day-short { font-weight: 700; }
         .day-num { font-size: .75rem; color: var(--text-muted); }
+        .day-month { font-size: .6875rem; color: var(--text-muted); opacity: .75; font-style: italic; }
 
         .emp-row:not(:last-child) td { border-bottom: 1px solid var(--border); }
         .emp-row:hover td { background: rgba(200,136,42,.04); }

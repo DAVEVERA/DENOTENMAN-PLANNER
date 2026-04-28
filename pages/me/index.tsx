@@ -17,12 +17,24 @@ interface Props {
 
 type ViewMode = 'week' | 'month' | '3months'
 
+const MONTHS_NL = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec']
+
 function weekStartDate(w: number, y: number) {
   const jan4 = new Date(y, 0, 4)
   const dow = jan4.getDay() || 7
   const start = new Date(jan4)
   start.setDate(jan4.getDate() - dow + 1 + (w - 1) * 7)
   return start
+}
+
+/** Returns the ISO week date range e.g. "28 apr – 4 mei 2026" */
+function weekDateRange(w: number, y: number) {
+  const mon = weekStartDate(w, y)
+  const sun = new Date(mon)
+  sun.setDate(mon.getDate() + 6)
+  const fmt = (d: Date) => `${d.getDate()} ${MONTHS_NL[d.getMonth()]}`
+  const yearSuffix = sun.getFullYear() !== y ? ` ${sun.getFullYear()}` : ''
+  return `${fmt(mon)} – ${fmt(sun)}${yearSuffix}`
 }
 
 function weeksInRange(startWeek: number, startYear: number, numWeeks: number): { week: number; year: number }[] {
@@ -179,11 +191,16 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
               <button className="btn btn-outline btn-sm btn-icon" onClick={prevPeriod} title="Vorige periode" aria-label="Vorige periode">
                 <PrevIcon />
               </button>
-              <span className="period-label">
-                {view === 'week'
-                  ? `Week ${week} · ${year}`
-                  : `Wk ${week}–${weeks[weeks.length-1].week} · ${year}`}
-              </span>
+              <div className="period-label-wrap">
+                <span className="period-label">
+                  {view === 'week'
+                    ? `Week ${week} · ${year}`
+                    : `Wk ${week}–${weeks[weeks.length-1].week} · ${year}`}
+                </span>
+                {view === 'week' && (
+                  <span className="period-date-range">{weekDateRange(week, year)}</span>
+                )}
+              </div>
               <button className="btn btn-outline btn-sm btn-icon" onClick={nextPeriod} title="Volgende periode" aria-label="Volgende periode">
                 <NextIcon />
               </button>
@@ -217,11 +234,13 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                   )}
                   <div className="days-grid">
                     {wk.days.map(({ day, shifts: ds }, dayIdx) => {
-                      const dateNum = (() => {
+                      const dateD = (() => {
                         const start = weekStartDate(wk.week, wk.year)
                         start.setDate(start.getDate() + dayIdx)
-                        return start.getDate()
+                        return start
                       })()
+                      const dateNum = dateD.getDate()
+                      const dateMonth = MONTHS_NL[dateD.getMonth()]
                       const isToday = (() => {
                         const now = new Date()
                         const start = weekStartDate(wk.week, wk.year)
@@ -230,10 +249,11 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                       })()
                       return (
                         <div key={day} className={`day-slot${isToday ? ' today' : ''}${ds.length === 0 ? ' empty' : ''}`}
-                          aria-label={`${day} ${dateNum}`}>
+                          aria-label={`${day} ${dateNum} ${dateMonth}`}>
                           <div className="day-slot-head">
                             <span className="slot-day">{DAY_SHORT[day]}</span>
                             <span className={`slot-num${isToday ? ' today-num' : ''}`}>{dateNum}</span>
+                            <span className="slot-month">{dateMonth}</span>
                           </div>
                           {ds.length > 0 ? ds.map(s => {
                             const isOffered = s.is_open === 1 && s.employee_id === user.employee_id
@@ -299,7 +319,15 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .view-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 
         .period-nav { display: flex; align-items: center; gap: var(--s2); }
-        .period-label { font-size: .9375rem; font-weight: 600; min-width: 150px; text-align: center; }
+        .period-label-wrap {
+          display: flex; flex-direction: column; align-items: center; gap: 1px;
+          min-width: 165px; text-align: center;
+        }
+        .period-label { font-size: .9375rem; font-weight: 600; line-height: 1.2; }
+        .period-date-range {
+          font-size: .6875rem; color: var(--text-muted); font-weight: 400; line-height: 1;
+          white-space: nowrap;
+        }
 
         .me-stats {
           display: flex; gap: var(--s5); margin-bottom: var(--s5);
@@ -328,10 +356,11 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .day-slot.today { border-color: var(--brand); }
         .day-slot.empty { opacity: .6; }
 
-        .day-slot-head { display: flex; align-items: baseline; gap: 4px; margin-bottom: var(--s2); }
+        .day-slot-head { display: flex; align-items: baseline; gap: 3px; flex-wrap: wrap; margin-bottom: var(--s2); }
         .slot-day { font-size: .8125rem; font-weight: 700; color: var(--text-sub); }
         .slot-num { font-size: .875rem; color: var(--text-muted); }
         .slot-num.today-num { color: var(--brand); font-weight: 700; }
+        .slot-month { font-size: .6875rem; color: var(--text-muted); opacity: .7; font-style: italic; }
 
         .slot-shift {
           padding: 4px 6px; border-radius: 5px; margin-bottom: 3px;

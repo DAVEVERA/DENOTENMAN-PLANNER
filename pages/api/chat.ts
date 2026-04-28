@@ -18,7 +18,15 @@ import { getToolsForRole, executeTool } from '@/lib/dave-tools'
 import { getISOWeek } from '@/lib/scheduler'
 import { DAVE_MAX_CONTEXT_MESSAGES } from '@/lib/dave-config'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// ── Lazy Anthropic client ────────────────────────────────────────────────────
+// Instantiated on first request, after the ANTHROPIC_API_KEY guard has run.
+let _anthropic: Anthropic | null = null
+function getAnthropic(): Anthropic {
+  if (!_anthropic) {
+    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  }
+  return _anthropic
+}
 
 // ── Per-user rate limiting ────────────────────────────────────────────────────
 // Allows up to MAX_MSG messages per WINDOW_MS per user_id (in-memory).
@@ -99,6 +107,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const session = await getSession(req, res)
   if (!session.user) return res.status(401).json({ success: false, message: 'Niet ingelogd' })
 
+  // Guard: ANTHROPIC_API_KEY must be set
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('[chat] ANTHROPIC_API_KEY is not set')
+    return res.status(500).json({ success: false, message: 'Support is niet geconfigureerd (API-sleutel ontbreekt).' })
+  }
+
   const { user } = session
   const sessionId = user.user_id
 
@@ -170,7 +184,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       while (iterations < MAX_ITERATIONS) {
         iterations++
 
-        const response = await anthropic.messages.create({
+        const response = await getAnthropic().messages.create({
           model:      'claude-3-5-sonnet-20241022',
           max_tokens: 1024,
           system:     systemPrompt,
@@ -238,11 +252,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
 
     } catch (err: unknown) {
-      console.error('[chat] Anthropic error:', err)
-      return res.status(500).json({
-        success: false,
-        message: 'Da ging ff mis bij Support. Probeer nog eens.',
-      })
+      const errMsg = err instanceof Error ? err.message : String(err)
+      console.error('[chat] error:', errMsg)
+      // In development expose the real error; in production return a friendly message
+      const clientMsg = process.env.NODE_ENV === 'development'
+        ? `Support-fout: ${errMsg}`
+        : 'Da ging ff mis bij Support. Probeer nog eens.'
+      return res.status(500).json({ success: false, message: clientMsg })
     }
   }
 
