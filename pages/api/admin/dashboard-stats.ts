@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from '@/lib/auth'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { supabase, T } from '@/lib/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return res.status(405).json({ success: false, error: 'Methode niet toegestaan' })
@@ -12,23 +12,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const [empRes, openRes, leaveRes, expRes] = await Promise.all([
-      supabaseAdmin
-        .from('planner20_employees')
+      supabase
+        .from(T('employees'))
         .select('id', { count: 'exact', head: true })
         .eq('is_active', 1),
 
-      supabaseAdmin
-        .from('planner20_shifts')
+      supabase
+        .from(T('shifts'))
         .select('id', { count: 'exact', head: true })
         .eq('is_open', 1),
 
-      supabaseAdmin
-        .from('planner20_leave_requests')
+      supabase
+        .from(T('leave_requests'))
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending'),
 
-      supabaseAdmin
-        .from('planner20_expenses')
+      supabase
+        .from(T('expenses'))
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending'),
     ])
