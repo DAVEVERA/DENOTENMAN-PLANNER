@@ -69,22 +69,6 @@ export async function getShift(id: number): Promise<Shift | null> {
   return data ?? null
 }
 
-export async function getOpenShifts(location?: Location): Promise<Shift[]> {
-  let q = supabase.from(T('shifts')).select('*').eq('is_open', 1)
-  if (location && location !== 'both') q = q.eq('location', location)
-  const { data, error } = await q.order('week_number').order('day_of_week')
-  if (error) throw error
-  return sortByDay(data ?? [])
-}
-
-/** Geeft het ISO weeknummer voor een Date object */
-export function getISOWeek(date: Date): number {
-  const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = tmp.getUTCDay() || 7
-  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1))
-  return Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
-}
 
 
 async function hasConflict(data: Partial<Shift>, excludeId?: number): Promise<boolean> {

@@ -138,7 +138,7 @@ export default function ChatLogsPage({ user }: Props) {
                   key={s.session_id}
                   className={`session-item${activeSession === s.session_id ? ' active' : ''}`}
                   role="option"
-                  aria-selected={activeSession === s.session_id}
+                  aria-selected={activeSession === s.session_id ? 'true' : 'false'}
                   onClick={() => loadMessages(s.session_id)}
                   id={`session-${s.session_id}`}
                 >
@@ -173,7 +173,7 @@ export default function ChatLogsPage({ user }: Props) {
             <div className="chat-empty-state">
               <div className="empty-icon">
                 {DAVE_AVATAR_URL
-                  ? <img src={DAVE_AVATAR_URL} alt={DAVE_NAME} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--brand)' }} />
+                  ? <img src={DAVE_AVATAR_URL} alt={DAVE_NAME} className="empty-dave-img" />
                   : '🎩'
                 }
               </div>
@@ -217,7 +217,7 @@ export default function ChatLogsPage({ user }: Props) {
                           {msg.role === 'assistant' ? (
                             <span className="log-sender dave">
                               {DAVE_AVATAR_URL
-                                ? <img src={DAVE_AVATAR_URL} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle', marginRight: 4 }} />
+                                ? <img src={DAVE_AVATAR_URL} alt="" className="log-dave-img" />
                                 : '🎩 '
                               }
                               {DAVE_NAME}
@@ -232,7 +232,7 @@ export default function ChatLogsPage({ user }: Props) {
                             ? msg.content.split('\n').map((line, i, arr) => (
                               <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
                             ))
-                            : <em style={{ color: 'var(--text-muted)', fontSize: '.8125rem' }}>[Actie uitgevoerd]</em>
+                            : <em className="tool-action-label">[Actie uitgevoerd]</em>
                           }
                         </div>
                       </div>
@@ -553,6 +553,27 @@ export default function ChatLogsPage({ user }: Props) {
           font-size: .75rem;
           color: var(--brand-dark);
           font-weight: 500;
+        }
+
+        /* Inline-style vervangingen */
+        .empty-dave-img {
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 3px solid var(--brand);
+        }
+        .log-dave-img {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          object-fit: cover;
+          vertical-align: middle;
+          margin-right: 4px;
+        }
+        .tool-action-label {
+          color: var(--text-muted);
+          font-size: .8125rem;
         }
 
         @media (max-width: 768px) {

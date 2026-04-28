@@ -20,7 +20,7 @@ const NAV = [
   { href: '/admin/hours/export',  icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
   { href: '/admin/settings',      icon: <SettingsIcon size={20} />,  label: 'Instellingen',   cap: 'manage_settings' as const },
   { href: '/admin/backup',        icon: <ExportIcon size={20} />,    label: 'Backup',         cap: 'manage_settings' as const },
-  { href: '/admin/gesprekken',    icon: <span style={{fontSize:'1.1rem',lineHeight:1}}>🎩</span>, label: "D'n Dave",   cap: 'manage_settings' as const },
+  { href: '/admin/gesprekken',    icon: <span className="sb-dave-icon">🎩</span>, label: "D'n Dave",   cap: 'manage_settings' as const },
 ]
 
 function getInitials(name: string) {
@@ -266,6 +266,10 @@ export default function AdminLayout({ user, children, title }: Props) {
           background: var(--brand);
           flex-shrink: 0;
           opacity: .9;
+        }
+        .sb-dave-icon {
+          font-size: 1.1rem;
+          line-height: 1;
         }
 
         /* User area */
