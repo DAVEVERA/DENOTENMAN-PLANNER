@@ -18,6 +18,7 @@ import {
   Contact,
   FileText,
   Mail,
+  LayoutDashboard,
 } from 'lucide-react'
 
 export interface IconProps {
@@ -28,6 +29,18 @@ export interface IconProps {
 
 // Standaard stroke width voor alle icons
 const SW = 2
+
+/** Dashboard overzicht */
+export function DashboardIcon({ size = 20, className }: IconProps) {
+  return (
+    <LayoutDashboard
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
 
 /** Logo / merkicoon — pinda/bean silhouet */
 export function LogoIcon({ size = 24, className }: IconProps) {

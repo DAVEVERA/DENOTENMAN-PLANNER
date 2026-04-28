@@ -23,7 +23,6 @@ function formatTime(t: string | null) {
   return t.slice(0, 5)
 }
 
-interface InsightCard { id: string; icon: string; title: string; message: string; severity: string }
 
 export default function AdminPlanning({ user, initialWeek, initialYear }: Props) {
   const [week, setWeek]         = useState(initialWeek)
@@ -48,11 +47,6 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   const [fillBusy, setFillBusy]   = useState(false)
   const [fillMsg, setFillMsg]     = useState('')
 
-  // ── Insights state ──
-  const [insights, setInsights]     = useState<InsightCard[]>([])
-  const [insightsOpen, setInsightsOpen] = useState(true)
-  const [insightsLoaded, setInsightsLoaded] = useState(false)
-
   const load = useCallback(async () => {
     setLoading(true)
     const [eRes, sRes] = await Promise.all([
@@ -66,15 +60,6 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   }, [week, year, location])
 
   useEffect(() => { load() }, [load])
-
-  // Load insights async after main data
-  useEffect(() => {
-    setInsightsLoaded(false)
-    fetch(`/api/admin/insights?week=${week}&year=${year}&location=${location}`)
-      .then(r => r.json())
-      .then(d => { if (d.success) setInsights(d.data); setInsightsLoaded(true) })
-      .catch(() => setInsightsLoaded(true))
-  }, [week, year, location])
 
   function prevWeek() {
     if (week === 1) { setWeek(52); setYear(y => y - 1) }
@@ -226,27 +211,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         <button className="btn btn-outline btn-sm" onClick={openFillModal} title="Automatisch X weken vooruit plannen">
           🔁 Auto-fill
         </button>
-        {insightsLoaded && insights.length > 0 && (
-          <button className="btn btn-outline btn-sm" onClick={() => setInsightsOpen(!insightsOpen)}>
-            {insightsOpen ? '▼' : '▶'} Inzichten ({insights.length})
-          </button>
-        )}
       </div>
-
-      {/* ── Insights Panel ── */}
-      {insightsOpen && insightsLoaded && insights.length > 0 && (
-        <div className="insights-panel">
-          {insights.map(card => (
-            <div key={card.id} className={`insight-card severity-${card.severity}`}>
-              <span className="insight-icon">{card.icon}</span>
-              <div className="insight-body">
-                <span className="insight-title">{card.title}</span>
-                <span className="insight-msg">{card.message}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* ── Copy Week Modal ── */}
       {showCopy && (
@@ -488,27 +453,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           flex-wrap: wrap;
         }
 
-        /* ── Insights Panel ── */
-        .insights-panel {
-          display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: var(--s2); margin-bottom: var(--s4);
-        }
-        .insight-card {
-          display: flex; align-items: flex-start; gap: var(--s2);
-          padding: var(--s3); border-radius: var(--radius); border: 1px solid var(--border);
-          background: var(--surface); transition: transform .15s;
-        }
-        .insight-card:hover { transform: translateY(-1px); }
-        .severity-success { border-left: 3px solid #2E7D32; }
-        .severity-warning { border-left: 3px solid #E65100; }
-        .severity-danger  { border-left: 3px solid #dc3545; }
-        .severity-info    { border-left: 3px solid var(--brand); }
-        .insight-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
-        .insight-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .insight-title { font-size: .8125rem; font-weight: 700; }
-        .insight-msg { font-size: .75rem; color: var(--text-sub); line-height: 1.4; }
 
-        /* ── Modal ── */
         .modal-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 999;
           display: flex; align-items: center; justify-content: center; padding: var(--s4);

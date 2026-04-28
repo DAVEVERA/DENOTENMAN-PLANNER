@@ -6,21 +6,23 @@ import { can } from '@/lib/capabilities'
 import {
   ScheduleIcon, EmployeesIcon, LeaveIcon,
   HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon, MyScheduleIcon, LeaveIcon as OpenIcon,
+  DashboardIcon,
 } from '@/components/ui/Icons'
 
 interface Props { user: SessionUser; children: React.ReactNode; title?: string }
 
 const NAV = [
-  { href: '/admin',               icon: <ScheduleIcon size={20} />,  label: 'Rooster',        cap: 'read' as const },
-  { href: '/admin/employees',     icon: <EmployeesIcon size={20} />, label: 'Medewerkers',    cap: 'manage_employees' as const },
-  { href: '/admin/open-shifts',   icon: <HoursIcon size={20} />,    label: 'Open diensten',  cap: 'manage_shifts' as const },
-  { href: '/admin/leave',         icon: <LeaveIcon size={20} />,     label: 'Verlof',         cap: 'approve_leave' as const },
-  { href: '/admin/expenses',      icon: <ExportIcon size={20} />,    label: 'Declaraties',    cap: 'manage_hours' as const },
-  { href: '/admin/hours',         icon: <HoursIcon size={20} />,     label: 'Uren',           cap: 'manage_hours' as const },
-  { href: '/admin/hours/export',  icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
-  { href: '/admin/settings',      icon: <SettingsIcon size={20} />,  label: 'Instellingen',   cap: 'manage_settings' as const },
-  { href: '/admin/backup',        icon: <ExportIcon size={20} />,    label: 'Backup',         cap: 'manage_settings' as const },
-  { href: '/admin/gesprekken',    icon: <span className="sb-dave-icon">🎩</span>, label: "Support",   cap: 'manage_settings' as const },
+  { href: '/admin/dashboard',   icon: <DashboardIcon size={20} />,  label: 'Dashboard',      cap: 'read' as const },
+  { href: '/admin',             icon: <ScheduleIcon size={20} />,   label: 'Rooster',        cap: 'read' as const },
+  { href: '/admin/employees',   icon: <EmployeesIcon size={20} />,  label: 'Medewerkers',    cap: 'manage_employees' as const },
+  { href: '/admin/open-shifts', icon: <HoursIcon size={20} />,      label: 'Open diensten',  cap: 'manage_shifts' as const },
+  { href: '/admin/leave',       icon: <LeaveIcon size={20} />,      label: 'Verlof',         cap: 'approve_leave' as const },
+  { href: '/admin/expenses',    icon: <ExportIcon size={20} />,     label: 'Declaraties',    cap: 'manage_hours' as const },
+  { href: '/admin/hours',       icon: <HoursIcon size={20} />,      label: 'Uren',           cap: 'manage_hours' as const },
+  { href: '/admin/hours/export',icon: <ExportIcon size={20} />,     label: 'Export',         cap: 'export_data' as const },
+  { href: '/admin/settings',    icon: <SettingsIcon size={20} />,   label: 'Instellingen',   cap: 'manage_settings' as const },
+  { href: '/admin/backup',      icon: <ExportIcon size={20} />,     label: 'Backup',         cap: 'manage_settings' as const },
+  { href: '/admin/gesprekken',  icon: <span className="sb-dave-icon">🎩</span>, label: "Support", cap: 'manage_settings' as const },
 ]
 
 function getInitials(name: string) {
@@ -64,8 +66,10 @@ export default function AdminLayout({ user, children, title }: Props) {
             <span className="sb-section-label">Menu</span>
             <nav className="sb-nav" aria-label="Beheer">
               {links.map(l => {
-                const isActive = router.pathname === l.href ||
-                  (l.href !== '/admin' && router.pathname.startsWith(l.href))
+                // /admin must be exact-match so it doesn't activate on /admin/dashboard etc.
+                const isActive = l.href === '/admin'
+                  ? router.pathname === '/admin'
+                  : router.pathname === l.href || router.pathname.startsWith(l.href + '/')
                 return (
                   <Link
                     key={l.href}
