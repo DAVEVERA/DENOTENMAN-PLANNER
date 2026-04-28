@@ -11,15 +11,16 @@ import {
 interface Props { user: SessionUser; children: React.ReactNode; title?: string }
 
 const NAV = [
-  { href: '/admin',              icon: <ScheduleIcon size={20} />,  label: 'Rooster',        cap: 'read' as const },
-  { href: '/admin/employees',    icon: <EmployeesIcon size={20} />, label: 'Medewerkers',    cap: 'manage_employees' as const },
-  { href: '/admin/open-shifts',  icon: <HoursIcon size={20} />,    label: 'Open diensten',  cap: 'manage_shifts' as const },
-  { href: '/admin/leave',        icon: <LeaveIcon size={20} />,     label: 'Verlof',         cap: 'approve_leave' as const },
-  { href: '/admin/expenses',     icon: <ExportIcon size={20} />,    label: 'Declaraties',    cap: 'manage_hours' as const },
-  { href: '/admin/hours',        icon: <HoursIcon size={20} />,     label: 'Uren',           cap: 'manage_hours' as const },
-  { href: '/admin/hours/export', icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
-  { href: '/admin/settings',     icon: <SettingsIcon size={20} />,  label: 'Instellingen',  cap: 'manage_settings' as const },
-  { href: '/admin/backup',       icon: <ExportIcon size={20} />,    label: 'Backup',         cap: 'manage_settings' as const },
+  { href: '/admin',               icon: <ScheduleIcon size={20} />,  label: 'Rooster',        cap: 'read' as const },
+  { href: '/admin/employees',     icon: <EmployeesIcon size={20} />, label: 'Medewerkers',    cap: 'manage_employees' as const },
+  { href: '/admin/open-shifts',   icon: <HoursIcon size={20} />,    label: 'Open diensten',  cap: 'manage_shifts' as const },
+  { href: '/admin/leave',         icon: <LeaveIcon size={20} />,     label: 'Verlof',         cap: 'approve_leave' as const },
+  { href: '/admin/expenses',      icon: <ExportIcon size={20} />,    label: 'Declaraties',    cap: 'manage_hours' as const },
+  { href: '/admin/hours',         icon: <HoursIcon size={20} />,     label: 'Uren',           cap: 'manage_hours' as const },
+  { href: '/admin/hours/export',  icon: <ExportIcon size={20} />,    label: 'Export',         cap: 'export_data' as const },
+  { href: '/admin/settings',      icon: <SettingsIcon size={20} />,  label: 'Instellingen',   cap: 'manage_settings' as const },
+  { href: '/admin/backup',        icon: <ExportIcon size={20} />,    label: 'Backup',         cap: 'manage_settings' as const },
+  { href: '/admin/gesprekken',    icon: <span style={{fontSize:'1.1rem',lineHeight:1}}>🎩</span>, label: "D'n Dave",   cap: 'manage_settings' as const },
 ]
 
 function getInitials(name: string) {
