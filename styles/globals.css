@@ -589,8 +589,8 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
   height: 520px;
   max-height: calc(100vh - 120px);
   background: rgba(255,252,248,.92);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(200,136,42,.18);
   border-radius: var(--radius-xl);
   box-shadow: 0 16px 48px rgba(26,20,18,.18), 0 2px 8px rgba(200,136,42,.12);
@@ -929,4 +929,29 @@ select.form-control{appearance:none;padding-right:var(--s8);background-image:url
     transform-origin: bottom center;
   }
   .dave-fab, .dave-fab-pulse { right: 16px; bottom: 16px; }
+}
+
+/* DaveChat avatar and container classes */
+.dave-fab-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.dave-welcome-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--brand);
+}
+.dave-msg-content {
+  flex: 1;
+  min-width: 0;
+}
+.dave-tool-cards {
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }

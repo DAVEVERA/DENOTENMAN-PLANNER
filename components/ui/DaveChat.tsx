@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /**
  * components/ui/DaveChat.tsx
  * ─────────────────────────────────────────────────────────────────────────────
@@ -100,7 +101,9 @@ export default function DaveChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
-  useEffect(scrollToBottom, [messages, loading])
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, loading, scrollToBottom])
 
   // Laad chatgeschiedenis (eenmalig bij openen)
   useEffect(() => {
@@ -236,7 +239,7 @@ export default function DaveChat() {
         title={DAVE_NAME}
         id="dave-fab-btn"
       >
-        {open ? '✕' : (DAVE_AVATAR_URL ? <img src={DAVE_AVATAR_URL} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} /> : '🎩')}
+        {open ? '✕' : (DAVE_AVATAR_URL ? <img src={DAVE_AVATAR_URL} alt="" className="dave-fab-avatar" /> : '🎩')}
       </button>
 
       {/* Chat paneel */}
@@ -270,7 +273,7 @@ export default function DaveChat() {
             {messages.length === 0 && !loading && (
               <div className="dave-welcome">
                 <div className="dave-welcome-icon">
-                  {DAVE_AVATAR_URL ? <img src={DAVE_AVATAR_URL} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--brand)' }} /> : '🎩'}
+                  {DAVE_AVATAR_URL ? <img src={DAVE_AVATAR_URL} alt="" className="dave-welcome-avatar" /> : '🎩'}
                 </div>
                 <div className="dave-welcome-title">Hé! Ik ben {DAVE_NAME}</div>
                 <div className="dave-welcome-sub">
@@ -308,10 +311,10 @@ export default function DaveChat() {
               return (
                 <div key={msg.id} className="dave-msg dave">
                   <DaveAvatar />
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="dave-msg-content">
                     {/* Tool-resultaat kaartjes (tonen vóór het antwoord) */}
                     {msg.tool_calls && msg.tool_calls.length > 0 && (
-                      <div style={{ marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div className="dave-tool-cards">
                         {msg.tool_calls.map((tc, i) => (
                           <div key={i} className="dave-tool-card">
                             <div className="dave-tool-name">{TOOL_LABELS[tc.name] ?? tc.name}</div>

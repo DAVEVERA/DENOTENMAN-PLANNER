@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { getSession } from '@/lib/auth'
@@ -134,11 +135,12 @@ export default function ChatLogsPage({ user }: Props) {
           ) : (
             <ul className="session-list" role="listbox" aria-label="Gesprekken">
               {filteredSessions.map(s => (
+                // eslint-disable-next-line jsx-a11y/aria-proptypes
                 <li
                   key={s.session_id}
                   className={`session-item${activeSession === s.session_id ? ' active' : ''}`}
                   role="option"
-                  aria-selected={activeSession === s.session_id ? 'true' : 'false'}
+                  aria-selected={activeSession === s.session_id}
                   onClick={() => loadMessages(s.session_id)}
                   id={`session-${s.session_id}`}
                 >
