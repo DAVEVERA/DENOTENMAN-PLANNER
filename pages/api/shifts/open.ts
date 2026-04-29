@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
-import { getOpenShifts, saveShift, updateOpenShift, withdrawOpenShift } from '@/lib/scheduler'
+import { getOpenShifts, saveShift, updateOpenShift, withdrawOpenShift, getEmployees } from '@/lib/scheduler'
 import { sendPushToAll } from '@/lib/push'
+import { sendOpenShiftAlertEmail } from '@/lib/email'
 import type { Location } from '@/types'
 
 const DAY_NL: Record<string, string> = {
@@ -38,12 +39,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const body = req.body
         const day  = DAY_NL[body.day_of_week] ?? body.day_of_week
+
+        const employees = await getEmployees(true)
+        const emails = employees.map(e => e.email).filter(Boolean) as string[]
+
+        if (emails.length > 0) {
+          await sendOpenShiftAlertEmail({
+            toBcc: emails,
+            subject: '📢 Nieuwe open dienst beschikbaar!',
+            body: `Er is een nieuwe open dienst beschikbaar gezet door de beheerder:\n\nType: ${body.shift_type}-dienst\nDag: ${day} (Week ${body.week_number})\n\nLog in via de app om deze dienst te bekijken en eventueel over te nemen.`,
+          })
+        }
+
         await sendPushToAll({
           title: '📢 Nieuwe open dienst!',
           body:  `Een ${body.shift_type}-dienst op ${day} (week ${body.week_number}) is beschikbaar. Klik om te claimen!`,
           url:   '/me/open-shifts',
         })
-      } catch { /* push is optional */ }
+      } catch (err) {
+        console.error('Error sending open shift alert:', err)
+      }
 
       return res.status(201).json({ success: true, data: result })
     }

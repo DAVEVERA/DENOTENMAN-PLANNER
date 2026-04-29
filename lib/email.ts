@@ -185,3 +185,60 @@ export async function sendExportEmail(opts: {
     ],
   })
 }
+
+export async function sendOpenShiftAlertEmail(opts: {
+  toBcc: string[]
+  subject: string
+  body: string
+}): Promise<void> {
+  assertSmtpConfigured()
+  const transport = getTransport()
+  await transport.sendMail({
+    from: process.env.SMTP_FROM ?? 'Planner <planner@denotenkar.nl>',
+    bcc: opts.toBcc.join(', '),
+    subject: opts.subject,
+    text: opts.body,
+    html: `
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f1ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ee;padding:40px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <!-- Header -->
+        <tr><td style="background:#2C6E49;padding:28px 32px;text-align:center">
+          <p style="margin:0;font-size:22px;font-weight:700;color:#fff;letter-spacing:-.02em">
+            De Notenman – Planner
+          </p>
+        </td></tr>
+        <!-- Body -->
+        <tr><td style="padding:32px">
+          <p style="margin:0 0 16px;font-size:16px;color:#4a3728;line-height:1.6">
+            ${opts.body.replace(/\n/g, '<br/>')}
+          </p>
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:24px 0">
+            <tr><td align="center">
+              <table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate">
+                <tr>
+                  <td style="background:#2C6E49;border-radius:8px;text-align:center">
+                    <a href="${APP_URL}/me/open-shifts"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       style="display:block;background:#2C6E49;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;border:1px solid #2C6E49;-webkit-text-size-adjust:none;mso-hide:all"
+                    >Bekijk Open Diensten &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `
+  })
+}

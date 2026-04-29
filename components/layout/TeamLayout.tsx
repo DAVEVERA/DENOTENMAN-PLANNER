@@ -53,52 +53,60 @@ export default function TeamLayout({ user, children, location }: Props) {
           </div>
 
           {/* Desktop nav */}
-          {location && (
-            <nav className="team-nav" aria-label="Hoofdmenu">
-              <Link href={`/team/${location}`}
-                className={`tn-link${onTeam ? ' active' : ''}`}
-                aria-current={onTeam ? 'page' : undefined}>
+          <nav className="team-nav" aria-label="Hoofdmenu">
+            {(user.location === 'markt' || user.location === 'both' || isAdmin) && (
+              <Link href="/team/markt"
+                className={`tn-link${onTeam && location === 'markt' ? ' active' : ''}`}
+                aria-current={onTeam && location === 'markt' ? 'page' : undefined}>
                 <ScheduleIcon size={20} />
-                Rooster
+                {user.location === 'both' || isAdmin ? 'Rooster Markt' : 'Rooster'}
               </Link>
-              <Link href="/me"
-                className={`tn-link${onMe ? ' active' : ''}`}
-                aria-current={onMe ? 'page' : undefined}>
-                <MyScheduleIcon size={20} />
-                Mijn rooster
-              </Link>
-              <Link href="/me/leave"
-                className={`tn-link${onLeave ? ' active' : ''}`}
-                aria-current={onLeave ? 'page' : undefined}>
-                <LeaveIcon size={20} />
-                Verlof
-              </Link>
-              <Link href="/me/open-shifts"
-                className={`tn-link${onOpenShifts ? ' active' : ''}`}
-                aria-current={onOpenShifts ? 'page' : undefined}>
+            )}
+            {(user.location === 'nootmagazijn' || user.location === 'both' || isAdmin) && (
+              <Link href="/team/nootmagazijn"
+                className={`tn-link${onTeam && location === 'nootmagazijn' ? ' active' : ''}`}
+                aria-current={onTeam && location === 'nootmagazijn' ? 'page' : undefined}>
                 <ScheduleIcon size={20} />
-                Open diensten
+                {user.location === 'both' || isAdmin ? 'Rooster Noot' : 'Rooster'}
               </Link>
-              <Link href="/me/profile"
-                className={`tn-link${onProfile ? ' active' : ''}`}
-                aria-current={onProfile ? 'page' : undefined}>
-                <ProfileIcon size={20} />
-                Mijn profiel
-              </Link>
-              <Link href="/me/documents"
-                className={`tn-link${onDocuments ? ' active' : ''}`}
-                aria-current={onDocuments ? 'page' : undefined}>
-                <DocumentIcon size={20} />
-                Documenten
-              </Link>
-              <Link href="/me/expenses"
-                className={`tn-link${onExpenses ? ' active' : ''}`}
-                aria-current={onExpenses ? 'page' : undefined}>
-                <DocumentIcon size={20} />
-                Declaraties
-              </Link>
-            </nav>
-          )}
+            )}
+            <Link href="/me"
+              className={`tn-link${onMe ? ' active' : ''}`}
+              aria-current={onMe ? 'page' : undefined}>
+              <MyScheduleIcon size={20} />
+              Mijn rooster
+            </Link>
+            <Link href="/me/leave"
+              className={`tn-link${onLeave ? ' active' : ''}`}
+              aria-current={onLeave ? 'page' : undefined}>
+              <LeaveIcon size={20} />
+              Verlof
+            </Link>
+            <Link href="/me/open-shifts"
+              className={`tn-link${onOpenShifts ? ' active' : ''}`}
+              aria-current={onOpenShifts ? 'page' : undefined}>
+              <ScheduleIcon size={20} />
+              Open diensten
+            </Link>
+            <Link href="/me/profile"
+              className={`tn-link${onProfile ? ' active' : ''}`}
+              aria-current={onProfile ? 'page' : undefined}>
+              <ProfileIcon size={20} />
+              Mijn profiel
+            </Link>
+            <Link href="/me/documents"
+              className={`tn-link${onDocuments ? ' active' : ''}`}
+              aria-current={onDocuments ? 'page' : undefined}>
+              <DocumentIcon size={20} />
+              Documenten
+            </Link>
+            <Link href="/me/expenses"
+              className={`tn-link${onExpenses ? ' active' : ''}`}
+              aria-current={onExpenses ? 'page' : undefined}>
+              <DocumentIcon size={20} />
+              Declaraties
+            </Link>
+          </nav>
 
           {/* Right: user + admin link */}
           <div className="team-header-right">
@@ -126,13 +134,22 @@ export default function TeamLayout({ user, children, location }: Props) {
 
       {/* ── Mobile bottom nav ───────────────────────────────────────── */}
       <nav className="team-bnav" aria-label="Mobiele navigatie">
-        {location && (
-          <Link href={`/team/${location}`}
-            className={`tbn-item${onTeam ? ' active' : ''}`}
-            aria-current={onTeam ? 'page' : undefined}>
-            {onTeam && <span className="tbn-bar" aria-hidden="true" />}
+        {(user.location === 'markt' || user.location === 'both' || isAdmin) && (
+          <Link href="/team/markt"
+            className={`tbn-item${onTeam && location === 'markt' ? ' active' : ''}`}
+            aria-current={onTeam && location === 'markt' ? 'page' : undefined}>
+            {onTeam && location === 'markt' && <span className="tbn-bar" aria-hidden="true" />}
             <span className="tbn-icon"><ScheduleIcon size={22} /></span>
-            <span className="tbn-label">Rooster</span>
+            <span className="tbn-label">{user.location === 'both' || isAdmin ? 'Rooster M' : 'Rooster'}</span>
+          </Link>
+        )}
+        {(user.location === 'nootmagazijn' || user.location === 'both' || isAdmin) && (
+          <Link href="/team/nootmagazijn"
+            className={`tbn-item${onTeam && location === 'nootmagazijn' ? ' active' : ''}`}
+            aria-current={onTeam && location === 'nootmagazijn' ? 'page' : undefined}>
+            {onTeam && location === 'nootmagazijn' && <span className="tbn-bar" aria-hidden="true" />}
+            <span className="tbn-icon"><ScheduleIcon size={22} /></span>
+            <span className="tbn-label">{user.location === 'both' || isAdmin ? 'Rooster N' : 'Rooster'}</span>
           </Link>
         )}
         <Link href="/me"
