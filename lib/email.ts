@@ -1,13 +1,19 @@
 import nodemailer from 'nodemailer'
 
 function getTransport() {
+  const port   = parseInt(process.env.SMTP_PORT ?? '587')
+  const secure = port === 465
   return nodemailer.createTransport({
     host:   process.env.SMTP_HOST,
-    port:   parseInt(process.env.SMTP_PORT ?? '587'),
-    secure: process.env.SMTP_PORT === '465',
+    port,
+    secure,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
+    },
+    tls: {
+      // Strato gebruikt een geldig certificaat; zet dit nooit op true in productie
+      rejectUnauthorized: true,
     },
   })
 }
@@ -26,7 +32,7 @@ function assertSmtpConfigured(): void {
   }
 }
 
-const FROM    = process.env.SMTP_FROM    ?? 'Planner De Notenman <planner@denotenkar.nl>'
+const FROM    = process.env.SMTP_FROM    ?? 'Planner De Notenman <planner@notenman.nl>'
 function resolveAppUrl(): string {
   if (process.env.APP_URL) return process.env.APP_URL.replace(/\/+$/, '')
   if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL.replace(/\/+$/, '')
