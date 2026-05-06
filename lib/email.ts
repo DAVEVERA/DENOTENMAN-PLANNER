@@ -258,7 +258,7 @@ export async function sendLeaveRequestAlertEmail(opts: {
 }): Promise<void> {
   assertSmtpConfigured()
   const transport = getTransport()
-  const toEmail = process.env.ADMIN_EMAIL ?? 'fedor@denotenkar.nl'
+  const toEmail = process.env.ADMIN_EMAIL ?? 'info@denotenman.com'
   
   await transport.sendMail({
     from: process.env.SMTP_FROM ?? 'Planner <planner@denotenkar.nl>',
