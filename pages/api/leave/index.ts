@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
 import { submitLeaveRequest, getLeaveRequests } from '@/lib/leave'
+import { sendLeaveRequestAlertEmail } from '@/lib/email'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
@@ -38,6 +39,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       leave_type, start_date, end_date,
       note: note || null,
     })
+
+    try {
+      await sendLeaveRequestAlertEmail({
+        employeeName: emp.name,
+        leaveType: leave_type,
+        startDate: start_date,
+        endDate: end_date,
+        note: note
+      })
+    } catch (e) {
+      console.error('Kon geen notificatie email sturen voor verlof', e)
+    }
+
     return res.status(201).json({ success: true, data: row })
   }
 
