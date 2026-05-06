@@ -1,33 +1,13 @@
-import NextAuth, { type NextAuthOptions } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
+/**
+ * pages/api/auth/[...nextauth].ts
+ * Google OAuth is verwijderd. Inloggen verloopt uitsluitend via
+ * gebruikersnaam + wachtwoord (POST /api/auth/login).
+ *
+ * Dit bestand blijft bestaan zodat eventuele externe verwijzingen
+ * naar /api/auth/* geen onverwachte server-errors geven.
+ */
+import type { NextApiRequest, NextApiResponse } from 'next'
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    GoogleProvider({
-      clientId:     process.env.GOOGLE_CLIENT_ID     ?? '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-    }),
-  ],
-  secret: process.env.NEXTAUTH_SECRET ?? process.env.SECRET_KEY,
-  pages: {
-    signIn:  '/login',
-    signOut: '/login',
-    error:   '/login',
-  },
-  callbacks: {
-    async signIn() {
-      // Sta elke Google-gebruiker toe; beperk eventueel op domein:
-      // return profile?.email?.endsWith('@denotenman.nl') ?? false
-      return true
-    },
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        // Voeg het Google user-id toe aan de sessie
-        ;(session.user as typeof session.user & { id: string }).id = token.sub
-      }
-      return session
-    },
-  },
+export default function handler(_req: NextApiRequest, res: NextApiResponse) {
+  res.status(404).json({ error: 'Google-authenticatie is uitgeschakeld.' })
 }
-
-export default NextAuth(authOptions)
