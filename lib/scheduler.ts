@@ -39,7 +39,7 @@ export async function getWeekShifts(
 ): Promise<Shift[]> {
   try {
     let q = supabase.from(T('shifts')).select('*').eq('week_number', week).eq('year', year)
-    if (location && location !== 'both') q = q.eq('location', location)
+    if (location && location !== 'both') q = q.or(`location.eq.${location},location.eq.both`)
     const { data, error } = await q
     if (error) throw error
     return sortByDay(data ?? [])
