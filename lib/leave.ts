@@ -53,6 +53,16 @@ export async function reviewLeaveRequest(
       if (DAYS.includes(dow as typeof DAYS[number])) {
         const week = getISOWeek(cursor)
         const year = cursor.getFullYear()
+
+        // Verwijder bestaande diensten van de medewerker op deze dag
+        await supabase
+          .from(T('shifts'))
+          .delete()
+          .eq('employee_id', row.employee_id)
+          .eq('year', year)
+          .eq('week_number', week)
+          .eq('day_of_week', dow)
+
         await saveShift({
           employee_id:   row.employee_id,
           employee_name: row.employee_name,
