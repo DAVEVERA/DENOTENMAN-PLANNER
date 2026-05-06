@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
 import { reviewLeaveRequest } from '@/lib/leave'
+import { sendLeaveReviewEmail } from '@/lib/email'
+import { supabase, T } from '@/lib/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
@@ -14,6 +16,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (decision !== 'approved' && decision !== 'rejected')
       return res.status(400).json({ success: false, message: 'Ongeldige beslissing' })
     const row = await reviewLeaveRequest(id, decision, session.user.user_id)
+
+    try {
+      const { data: emp } = await supabase.from(T('employees')).select('email').eq('id', row.employee_id).single()
+      if (emp?.email) {
+        await sendLeaveReviewEmail({
+          to: emp.email,
+          employeeName: row.employee_name,
+          leaveType: row.leave_type,
+          startDate: row.start_date,
+          endDate: row.end_date,
+          decision: decision as 'approved' | 'rejected'
+        })
+      }
+    } catch (e) {
+      console.error('Kon geen notificatie email sturen voor verlof review', e)
+    }
+
     return res.json({ success: true, data: row })
   }
 

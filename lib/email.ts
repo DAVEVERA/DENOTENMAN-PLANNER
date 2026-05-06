@@ -319,3 +319,79 @@ export async function sendLeaveRequestAlertEmail(opts: {
     `
   })
 }
+
+export async function sendLeaveReviewEmail(opts: {
+  to: string
+  employeeName: string
+  leaveType: string
+  startDate: string
+  endDate: string
+  decision: 'approved' | 'rejected'
+}): Promise<void> {
+  assertSmtpConfigured()
+  const transport = getTransport()
+  
+  const statusNL = opts.decision === 'approved' ? 'goedgekeurd' : 'afgekeurd'
+  const color = opts.decision === 'approved' ? '#2E7D32' : '#C62828'
+  
+  await transport.sendMail({
+    from: process.env.SMTP_FROM ?? 'Planner <planner@denotenkar.nl>',
+    to: opts.to,
+    subject: `Verlofaanvraag ${statusNL}`,
+    text: `Hallo ${opts.employeeName},\n\nJe verlofaanvraag (${opts.leaveType}) van ${opts.startDate} t/m ${opts.endDate} is ${statusNL}.\n\nBekijk je rooster in de planner.`,
+    html: `
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f1ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ee;padding:40px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <!-- Header -->
+        <tr><td style="background:${color};padding:28px 32px;text-align:center">
+          <p style="margin:0;font-size:22px;font-weight:700;color:#fff;letter-spacing:-.02em">
+            Verlofaanvraag ${statusNL}
+          </p>
+        </td></tr>
+        <!-- Body -->
+        <tr><td style="padding:32px">
+          <p style="margin:0 0 16px;font-size:16px;color:#4a3728;line-height:1.6">
+            Hallo <strong>${opts.employeeName}</strong>,
+          </p>
+          <p style="margin:0 0 16px;font-size:16px;color:#4a3728;line-height:1.6">
+            Je verlofaanvraag is <strong>${statusNL}</strong>.
+          </p>
+          <table width="100%" style="background:#f9f5f1;border:1px solid #e8ddd4;border-radius:8px;margin-bottom:24px">
+            <tr>
+              <td style="padding:16px 20px">
+                <p style="margin:0 0 6px;font-size:14px;color:#4a3728"><strong>Type:</strong> ${opts.leaveType}</p>
+                <p style="margin:0 0 6px;font-size:14px;color:#4a3728"><strong>Van:</strong> ${opts.startDate}</p>
+                <p style="margin:0;font-size:14px;color:#4a3728"><strong>Tot:</strong> ${opts.endDate}</p>
+              </td>
+            </tr>
+          </table>
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:24px 0">
+            <tr><td align="center">
+              <table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate">
+                <tr>
+                  <td style="background:#2C6E49;border-radius:8px;text-align:center">
+                    <a href="${APP_URL}/me"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       style="display:block;background:#2C6E49;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;border:1px solid #2C6E49;-webkit-text-size-adjust:none;mso-hide:all"
+                    >Bekijk je rooster &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `
+  })
+}
