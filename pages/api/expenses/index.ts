@@ -4,6 +4,7 @@ import { getExpenseClaims, createExpenseClaim, getExpenseSummaryByEmployee } fro
 import { getEmployee } from '@/lib/scheduler'
 import { validateFileMagic } from '@/lib/documents'
 import { supabase } from '@/lib/db'
+import { sendExpenseRequestAlertEmail } from '@/lib/email'
 import crypto from 'crypto'
 import type { ClaimType, CLAIM_TYPES } from '@/types'
 
@@ -102,6 +103,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         attachment_path,
         submitted_by:   session.user.user_id,
       })
+
+      // Stuur mail naar admin
+      try {
+        await sendExpenseRequestAlertEmail({
+          employeeName: claim.employee_name,
+          claimType: claim.claim_type,
+          amount: claim.amount,
+          description: claim.description,
+        })
+      } catch (emailErr) {
+        console.error('[api/expenses] Email failed:', emailErr)
+      }
 
       return res.status(201).json({ success: true, data: claim })
     }

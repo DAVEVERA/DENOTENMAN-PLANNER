@@ -395,3 +395,64 @@ export async function sendLeaveReviewEmail(opts: {
     `
   })
 }
+
+export async function sendExpenseRequestAlertEmail(opts: {
+  employeeName: string
+  claimType: string
+  amount: number
+  description: string
+}): Promise<void> {
+  assertSmtpConfigured()
+  const transport = getTransport()
+  const toEmail = process.env.ADMIN_EMAIL ?? 'info@denotenman.com'
+  
+  await transport.sendMail({
+    from: process.env.SMTP_FROM ?? 'Planner <planner@denotenkar.nl>',
+    to: toEmail,
+    subject: `Nieuwe Declaratie: ${opts.employeeName}`,
+    text: `Er is een nieuwe declaratie ingediend.\n\nMedewerker: ${opts.employeeName}\nType: ${opts.claimType}\nBedrag: €${opts.amount.toFixed(2)}\nOmschrijving: ${opts.description}\n\nBekijk en behandel deze in de admin planner.`,
+    html: `
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f1ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ee;padding:40px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <tr><td style="background:#C8882A;padding:28px 32px;text-align:center">
+          <p style="margin:0;font-size:22px;font-weight:700;color:#fff;letter-spacing:-.02em">
+            Nieuwe Declaratie
+          </p>
+        </td></tr>
+        <tr><td style="padding:32px">
+          <p style="margin:0 0 16px;font-size:16px;color:#4a3728;line-height:1.6">
+            Er is een nieuwe declaratie ingediend door <strong>${opts.employeeName}</strong>.
+          </p>
+          <div style="background:#f9f8f6;border:1px solid #e5e0d8;border-radius:8px;padding:20px;margin-bottom:24px">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding-bottom:8px;color:#8c7b6f;font-size:13px;text-transform:uppercase;font-weight:600;width:120px">Type</td>
+                <td style="padding-bottom:8px;color:#2c1e16;font-size:15px;font-weight:500">${opts.claimType}</td>
+              </tr>
+              <tr>
+                <td style="padding-bottom:8px;color:#8c7b6f;font-size:13px;text-transform:uppercase;font-weight:600">Bedrag</td>
+                <td style="padding-bottom:8px;color:#2c1e16;font-size:15px;font-weight:500">€${opts.amount.toFixed(2).replace('.', ',')}</td>
+              </tr>
+              <tr>
+                <td style="padding-top:8px;border-top:1px solid #e5e0d8;color:#8c7b6f;font-size:13px;text-transform:uppercase;font-weight:600">Omschrijving</td>
+                <td style="padding-top:8px;border-top:1px solid #e5e0d8;color:#2c1e16;font-size:15px">${opts.description}</td>
+              </tr>
+            </table>
+          </div>
+          <p style="margin:0;font-size:14px;color:#8c7b6f">
+            Ga naar de <a href="${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://planner.denotenman.com'}/admin/expenses" style="color:#C8882A;text-decoration:none;font-weight:500">admin planner</a> om deze aanvraag te bekijken en af te handelen.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `
+  })
+}
