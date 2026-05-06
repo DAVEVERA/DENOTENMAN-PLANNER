@@ -18,6 +18,19 @@ const LOCATIONS: { value: Exclude<Location, 'both'>; label: string }[] = [
   { value: 'nootmagazijn', label: 'Het Nootmagazijn' },
 ]
 
+type ViewMode = 'week' | 'month' | '3months'
+
+function weeksInRange(startWeek: number, startYear: number, numWeeks: number): { week: number; year: number }[] {
+  const result = []
+  let w = startWeek, y = startYear
+  for (let i = 0; i < numWeeks; i++) {
+    result.push({ week: w, year: y })
+    w++
+    if (w > 52) { w = 1; y++ }
+  }
+  return result
+}
+
 function formatTime(t: string | null) {
   if (!t) return ''
   return t.slice(0, 5)
@@ -25,6 +38,7 @@ function formatTime(t: string | null) {
 
 
 export default function AdminPlanning({ user, initialWeek, initialYear }: Props) {
+  const [view, setView]         = useState<ViewMode>('week')
   const [week, setWeek]         = useState(initialWeek)
   const [year, setYear]         = useState(initialYear)
   const [location, setLocation] = useState<Exclude<Location, 'both'>>('markt')
@@ -35,6 +49,8 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     shift: Partial<Shift> | null
     employee: Employee
     day: Day
+    week: number
+    year: number
   } | null>(null)
 
   // ── Automation state ──
@@ -47,35 +63,53 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   const [fillBusy, setFillBusy]   = useState(false)
   const [fillMsg, setFillMsg]     = useState('')
 
+  const numWeeks = view === 'week' ? 1 : view === 'month' ? 4 : 13
+
   const load = useCallback(async () => {
     setLoading(true)
-    const [eRes, sRes] = await Promise.all([
+    const wks = weeksInRange(week, year, numWeeks)
+    const [eRes, ...sResArr] = await Promise.all([
       fetch(`/api/employees?location=${location}&active=1`),
-      fetch(`/api/shifts?week=${week}&year=${year}&location=${location}`),
+      ...wks.map(w => fetch(`/api/shifts?week=${w.week}&year=${w.year}&location=${location}`))
     ])
-    const [eData, sData] = await Promise.all([eRes.json(), sRes.json()])
+    
+    const eData = await eRes.json()
+    const sDataArr = await Promise.all(sResArr.map(r => r.json()))
+    
     setEmployees(eData.success ? eData.data : [])
-    setShifts(sData.success ? sData.data : [])
+    const allShifts = sDataArr.flatMap(d => d.success ? d.data : [])
+    setShifts(allShifts)
     setLoading(false)
-  }, [week, year, location])
+  }, [week, year, location, numWeeks])
 
   useEffect(() => { load() }, [load])
 
-  function prevWeek() {
-    if (week === 1) { setWeek(52); setYear(y => y - 1) }
-    else setWeek(w => w - 1)
+  function prevPeriod() {
+    if (view === 'week') {
+      if (week === 1) { setWeek(52); setYear(y => y - 1) } else setWeek(w => w - 1)
+    } else {
+      setWeek(w => { const nw = w - numWeeks; if (nw < 1) { setYear(y => y - 1); return 52 + nw }; return nw })
+    }
   }
-  function nextWeek() {
-    if (week === 52) { setWeek(1); setYear(y => y + 1) }
-    else setWeek(w => w + 1)
+  function nextPeriod() {
+    if (view === 'week') {
+      if (week === 52) { setWeek(1); setYear(y => y + 1) } else setWeek(w => w + 1)
+    } else {
+      setWeek(w => { const nw = w + numWeeks; if (nw > 52) { setYear(y => y + 1); return nw - 52 }; return nw })
+    }
   }
 
-  function shiftsFor(empId: number, day: Day) {
-    return shifts.filter(s => s.employee_id === empId && s.day_of_week === day)
+  function goToday() {
+    const { week: cw, year: cy } = currentWeekYear()
+    setWeek(cw); setYear(cy)
   }
 
-  function openShiftsFor(day: Day) {
-    return shifts.filter(s => s.is_open === 1 && s.day_of_week === day)
+  function shiftsFor(empId: number, day: Day, w: number, y: number) {
+    return shifts.filter(s => s.employee_id === empId && s.day_of_week === day && s.week_number === w && s.year === y)
+  }
+
+  function openShiftsFor(day: Day, w: number, y: number) {
+    return shifts.filter(s => s.is_open === 1 && s.day_of_week === day && s.week_number === w && s.year === y)
   }
 
   async function deleteShift(id: number) {
@@ -169,17 +203,38 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     <AdminLayout user={user} title="Rooster">
       {/* ── Controls ── */}
       <div className="plan-controls">
+        <div className="view-tabs" role="tablist" aria-label="Weergave">
+          {(['week', 'month', '3months'] as ViewMode[]).map(v => (
+            <button
+              key={v}
+              role="tab"
+              className={`view-tab${view === v ? ' active' : ''}`}
+              onClick={() => setView(v)}
+              {...(view === v ? { 'aria-current': 'true' } : {})}
+            >
+              {v === 'week' ? 'Week' : v === 'month' ? 'Maand' : '3 mnd'}
+            </button>
+          ))}
+        </div>
+        
         <div className="week-nav">
-          <button className="btn btn-outline btn-sm btn-icon" onClick={prevWeek} title="Vorige week" aria-label="Vorige week">
+          <button className="btn btn-outline btn-sm btn-icon" onClick={prevPeriod} title="Vorige periode" aria-label="Vorige periode">
             <PrevIcon />
           </button>
           <div className="week-label-wrap">
-            <span className="week-label">Week {week} · {year}</span>
-            <span className="week-date-range">{weekDateRange(week, year)}</span>
+            <span className="week-label">
+              {view === 'week'
+                ? `Week ${week} · ${year}`
+                : `Wk ${week}–${weeksInRange(week, year, numWeeks).slice(-1)[0].week} · ${year}`}
+            </span>
+            {view === 'week' && (
+              <span className="week-date-range">{weekDateRange(week, year)}</span>
+            )}
           </div>
-          <button className="btn btn-outline btn-sm btn-icon" onClick={nextWeek} title="Volgende week" aria-label="Volgende week">
+          <button className="btn btn-outline btn-sm btn-icon" onClick={nextPeriod} title="Volgende periode" aria-label="Volgende periode">
             <NextIcon />
           </button>
+          <button className="btn btn-ghost btn-sm" onClick={goToday}>Vandaag</button>
         </div>
 
         <div className="loc-tabs" role="tablist" aria-label="Locatie selectie">
@@ -255,178 +310,194 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         <div className="loading-row"><Spinner /> Laden…</div>
       ) : (
         <div className="plan-grid-wrap">
-          <table className="plan-grid" aria-label="Planning weekoverzicht">
-            <thead>
-              <tr>
-                <th scope="col" className="col-emp">Medewerker</th>
-                {DAYS.map((day, i) => {
-                  const { date, month } = dayInfo(week, year, i)
-                  return (
-                    <th key={day} scope="col" className="col-day">
-                      <div className="day-head">
-                        <span className="day-short">{DAY_SHORT[day]}</span>
-                        <span className="day-num">{date}</span>
-                        <span className="day-month">{month}</span>
-                      </div>
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {employees.map(emp => (
-                <tr key={emp.id} className="emp-row">
-                  <th scope="row" className="col-emp">
-                    <div className="emp-cell">
-                      <span className="emp-name">{emp.name}</span>
-                      {emp.location === 'both' && <LocationBadge location="both" size="xs" />}
-                    </div>
-                  </th>
-                  {DAYS.map(day => {
-                    const dayShifts = shiftsFor(emp.id, day)
-                    return (
-                      <td
-                        key={day}
-                        className="shift-cell"
-                      >
-                        <div className="shifts-container">
-                          {dayShifts.map(s => (
-                            <div
-                              key={s.id}
-                              className="shift-chip"
-                              data-type={s.shift_type.toLowerCase()}
-                            >
-                              <button
-                                className="shift-chip-edit-btn"
-                                onClick={() => setModal({ shift: s, employee: emp, day })}
-                                aria-label={`${s.shift_type} dienst van ${emp.name} bewerken`}
-                              >
-                                <span className="chip-type">{s.shift_type}</span>
-                                {(s.start_time || s.end_time) && (
-                                  <span className="chip-time">{formatTime(s.start_time)}–{formatTime(s.end_time)}</span>
-                                )}
-                              </button>
-                              <button
-                                className="chip-delete"
-                                onClick={e => { e.stopPropagation(); deleteShift(s.id) }}
-                                title="Dienst verwijderen"
-                                aria-label="Verwijderen"
-                              >×</button>
-                            </div>
-                          ))}
-                        </div>
-                        <button
-                          className="cell-add-btn"
-                          onClick={() => setModal({ shift: null, employee: emp, day })}
-                          aria-label={`Dienst toevoegen voor ${emp.name} op ${day}`}
-                          title="Dienst toevoegen"
-                        >+</button>
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-
-              {/* Open shifts row */}
-              {DAYS.some(d => openShiftsFor(d).length > 0) && (
-                <tr className="emp-row open-row">
-                  <th scope="row" className="col-emp">
-                    <div className="emp-cell">
-                      <span className="emp-name text-muted">Open diensten</span>
-                    </div>
-                  </th>
-                  {DAYS.map(day => {
-                    const open = openShiftsFor(day)
-                    return (
-                      <td key={day} className="shift-cell">
-                        <div className="shifts-container">
-                          {open.map(s => (
-                            <div key={s.id} className="shift-chip open-chip"
-                              data-type={s.shift_type.toLowerCase()}
-                              aria-label={`Open dienst: ${s.shift_type}`}>
-                              <button
-                                className="open-chip-edit-btn"
-                                onClick={() => setModal({ shift: s, employee: { id: 0, name: '', email: null, phone: null, contract_hours: 0, is_active: 1, user_level: 'Medewerker', team_group: null, location, hourly_rate: null, invite_sent_at: null, invite_pending: null }, day })}
-                                aria-label={`Bewerken: ${s.shift_type}`}
-                              >
-                                <span className="chip-type">{s.shift_type}</span>
-                                {s.open_invite_status && (
-                                  <span className={`chip-invite ${s.open_invite_status}`}>{s.open_invite_status}</span>
-                                )}
-                              </button>
-                              <button className="chip-delete" onClick={e => { e.stopPropagation(); deleteShift(s.id) }} title="Open dienst verwijderen" aria-label="Verwijderen">×</button>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                    )
-                  })}
-                </tr>
+          {weeksInRange(week, year, numWeeks).map((wk, wkIdx) => (
+            <div key={`${wk.year}-${wk.week}`} className="admin-week-block">
+              {numWeeks > 1 && (
+                <div className="admin-week-header">
+                  Week {wk.week} · {wk.year}
+                  <span className="admin-week-dates">{weekDateRange(wk.week, wk.year)}</span>
+                </div>
               )}
+              <table className="plan-grid" aria-label={`Planning week ${wk.week}`}>
+                <thead>
+                  <tr>
+                    <th scope="col" className="col-emp">Medewerker</th>
+                    {DAYS.map((day, i) => {
+                      const { date, month } = dayInfo(wk.week, wk.year, i)
+                      return (
+                        <th key={day} scope="col" className="col-day">
+                          <div className="day-head">
+                            <span className="day-short">{DAY_SHORT[day]}</span>
+                            <span className="day-num">{date}</span>
+                            <span className="day-month">{month}</span>
+                          </div>
+                        </th>
+                      )
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map(emp => (
+                    <tr key={emp.id} className="emp-row">
+                      <th scope="row" className="col-emp">
+                        <div className="emp-cell">
+                          <span className="emp-name">{emp.name}</span>
+                          {emp.location === 'both' && <LocationBadge location="both" size="xs" />}
+                        </div>
+                      </th>
+                      {DAYS.map(day => {
+                        const dayShifts = shiftsFor(emp.id, day, wk.week, wk.year)
+                        return (
+                          <td
+                            key={day}
+                            className="shift-cell"
+                          >
+                            <div className="shifts-container">
+                              {dayShifts.map(s => (
+                                <div
+                                  key={s.id}
+                                  className="shift-chip"
+                                  data-type={s.shift_type.toLowerCase()}
+                                >
+                                  <button
+                                    className="shift-chip-edit-btn"
+                                    onClick={() => setModal({ shift: s, employee: emp, day, week: wk.week, year: wk.year })}
+                                    aria-label={`${s.shift_type} dienst van ${emp.name} bewerken`}
+                                  >
+                                    <span className="chip-type">{s.shift_type}</span>
+                                    {(s.start_time || s.end_time) && (
+                                      <span className="chip-time">{formatTime(s.start_time)}–{formatTime(s.end_time)}</span>
+                                    )}
+                                  </button>
+                                  <button
+                                    className="chip-delete"
+                                    onClick={e => { e.stopPropagation(); deleteShift(s.id) }}
+                                    title="Dienst verwijderen"
+                                    aria-label="Verwijderen"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                            <button
+                              className="cell-add-btn"
+                              onClick={() => setModal({ shift: null, employee: emp, day, week: wk.week, year: wk.year })}
+                              aria-label={`Dienst toevoegen voor ${emp.name} op ${day}`}
+                              title="Dienst toevoegen"
+                            >+</button>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
 
-              {employees.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="empty-row">
-                    Geen medewerkers gevonden voor deze locatie.
-                    <Link href="/admin/employees" className="link ml-2">Medewerkers beheren →</Link>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  {/* Open shifts row */}
+                  {DAYS.some(d => openShiftsFor(d, wk.week, wk.year).length > 0) && (
+                    <tr className="emp-row open-row">
+                      <th scope="row" className="col-emp">
+                        <div className="emp-cell">
+                          <span className="emp-name text-muted">Open diensten</span>
+                        </div>
+                      </th>
+                      {DAYS.map(day => {
+                        const open = openShiftsFor(day, wk.week, wk.year)
+                        return (
+                          <td key={day} className="shift-cell">
+                            <div className="shifts-container">
+                              {open.map(s => (
+                                <div key={s.id} className="shift-chip open-chip"
+                                  data-type={s.shift_type.toLowerCase()}
+                                  aria-label={`Open dienst: ${s.shift_type}`}>
+                                  <button
+                                    className="open-chip-edit-btn"
+                                    onClick={() => setModal({ shift: s, employee: { id: 0, name: '', email: null, phone: null, contract_hours: 0, is_active: 1, user_level: 'Medewerker', team_group: null, location, hourly_rate: null, invite_sent_at: null, invite_pending: null }, day, week: wk.week, year: wk.year })}
+                                    aria-label={`Bewerken: ${s.shift_type}`}
+                                  >
+                                    <span className="chip-type">{s.shift_type}</span>
+                                    {s.open_invite_status && (
+                                      <span className={`chip-invite ${s.open_invite_status}`}>{s.open_invite_status}</span>
+                                    )}
+                                  </button>
+                                  <button className="chip-delete" onClick={e => { e.stopPropagation(); deleteShift(s.id) }} title="Open dienst verwijderen" aria-label="Verwijderen">×</button>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )}
+
+                  {employees.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="empty-row">
+                        Geen medewerkers gevonden voor deze locatie.
+                        <Link href="/admin/employees" className="link ml-2">Medewerkers beheren →</Link>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
       )}
 
       {/* ── Mobile Employee Cards (≤768px) ── */}
       {!loading && (
         <div className="plan-mobile-view" aria-label="Planning weekoverzicht mobiel">
-          {employees.map(emp => (
-            <div key={emp.id} className="mobile-emp-card">
-              <div className="mobile-emp-header">
-                <span className="mobile-emp-name">{emp.name}</span>
-                {emp.location === 'both' && <LocationBadge location="both" size="xs" />}
-              </div>
-              <div className="mobile-days-strip">
-                {DAYS.map((day, i) => {
-                  const dayShifts = shiftsFor(emp.id, day)
-                  return (
-                    <div key={day} className="mobile-day-col">
-                      <div className="mobile-day-head">
-                        <span className="mobile-day-short">{DAY_SHORT[day]}</span>
-                        <span className="mobile-day-num">{dayDate(week, year, i)}</span>
-                      </div>
-                      <div className="mobile-day-shifts">
-                        {dayShifts.map(s => (
-                          <button
-                            key={s.id}
-                            className="mobile-shift-chip"
-                            data-type={s.shift_type.toLowerCase()}
-                            onClick={() => setModal({ shift: s, employee: emp, day })}
-                            aria-label={`${s.shift_type} - ${emp.name} - ${day}. Tik om te bewerken.`}
-                          >
-                            <span className="mobile-chip-type">{s.shift_type.slice(0, 3)}</span>
-                            {s.start_time && (
-                              <span className="mobile-chip-time">{formatTime(s.start_time)}</span>
-                            )}
-                          </button>
-                        ))}
-                        <button
-                          className="mobile-add-btn"
-                          onClick={() => setModal({ shift: null, employee: emp, day })}
-                          aria-label={`Dienst toevoegen voor ${emp.name} op ${day}`}
-                        >+</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+          {weeksInRange(week, year, numWeeks).map(wk => (
+            <div key={`mob-${wk.year}-${wk.week}`} className="mobile-week-block">
+              {numWeeks > 1 && (
+                <div className="admin-week-header">Week {wk.week} · {wk.year}</div>
+              )}
+              {employees.map(emp => (
+                <div key={emp.id} className="mobile-emp-card">
+                  <div className="mobile-emp-header">
+                    <span className="mobile-emp-name">{emp.name}</span>
+                    {emp.location === 'both' && <LocationBadge location="both" size="xs" />}
+                  </div>
+                  <div className="mobile-days-strip">
+                    {DAYS.map((day, i) => {
+                      const dayShifts = shiftsFor(emp.id, day, wk.week, wk.year)
+                      const { date, month } = dayInfo(wk.week, wk.year, i)
+                      return (
+                        <div key={day} className="mobile-day-col">
+                          <div className="mobile-day-head">
+                            <span className="mobile-day-short">{DAY_SHORT[day]}</span>
+                            <span className="mobile-day-num">{date} {month.slice(0,3)}</span>
+                          </div>
+                          <div className="mobile-day-shifts">
+                            {dayShifts.map(s => (
+                              <button
+                                key={s.id}
+                                className="mobile-shift-chip"
+                                data-type={s.shift_type.toLowerCase()}
+                                onClick={() => setModal({ shift: s, employee: emp, day, week: wk.week, year: wk.year })}
+                                aria-label={`${s.shift_type} - ${emp.name} - ${day}. Tik om te bewerken.`}
+                              >
+                                <span className="mobile-chip-type">{s.shift_type.slice(0, 3)}</span>
+                                {s.start_time && (
+                                  <span className="mobile-chip-time">{formatTime(s.start_time)}</span>
+                                )}
+                              </button>
+                            ))}
+                            <button
+                              className="mobile-add-btn"
+                              onClick={() => setModal({ shift: null, employee: emp, day, week: wk.week, year: wk.year })}
+                              aria-label={`Dienst toevoegen voor ${emp.name} op ${day}`}
+                            >+</button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+              {employees.length === 0 && (
+                <div className="empty-row">Geen medewerkers gevonden voor deze locatie.</div>
+              )}
             </div>
           ))}
-          {employees.length === 0 && (
-            <div className="empty-row">
-              Geen medewerkers gevonden voor deze locatie.
-            </div>
-          )}
         </div>
       )}
 
@@ -437,8 +508,8 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           employeeId={modal.employee.id}
           employeeName={modal.employee.name}
           day={modal.day}
-          week={week}
-          year={year}
+          week={modal.week}
+          year={modal.year}
           location={location}
           userRole={user.role as 'admin' | 'manager' | 'employee'}
           onClose={() => setModal(null)}
@@ -511,11 +582,21 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
 
         .plan-grid-wrap {
           overflow-x: auto; -webkit-overflow-scrolling: touch;
-          border: 1px solid var(--border); border-radius: var(--radius-lg);
-          background: var(--surface);
+          background: transparent;
         }
+        .admin-week-block { margin-bottom: var(--s6); }
+        .admin-week-header {
+          font-size: 1rem; font-weight: 700; margin-bottom: var(--s3);
+          display: flex; align-items: baseline; gap: var(--s2);
+          padding-left: var(--s2);
+        }
+        .admin-week-dates { font-size: .8125rem; font-weight: 400; color: var(--text-muted); }
+
         .plan-grid {
           width: 100%; border-collapse: collapse; min-width: 600px;
+          background: var(--surface);
+          border: 1px solid var(--border); border-radius: var(--radius-lg);
+          overflow: hidden;
         }
         .plan-grid thead th {
           background: var(--surface-alt); font-size: .8125rem; font-weight: 600;
@@ -611,6 +692,19 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           display: flex; align-items: center; justify-content: center;
         }
         .mobile-add-btn:active { border-color: var(--brand); color: var(--brand); background: var(--brand-subtle); }
+        
+        .view-tabs {
+          display: flex; gap: 3px; background: var(--surface-alt);
+          border-radius: var(--radius); padding: 3px;
+        }
+        .view-tab {
+          padding: 8px 12px; border-radius: calc(var(--radius) - 2px);
+          font-size: .875rem; font-weight: 500; color: var(--text-sub);
+          transition: background .15s, color .15s; cursor: pointer;
+          border: none; background: transparent;
+        }
+        .view-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .mobile-week-block { margin-bottom: var(--s6); display: flex; flex-direction: column; gap: var(--s2); }
 
         /* ── Mobile breakpoints ── */
         @media (max-width: 768px) {
