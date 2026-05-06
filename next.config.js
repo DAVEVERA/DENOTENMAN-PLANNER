@@ -1,11 +1,3 @@
-// NEXTAUTH_URL is required for the Google OAuth callback URL.
-// Vercel sets VERCEL_URL automatically (without protocol), so we build the full URL here.
-if (!process.env.NEXTAUTH_URL) {
-  process.env.NEXTAUTH_URL = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000'
-}
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,

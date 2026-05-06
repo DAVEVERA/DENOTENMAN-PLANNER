@@ -67,8 +67,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ success: false, message: 'Gebruikersnaam en wachtwoord vereist' })
   }
 
-  await ensureDefaultAdmin()
-
   const ok = await attemptLogin(req, res, username, password)
 
   await ensureDelay(start)

@@ -29,14 +29,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('id', parseInt(shift_id))
       if (error) throw error
 
-      // Notify admin (employee_id 1 = Fedor)
+      // Notify all admins via push
       try {
         const emp = await getEmployee(employeeId)
-        await sendPushToEmployee(1, {
-          title: '📋 Nieuwe claim op open dienst',
-          body: `${emp?.name ?? 'Een medewerker'} wil de ${shift.shift_type}-dienst (week ${shift.week_number}) overnemen.`,
-          url: '/admin/open-shifts',
-        })
+        const { data: adminUsers } = await supabase
+          .from(T('users'))
+          .select('employee_id')
+          .eq('role', 'admin')
+          .not('employee_id', 'is', null)
+        for (const u of (adminUsers ?? [])) {
+          if (u.employee_id) {
+            await sendPushToEmployee(u.employee_id, {
+              title: '📋 Nieuwe claim op open dienst',
+              body: `${emp?.name ?? 'Een medewerker'} wil de ${shift.shift_type}-dienst (week ${shift.week_number}) overnemen.`,
+              url: '/admin/open-shifts',
+            })
+          }
+        }
       } catch { /* push optional */ }
 
       return res.json({ success: true })

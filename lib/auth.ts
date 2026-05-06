@@ -96,13 +96,24 @@ export async function attemptLogin(
   const user = await dbFindUser(username)
   if (!user || !bcrypt.compareSync(password, user.password_hash)) return false
 
+  // Haal locatie op zodat index-page correct kan doorsturen
+  let empLocation: string | null = null
+  if (user.employee_id) {
+    const { data: empData } = await supabase
+      .from(T('employees'))
+      .select('location')
+      .eq('id', user.employee_id)
+      .maybeSingle()
+    empLocation = empData?.location ?? null
+  }
+
   const session = await getIronSession<{ user?: SessionUser; csrf?: string }>(req, res, sessionOptions)
   session.user = {
     user_id:      user.username,
     display_name: user.display_name,
     role:         user.role,
     employee_id:  user.employee_id,
-    location:     null,
+    location:     empLocation as any,
   }
   session.csrf = crypto.randomBytes(32).toString('hex')
   await session.save()
