@@ -10,8 +10,10 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { supabase, T } from './db'
-import { saveShift, getWeekShifts, getEmployeeShifts, getOpenShifts } from './scheduler'
+import { saveShift, getWeekShifts, getEmployeeShifts, getOpenShifts, getEmployees } from './scheduler'
 import { getISOWeek } from './scheduler'
+import { sendOpenShiftAlertEmail } from './email'
+import { sendPushToAll } from './push'
 import type { SessionUser } from '@/types'
 import { DAYS } from '@/types'
 
@@ -291,7 +293,36 @@ export async function executeTool(
       }, session.user_id)
 
       if ('error' in result) return { success: false, message: result.error }
-      return { success: true, message: `Open dienst aangemaakt op ${day} (week ${week}).`, shift: result }
+
+      // Stuur e-mail + push naar alle actieve medewerkers
+      try {
+        const DAY_NL: Record<string, string> = {
+          maandag: 'Maandag', dinsdag: 'Dinsdag', woensdag: 'Woensdag',
+          donderdag: 'Donderdag', vrijdag: 'Vrijdag', zaterdag: 'Zaterdag', zondag: 'Zondag',
+        }
+        const dayLabel = DAY_NL[day.toLowerCase()] ?? day
+        const employees = await getEmployees(true)
+        const emails = employees.map(e => e.email).filter(Boolean) as string[]
+
+        if (emails.length > 0) {
+          await sendOpenShiftAlertEmail({
+            toBcc:   emails,
+            subject: '📢 Nieuwe open dienst beschikbaar!',
+            body:    `Er is een nieuwe open dienst beschikbaar gezet:\n\nType: ${input.shift_type}-dienst\nDag: ${dayLabel} (Week ${week})\n\nLog in via de app om deze dienst te bekijken en eventueel over te nemen.`,
+          })
+        }
+
+        await sendPushToAll({
+          title: '📢 Nieuwe open dienst!',
+          body:  `Een ${input.shift_type}-dienst op ${dayLabel} (week ${week}) is beschikbaar. Klik om te claimen!`,
+          url:   '/me/open-shifts',
+        })
+      } catch (notifyErr) {
+        // Meldingen zijn niet-kritiek — open dienst is al aangemaakt
+        console.error('[create_open_shift] Notificatie-fout (non-fatal):', notifyErr)
+      }
+
+      return { success: true, message: `Open dienst aangemaakt op ${day} (week ${week}). Alle medewerkers zijn per e-mail en push-bericht geïnformeerd.`, shift: result }
     }
 
     // ── get_schedule ────────────────────────────────────────────────────────
