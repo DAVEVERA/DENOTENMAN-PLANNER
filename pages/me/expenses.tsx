@@ -43,6 +43,7 @@ export default function ExpensesPage({ user }: Props) {
   const [loading, setLoading]   = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm]         = useState(EMPTY_FORM)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [saving, setSaving]     = useState(false)
   const [formErr, setFormErr]   = useState('')
   const [toast, setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
@@ -64,15 +65,46 @@ export default function ExpensesPage({ user }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true); setFormErr('')
+    
+    let base64 = ''
+    let mime_type = ''
+    let filename = ''
+    
+    if (uploadFile) {
+      if (uploadFile.size > 10 * 1024 * 1024) {
+        setFormErr('Bestand mag maximaal 10 MB zijn')
+        setSaving(false)
+        return
+      }
+      base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const res = reader.result as string
+          resolve(res.split(',')[1])
+        }
+        reader.readAsDataURL(uploadFile)
+      })
+      mime_type = uploadFile.type
+      filename = uploadFile.name
+    }
+
+    const payload = {
+      ...form,
+      base64: base64 || undefined,
+      mime_type: mime_type || undefined,
+      filename: filename || undefined,
+    }
+
     const r = await fetch('/api/expenses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     }).then(r => r.json())
     setSaving(false)
     if (!r.success) { setFormErr(r.message ?? 'Indienen mislukt'); return }
     showToast('✅ Declaratie ingediend!')
     setForm(EMPTY_FORM)
+    setUploadFile(null)
     setShowForm(false)
     load()
   }
@@ -143,12 +175,19 @@ export default function ExpensesPage({ user }: Props) {
                     value={form.reference_date} onChange={e => setForm(f => ({ ...f, reference_date: e.target.value }))}
                     title="Datum waarop de kosten zijn gemaakt" />
                 </div>
-              </div>
-              <div className="form-group" style={{ marginTop: 12 }}>
-                <label className="form-label required" htmlFor="claim_desc">Omschrijving</label>
-                <textarea id="claim_desc" className="form-control" rows={3}
-                  value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Omschrijf de declaratie (bijv. reiskosten woon-werk 12 km × 2)" title="Omschrijving" required />
+                <div className="form-group form-group-full">
+                  <label className="form-label required" htmlFor="claim_desc">Omschrijving</label>
+                  <textarea id="claim_desc" className="form-control" rows={3}
+                    value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Omschrijf de declaratie (bijv. reiskosten woon-werk 12 km × 2 of aankoop koffie)" title="Omschrijving" required />
+                </div>
+                <div className="form-group form-group-full">
+                  <label className="form-label" htmlFor="receipt_file">Bonnetje / Foto (optioneel)</label>
+                  <input id="receipt_file" type="file" className="form-control file-input"
+                    accept=".pdf,image/jpeg,image/png,image/webp"
+                    onChange={e => setUploadFile(e.target.files?.[0] ?? null)} />
+                  <span className="form-hint">PDF, JPEG of PNG (max 10MB)</span>
+                </div>
               </div>
               <div className="exp-form-footer">
                 <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
@@ -183,7 +222,14 @@ export default function ExpensesPage({ user }: Props) {
                       </div>
                       <div className="exp-row-amount">{fmtEur(c.amount)}</div>
                       <span className={`badge ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
-                      <button className="btn btn-ghost btn-xs" onClick={() => withdraw(c.id)}>Intrekken</button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {c.attachment_url && (
+                          <a href={c.attachment_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-xs" title="Bekijk bonnetje">
+                            Bonnetje
+                          </a>
+                        )}
+                        <button className="btn btn-ghost btn-xs" onClick={() => withdraw(c.id)}>Intrekken</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -208,6 +254,11 @@ export default function ExpensesPage({ user }: Props) {
                       </div>
                       <div className="exp-row-amount">{fmtEur(c.amount)}</div>
                       <span className={`badge ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
+                      {c.attachment_url && (
+                        <a href={c.attachment_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-xs" title="Bekijk bonnetje">
+                          Bonnetje
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -285,6 +336,9 @@ export default function ExpensesPage({ user }: Props) {
         .exp-row-meta { font-size: .8125rem; color: var(--text-muted); }
         .exp-review-note { font-style: italic; }
         .exp-row-amount { font-weight: 700; text-align: right; white-space: nowrap; }
+        .form-group-full { grid-column: 1 / -1; }
+        .form-hint { font-size: .8125rem; color: var(--text-muted); margin-top: 4px; display: block; }
+        .file-input { padding: 6px; }
 
         .exp-empty-state {
           display: flex; flex-direction: column; align-items: center; gap: var(--s4);

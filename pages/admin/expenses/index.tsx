@@ -179,6 +179,7 @@ export default function AdminExpensesPage({ user }: Props) {
                   <td className="fw-500">{c.employee_name}</td>
                   <td>{CLAIM_LABEL[c.claim_type] ?? c.claim_type}</td>
                   <td style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.attachment_url && <span title="Bevat bijlage" style={{ marginRight: '4px' }}>📎</span>}
                     {c.description}
                   </td>
                   <td style={{ whiteSpace: 'nowrap' }}>{new Date(c.claim_date).toLocaleDateString('nl-NL')}</td>
@@ -220,6 +221,16 @@ export default function AdminExpensesPage({ user }: Props) {
                 <div><span className="rev-lbl">Bedrag</span><strong>{fmtEur(reviewing.amount)}</strong></div>
                 <div><span className="rev-lbl">Datum</span><span>{new Date(reviewing.claim_date).toLocaleDateString('nl-NL')}</span></div>
                 <div className="rev-full"><span className="rev-lbl">Omschrijving</span><span>{reviewing.description}</span></div>
+                {reviewing.attachment_url && (
+                  <div className="rev-full" style={{ marginTop: '8px' }}>
+                    <span className="rev-lbl">Bonnetje / Bijlage</span>
+                    <div style={{ marginTop: '4px' }}>
+                      <a href={reviewing.attachment_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+                        📎 Bekijk bestand
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="review_note">Opmerking (verplicht bij afwijzen)</label>

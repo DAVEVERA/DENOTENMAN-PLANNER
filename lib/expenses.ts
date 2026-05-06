@@ -17,7 +17,19 @@ export async function getExpenseClaims(filters?: {
 
   const { data, error } = await q
   if (error) throw error
-  return data ?? []
+  if (!data?.length) return []
+
+  const DOC_BUCKET = 'employee-documents'
+  const claims = await Promise.all(
+    (data as ExpenseClaim[]).map(async claim => {
+      if (!claim.attachment_path) return claim
+      const { data: signed } = await supabase.storage
+        .from(DOC_BUCKET)
+        .createSignedUrl(claim.attachment_path, 3600)
+      return { ...claim, attachment_url: signed?.signedUrl ?? null }
+    })
+  )
+  return claims
 }
 
 export async function getExpenseClaim(id: number): Promise<ExpenseClaim | null> {
@@ -30,7 +42,7 @@ export async function getExpenseClaim(id: number): Promise<ExpenseClaim | null> 
 }
 
 export async function createExpenseClaim(
-  data: Omit<ExpenseClaim, 'id' | 'status' | 'reviewed_by' | 'reviewed_at' | 'review_note' | 'created_at'>,
+  data: Omit<ExpenseClaim, 'id' | 'status' | 'reviewed_by' | 'reviewed_at' | 'review_note' | 'created_at' | 'attachment_url'>,
 ): Promise<ExpenseClaim> {
   const { data: inserted, error } = await supabase
     .from(T('expense_claims'))

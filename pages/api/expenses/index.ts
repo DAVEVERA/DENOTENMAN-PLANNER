@@ -2,7 +2,12 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
 import { getExpenseClaims, createExpenseClaim, getExpenseSummaryByEmployee } from '@/lib/expenses'
 import { getEmployee } from '@/lib/scheduler'
+import { validateFileMagic } from '@/lib/documents'
+import { supabase } from '@/lib/db'
+import crypto from 'crypto'
 import type { ClaimType, CLAIM_TYPES } from '@/types'
+
+export const config = { api: { bodyParser: { sizeLimit: '14mb' } } }
 
 const VALID_TYPES: readonly string[] = ['reiskosten', 'overuren', 'overig']
 
@@ -43,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!employeeId)
         return res.status(400).json({ success: false, message: 'Geen medewerker gekoppeld aan dit account' })
 
-      const { claim_type, amount, description, claim_date, reference_date, shift_id } = req.body
+      const { claim_type, amount, description, claim_date, reference_date, shift_id, base64, mime_type, filename } = req.body
 
       // Validatie
       if (!VALID_TYPES.includes(claim_type))
@@ -55,6 +60,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!claim_date)
         return res.status(400).json({ success: false, message: 'Declaratiedatum is verplicht' })
 
+      let attachment_path: string | null = null
+
+      if (base64 && mime_type && filename) {
+        const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+        if (!ALLOWED_MIME.includes(mime_type)) {
+          return res.status(400).json({ success: false, message: 'Bestandstype niet toegestaan. Gebruik PDF, JPEG of PNG.' })
+        }
+        
+        const buffer = Buffer.from(base64, 'base64')
+        if (buffer.byteLength > 10 * 1024 * 1024) {
+          return res.status(400).json({ success: false, message: 'Bestand mag maximaal 10 MB zijn' })
+        }
+        if (!validateFileMagic(buffer, mime_type)) {
+           return res.status(400).json({ success: false, message: 'Bestand is beschadigd of ongeldig' })
+        }
+        
+        const ext = filename.split('.').pop()?.toLowerCase() ?? 'bin'
+        const safeName = crypto.randomUUID()
+        attachment_path = `${employeeId}/expenses/${safeName}.${ext}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('employee-documents')
+          .upload(attachment_path, buffer, { contentType: mime_type })
+          
+        if (uploadError) {
+          return res.status(500).json({ success: false, message: 'Uploaden bestand mislukt: ' + uploadError.message })
+        }
+      }
+
       const emp = await getEmployee(employeeId)
       const claim = await createExpenseClaim({
         employee_id:    employeeId,
@@ -65,6 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         claim_date,
         reference_date: reference_date ?? null,
         shift_id:       shift_id ? parseInt(shift_id) : null,
+        attachment_path,
         submitted_by:   session.user.user_id,
       })
 

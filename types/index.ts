@@ -238,6 +238,8 @@ export interface ExpenseClaim {
   reviewed_by:    string | null
   reviewed_at:    string | null
   review_note:    string | null
+  attachment_path: string | null
+  attachment_url?: string | null  // client-side signed URL
   submitted_by:   string
   created_at:     string
 }
