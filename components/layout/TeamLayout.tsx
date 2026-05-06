@@ -32,6 +32,7 @@ export default function TeamLayout({ user, children, location }: Props) {
   const onProfile     = router.pathname === '/me/profile'
   const onDocuments   = router.pathname === '/me/documents'
   const onExpenses    = router.pathname === '/me/expenses'
+  const onSupport     = router.pathname === '/me/support'
 
   return (
     <div className="team-shell">
@@ -105,6 +106,12 @@ export default function TeamLayout({ user, children, location }: Props) {
               aria-current={onExpenses ? 'page' : undefined}>
               <DocumentIcon size={20} />
               Declaraties
+            </Link>
+            <Link href="/me/support"
+              className={`tn-link${onSupport ? ' active' : ''}`}
+              aria-current={onSupport ? 'page' : undefined}>
+              <span style={{fontSize:'1.1rem',lineHeight:1}}>🎫</span>
+              Support
             </Link>
           </nav>
 
@@ -186,6 +193,13 @@ export default function TeamLayout({ user, children, location }: Props) {
           {onExpenses && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon">🧾</span>
           <span className="tbn-label">Declaraties</span>
+        </Link>
+        <Link href="/me/support"
+          className={`tbn-item${onSupport ? ' active' : ''}`}
+          aria-current={onSupport ? 'page' : undefined}>
+          {onSupport && <span className="tbn-bar" aria-hidden="true" />}
+          <span className="tbn-icon">🎫</span>
+          <span className="tbn-label">Support</span>
         </Link>
         {isAdmin && (
           <Link href="/admin" className="tbn-item">
