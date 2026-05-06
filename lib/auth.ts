@@ -117,7 +117,7 @@ export async function getSession(
   req: NextApiRequest | IncomingMessage,
   res: NextApiResponse | ServerResponse,
 ) {
-  if (process.env.SKIP_AUTH === 'true') {
+  if (process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
     return { user: DEV_USER, csrf: 'dev' } as { user?: SessionUser; csrf?: string }
   }
   return getIronSession<{ user?: SessionUser; csrf?: string }>(req, res, sessionOptions)

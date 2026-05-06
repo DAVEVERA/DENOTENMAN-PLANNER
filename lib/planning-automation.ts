@@ -1,5 +1,5 @@
 import { supabase, T } from './db'
-import { getWeekShifts, saveShift, fmtTime } from './scheduler'
+import { getWeekShifts, saveShift, fmtTime, getISOWeeksInYear } from './scheduler'
 import { validateShiftAssignment, type GuardrailWarning } from './guardrails'
 import type { Shift, Location, Day } from '@/types'
 import { DAYS } from '@/types'
@@ -152,9 +152,9 @@ export async function autoFill(
   let ty = sourceYear
 
   for (let i = 0; i < weeks; i++) {
-    // Advance to next week
+    // Advance to next week (respects years with 53 ISO weeks, e.g. 2026)
     tw++
-    if (tw > 52) { tw = 1; ty++ }
+    if (tw > getISOWeeksInYear(ty)) { tw = 1; ty++ }
 
     const weekResult = await copyWeek(sourceWeek, sourceYear, tw, ty, location, overwrite, performedBy)
 
@@ -185,7 +185,7 @@ export async function autoFillPreview(
 
   for (let i = 0; i < weeks; i++) {
     tw++
-    if (tw > 52) { tw = 1; ty++ }
+    if (tw > getISOWeeksInYear(ty)) { tw = 1; ty++ }
 
     const preview = await copyWeekPreview(sourceWeek, sourceYear, tw, ty, location)
     result.weeks.push({ week: tw, year: ty, wouldCopy: preview.wouldCopy, wouldSkip: preview.wouldSkip })

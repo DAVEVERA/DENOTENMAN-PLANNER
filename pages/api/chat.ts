@@ -83,20 +83,67 @@ async function saveMessage(
   })
 }
 
-/** Bouw Anthropic message array op uit database-rijen */
+/** Bouw Anthropic message array op uit database-rijen.
+ *
+ * Werkwijze:
+ *  - user-rijen   → {role:'user', content: string}
+ *  - tool-rijen   → samengesteld als assistant tool_use + user tool_result paar
+ *  - assistant-rijen → {role:'assistant', content: string}
+ *
+ * Opeenvolgende tool-rijen (meerdere tools in één agentic iteratie) worden als
+ * één assistant-turn + één user-turn gegroepeerd, wat de Anthropic API vereist.
+ * Synthetische IDs worden aangemaakt (toolu_h{i}_{j}) — die hoeven niet
+ * overeen te komen met de originele Anthropic IDs, zolang ze intern consistent zijn.
+ */
 function buildMessages(history: Awaited<ReturnType<typeof loadHistory>>, newUserMessage: string): Anthropic.MessageParam[] {
   const msgs: Anthropic.MessageParam[] = []
+  let i = 0
 
-  for (const row of history) {
+  while (i < history.length) {
+    const row = history[i]
+
     if (row.role === 'user') {
       msgs.push({ role: 'user', content: row.content })
+      i++
+
+    } else if (row.role === 'tool') {
+      // Groepeer opeenvolgende tool-rijen (= één agentic iteratie)
+      const groupStart = i
+      const toolRows: typeof history = []
+      while (i < history.length && history[i].role === 'tool') {
+        toolRows.push(history[i])
+        i++
+      }
+
+      // Assistant-turn: één tool_use block per tool-aanroep
+      const toolUseBlocks = toolRows.map((t, j) => ({
+        type:  'tool_use' as const,
+        id:    `toolu_h${groupStart}_${j}`,  // synthetisch maar intern consistent
+        name:  t.tool_name ?? 'unknown_tool',
+        input: (t.tool_input as Record<string, unknown>) ?? {},
+      })) as Anthropic.ToolUseBlock[]
+      msgs.push({ role: 'assistant', content: toolUseBlocks })
+
+      // User-turn: tool_result per tool-aanroep
+      const toolResultBlocks: Anthropic.ToolResultBlockParam[] = toolRows.map((t, j) => ({
+        type:        'tool_result',
+        tool_use_id: `toolu_h${groupStart}_${j}`,
+        content:     typeof t.tool_result === 'string'
+          ? t.tool_result
+          : JSON.stringify(t.tool_result ?? {}),
+      }))
+      msgs.push({ role: 'user', content: toolResultBlocks })
+
     } else if (row.role === 'assistant') {
       msgs.push({ role: 'assistant', content: row.content })
+      i++
+
+    } else {
+      i++ // sla onbekende roles over
     }
-    // tool-resultaten worden niet apart toegevoegd — zitten al in assistant-berichten
   }
 
-  // Voeg het nieuwe bericht toe 
+  // Voeg het nieuwe gebruikersbericht toe
   msgs.push({ role: 'user', content: newUserMessage })
   return msgs
 }
@@ -151,25 +198,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     recordChatMessage(user.user_id)
 
-    // Length guard
+    // Lengte-check
     const trimmed = message.trim().slice(0, MAX_MESSAGE_LENGTH)
     if (!trimmed) {
       return res.status(400).json({ success: false, message: 'Geen bericht ontvangen.' })
     }
 
+    // Laad historiek VÓÓR opslaan van het nieuwe bericht (zodat buildMessages geen slice nodig heeft)
+    const history = await loadHistory(sessionId, DAVE_MAX_CONTEXT_MESSAGES)
+
     // Sla gebruikersbericht op
     await saveMessage(sessionId, 'user', trimmed)
 
     // Bouw context op
-    const history = await loadHistory(sessionId, DAVE_MAX_CONTEXT_MESSAGES)
     const now = new Date()
     const systemPrompt = buildSystemPrompt(user.role, {
       currentWeek: getISOWeek(now),
       currentYear: now.getFullYear(),
       userName:    user.display_name,
     })
-    const tools = getToolsForRole(user.role)
-    const messages = buildMessages(history.slice(0, -1), trimmed) // slice: nieuwste al in history, exclude het
+    const tools    = getToolsForRole(user.role)
+    const messages = buildMessages(history, trimmed)
 
     // Houd tool-uitvoer bij voor respons
     const toolCalls: { name: string; input: unknown; result: unknown }[] = []

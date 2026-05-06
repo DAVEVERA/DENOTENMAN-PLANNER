@@ -19,7 +19,16 @@ export function getSupabase(): SupabaseClient {
   return _supabase
 }
 
-/** Backwards-compatible proxy — behaves like the old `supabase` export. */
+/**
+ * Backwards-compatible proxy — behaves like the old `supabase` export.
+ *
+ * ⚠️  Type-safety trade-off: de `as unknown as Record` cast is bewust.
+ * De Proxy zorgt voor lazy-loading (Supabase client wordt pas aangemaakt bij het
+ * eerste echte request, niet tijdens Next.js build-time).
+ * Gevolg: TypeScript kan foutieve property-namen niet compiletijd vangen op de
+ * `supabase`-export zelf — die fouten manifesteren als runtime errors.
+ * Gebruik `getSupabase()` als je de volledige typechecking wil behouden.
+ */
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
     return (getSupabase() as unknown as Record<string | symbol, unknown>)[prop]

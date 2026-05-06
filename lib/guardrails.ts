@@ -1,5 +1,5 @@
 import { supabase, T, unwrap } from './db'
-import { getWeekShifts, shiftHours, getISOWeek } from './scheduler'
+import { getWeekShifts, shiftHours, getISOWeek, getISOWeeksInYear } from './scheduler'
 import { getLeaveRequests } from './leave'
 import type { Shift, Day, Location, LeaveRequest } from '@/types'
 import { DAYS } from '@/types'
@@ -324,7 +324,7 @@ async function getAverageOccupancy(
 
   for (let i = 0; i < 4; i++) {
     w--
-    if (w < 1) { w = 52; y-- }
+    if (w < 1) { y--; w = getISOWeeksInYear(y) }
 
     const shifts = await getWeekShifts(w, y, location)
     if (shifts.length === 0) continue

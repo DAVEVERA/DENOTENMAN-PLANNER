@@ -36,6 +36,14 @@ export async function reviewLeaveRequest(
     .single())
 
   if (decision === 'approved') {
+    // Fetch employee location so leave-rows use the correct location
+    const { data: empData } = await supabase
+      .from(T('employees'))
+      .select('location')
+      .eq('id', row.employee_id)
+      .maybeSingle()
+    const empLocation = empData?.location ?? 'markt'
+
     // Auto-create shift rows for each day in the date range
     const start = new Date(row.start_date)
     const end   = new Date(row.end_date)
@@ -53,7 +61,7 @@ export async function reviewLeaveRequest(
           day_of_week:   dow,
           shift_type:    row.leave_type,
           full_day:      1,
-          location:      'markt',     // default; admin can change afterwards
+          location:      empLocation,
           shift_category: 'regular',
         }, reviewedBy)
       }

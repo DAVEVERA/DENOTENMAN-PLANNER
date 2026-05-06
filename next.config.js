@@ -1,5 +1,3 @@
-/** @type {import('next').NextConfig} */
-
 // NEXTAUTH_URL is required for the Google OAuth callback URL.
 // Vercel sets VERCEL_URL automatically (without protocol), so we build the full URL here.
 if (!process.env.NEXTAUTH_URL) {
