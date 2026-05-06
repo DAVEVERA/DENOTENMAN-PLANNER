@@ -5,7 +5,10 @@
  * Support — floating AI-chat component
  *
  * Floating knop rechts onderin → klikken opent het chat-paneel.
- * Berichten worden opgeslagen in Supabase en herladen bij open.
+ * Knop kan worden verborgen via het ✕ verberg-knopje (hover op de FAB),
+ * of via het 👁 icoon in de chat-header.
+ * Als verborgen: kleine discrete tab rechtsonder brengt hem terug.
+ * Zichtbaarheid wordt opgeslagen in localStorage (blijft bewaard bij navigatie).
  * Avatar instellen: lib/dave-config.ts → DAVE_AVATAR_URL
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -35,17 +38,17 @@ interface ChatMessage {
 // ── Tool-naam → leesbare label ────────────────────────────────────────────────
 
 const TOOL_LABELS: Record<string, string> = {
-  plan_shift:          '📅 Dienst gepland',
-  create_open_shift:   '📋 Open dienst aangemaakt',
-  get_schedule:        '📆 Rooster opgehaald',
-  get_employees:       '👥 Medewerkers opgehaald',
-  approve_leave:       '✅ Verlof verwerkt',
-  get_leave_requests:  '📩 Verlofaanvragen opgehaald',
-  save_workflow:       '💾 Workflow opgeslagen',
-  get_insights:        '📊 Inzichten opgehaald',
-  get_my_schedule:     '📅 Jouw rooster opgehaald',
-  get_open_shifts_list:'📋 Open diensten opgehaald',
-  request_leave:       '✉️ Verlof aangevraagd',
+  plan_shift:           '📅 Dienst gepland',
+  create_open_shift:    '📋 Open dienst aangemaakt',
+  get_schedule:         '📆 Rooster opgehaald',
+  get_employees:        '👥 Medewerkers opgehaald',
+  approve_leave:        '✅ Verlof verwerkt',
+  get_leave_requests:   '📩 Verlofaanvragen opgehaald',
+  save_workflow:        '💾 Workflow opgeslagen',
+  get_insights:         '📊 Inzichten opgehaald',
+  get_my_schedule:      '📅 Jouw rooster opgehaald',
+  get_open_shifts_list: '📋 Open diensten opgehaald',
+  request_leave:        '✉️ Verlof aangevraagd',
 }
 
 // ── Avatar helper ─────────────────────────────────────────────────────────────
@@ -62,48 +65,64 @@ function DaveAvatar({ size = 'sm' }: { size?: 'sm' | 'md' }) {
   )
 }
 
-// ── Timestamp formattering ─────────────────────────────────────────────────────
+// ── Timestamp ─────────────────────────────────────────────────────────────────
 
 function fmt(ts: string) {
   return new Date(ts).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
 }
 
-// ── Quick-chips voor admins ───────────────────────────────────────────────────
+// ── Quick-chips ───────────────────────────────────────────────────────────────
 
 const ADMIN_QUICK: { label: string; msg: string }[] = [
   { label: '📅 Rooster deze week', msg: 'Laat me het rooster zien van deze week.' },
-  { label: '👥 Medewerkers', msg: 'Geef een lijst van alle actieve medewerkers.' },
-  { label: '📩 Verlofaanvragen', msg: 'Welke verlofaanvragen staan nog open?' },
-  { label: '📊 Bezetting', msg: 'Geef me een bezettingsoverzicht voor deze week.' },
+  { label: '👥 Medewerkers',        msg: 'Geef een lijst van alle actieve medewerkers.' },
+  { label: '📩 Verlofaanvragen',    msg: 'Welke verlofaanvragen staan nog open?' },
+  { label: '📊 Bezetting',          msg: 'Geef me een bezettingsoverzicht voor deze week.' },
 ]
 
 const EMPLOYEE_QUICK: { label: string; msg: string }[] = [
-  { label: '📅 Mijn rooster', msg: 'Wat staat er deze week in mijn rooster?' },
-  { label: '🔓 Open diensten', msg: 'Welke open diensten zijn er beschikbaar?' },
+  { label: '📅 Mijn rooster',    msg: 'Wat staat er deze week in mijn rooster?' },
+  { label: '🔓 Open diensten',   msg: 'Welke open diensten zijn er beschikbaar?' },
   { label: '✉️ Verlof aanvragen', msg: 'Ik wil verlof aanvragen.' },
 ]
+
+const LS_KEY = 'dave_chat_visible'
 
 // ── Hoofd component ───────────────────────────────────────────────────────────
 
 export default function DaveChat() {
-  const [open, setOpen]       = useState(false)
-  const [closing, setClosing] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput]     = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [open, setOpen]                     = useState(false)
+  const [closing, setClosing]               = useState(false)
+  const [messages, setMessages]             = useState<ChatMessage[]>([])
+  const [input, setInput]                   = useState('')
+  const [loading, setLoading]               = useState(false)
+  const [isAdmin, setIsAdmin]               = useState(false)
+  const [historyLoaded, setHistoryLoaded]   = useState(false)
+  // Zichtbaarheid van de FAB — geladen uit localStorage
+  const [visible, setVisible]               = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef   = useRef<HTMLTextAreaElement>(null)
+  const textareaRef    = useRef<HTMLTextAreaElement>(null)
 
-  // Scroll naar onderste bericht
+  // Lees opgeslagen voorkeur bij mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LS_KEY)
+      if (stored === 'false') setVisible(false)
+    } catch { /* private browsing */ }
+  }, [])
+
+  /** Zet zichtbaarheid + sla op in localStorage */
+  function setFabVisible(v: boolean) {
+    setVisible(v)
+    if (!v) setOpen(false) // sluit paneel als knop verborgen wordt
+    try { localStorage.setItem(LS_KEY, String(v)) } catch { /* private browsing */ }
+  }
+
+  // Scroll naar nieuwste bericht
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, loading, scrollToBottom])
+  useEffect(() => { scrollToBottom() }, [messages, loading, scrollToBottom])
 
   // Laad chatgeschiedenis (eenmalig bij openen)
   useEffect(() => {
@@ -117,17 +136,16 @@ export default function DaveChat() {
           const loaded = data.data
             .filter((m: any) => m.role === 'user' || m.role === 'assistant')
             .map((m: any) => ({
-              id:          String(m.id),
-              role:        m.role,
-              content:     m.content,
-              created_at:  m.created_at,
+              id:         String(m.id),
+              role:       m.role,
+              content:    m.content,
+              created_at: m.created_at,
             }))
           setMessages(loaded)
         }
       })
       .catch(() => {})
 
-    // Controleer of admin (sessie-info ophalen via een simpel eindpunt)
     fetch('/api/session')
       .then(r => r.json())
       .then(d => { if (d.user) setIsAdmin(d.user.role === 'admin' || d.user.role === 'manager') })
@@ -157,7 +175,7 @@ export default function DaveChat() {
     if (!msg || loading) return
 
     setInput('')
-    if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
     const userMsg: ChatMessage = {
       id:         Date.now().toString(),
@@ -169,7 +187,7 @@ export default function DaveChat() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/chat', {
+      const res  = await fetch('/api/chat', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ message: msg }),
@@ -177,14 +195,13 @@ export default function DaveChat() {
       const data = await res.json()
 
       if (data.success) {
-        const assistantMsg: ChatMessage = {
+        setMessages(prev => [...prev, {
           id:         Date.now().toString() + '_a',
           role:       'assistant',
           content:    data.message || '',
           tool_calls: data.tool_calls || [],
           created_at: new Date().toISOString(),
-        }
-        setMessages(prev => [...prev, assistantMsg])
+        }])
       } else {
         setMessages(prev => [...prev, {
           id:         Date.now().toString() + '_err',
@@ -214,7 +231,7 @@ export default function DaveChat() {
     setHistoryLoaded(false)
   }
 
-  // Enter = verzenden (Shift+Enter = newline)
+  // Enter = verzenden, Shift+Enter = newline
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -228,24 +245,66 @@ export default function DaveChat() {
 
   return (
     <>
-      {/* Puls-ring */}
-      {!open && <div className="dave-fab-pulse" aria-hidden="true" />}
+      {/* ── Peek-tab: verschijnt als de FAB verborgen is ── */}
+      {!visible && (
+        <button
+          className="dave-peek-tab"
+          onClick={() => setFabVisible(true)}
+          aria-label="Support tonen"
+          title="Support tonen"
+          id="dave-peek-tab"
+        >
+          <span className="dave-peek-icon">
+            {DAVE_AVATAR_URL
+              ? <img src={DAVE_AVATAR_URL} alt="" className="dave-peek-avatar" />
+              : '🎩'}
+          </span>
+          <span className="dave-peek-label">Support</span>
+        </button>
+      )}
 
-      {/* Floating knop */}
-      <button
-        className="dave-fab"
-        onClick={togglePanel}
-        aria-label={open ? "Sluit Support" : "Open Support"}
-        title={DAVE_NAME}
-        id="dave-fab-btn"
-      >
-        {open ? '✕' : (DAVE_AVATAR_URL ? <img src={DAVE_AVATAR_URL} alt="" className="dave-fab-avatar" /> : '🎩')}
-      </button>
+      {/* ── FAB + verberg-knop ── */}
+      {visible && (
+        <>
+          {!open && <div className="dave-fab-pulse" aria-hidden="true" />}
 
-      {/* Chat paneel */}
-      {open && (
-        <div className={`dave-panel${closing ? ' closing' : ''}`} role="dialog" aria-label="Support chat" id="dave-chat-panel">
+          {/* Wrapper zodat het verberg-knopje relatief aan de FAB zit */}
+          <div className="dave-fab-wrap">
+            <button
+              className="dave-fab-hide"
+              onClick={() => setFabVisible(false)}
+              aria-label="Support verbergen"
+              title="Verbergen"
+              id="dave-hide-btn"
+            >
+              ✕
+            </button>
 
+            <button
+              className="dave-fab"
+              onClick={togglePanel}
+              aria-label={open ? 'Sluit Support' : 'Open Support'}
+              title={DAVE_NAME}
+              id="dave-fab-btn"
+            >
+              {open
+                ? '✕'
+                : (DAVE_AVATAR_URL
+                    ? <img src={DAVE_AVATAR_URL} alt="" className="dave-fab-avatar" />
+                    : '🎩')}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ── Chat-paneel ── */}
+      {open && visible && (
+        <div
+          className={`dave-panel${closing ? ' closing' : ''}`}
+          role="dialog"
+          aria-label="Support chat"
+          id="dave-chat-panel"
+        >
           {/* Header */}
           <div className="dave-header">
             <DaveAvatar size="md" />
@@ -257,10 +316,31 @@ export default function DaveChat() {
               </div>
             </div>
             <div className="dave-header-actions">
-              <button className="dave-hdr-btn" onClick={clearChat} title="Gesprek wissen" aria-label="Gesprek wissen" id="dave-clear-btn">
+              <button
+                className="dave-hdr-btn"
+                onClick={clearChat}
+                title="Gesprek wissen"
+                aria-label="Gesprek wissen"
+                id="dave-clear-btn"
+              >
                 🗑️
               </button>
-              <button className="dave-hdr-btn" onClick={closePanel} title="Sluiten" aria-label="Sluiten" id="dave-close-btn">
+              <button
+                className="dave-hdr-btn"
+                onClick={() => setFabVisible(false)}
+                title="Support verbergen"
+                aria-label="Support verbergen"
+                id="dave-hide-panel-btn"
+              >
+                👁
+              </button>
+              <button
+                className="dave-hdr-btn"
+                onClick={closePanel}
+                title="Sluiten"
+                aria-label="Sluiten"
+                id="dave-close-btn"
+              >
                 ✕
               </button>
             </div>
@@ -269,11 +349,12 @@ export default function DaveChat() {
           {/* Berichten */}
           <div className="dave-messages" role="log" aria-live="polite" id="dave-messages">
 
-            {/* Welkomst-scherm als gesprek leeg is */}
             {messages.length === 0 && !loading && (
               <div className="dave-welcome">
                 <div className="dave-welcome-icon">
-                  {DAVE_AVATAR_URL ? <img src={DAVE_AVATAR_URL} alt="" className="dave-welcome-avatar" /> : '🎩'}
+                  {DAVE_AVATAR_URL
+                    ? <img src={DAVE_AVATAR_URL} alt="" className="dave-welcome-avatar" />
+                    : '🎩'}
                 </div>
                 <div className="dave-welcome-title">Hé! Ik ben {DAVE_NAME}</div>
                 <div className="dave-welcome-sub">
@@ -282,7 +363,6 @@ export default function DaveChat() {
               </div>
             )}
 
-            {/* Berichtenlijst */}
             {messages.map(msg => {
               if (msg.role === 'error') {
                 return (
@@ -295,7 +375,6 @@ export default function DaveChat() {
                   </div>
                 )
               }
-
               if (msg.role === 'user') {
                 return (
                   <div key={msg.id} className="dave-msg user">
@@ -306,13 +385,11 @@ export default function DaveChat() {
                   </div>
                 )
               }
-
               // assistant
               return (
                 <div key={msg.id} className="dave-msg dave">
                   <DaveAvatar />
                   <div className="dave-msg-content">
-                    {/* Tool-resultaat kaartjes (tonen vóór het antwoord) */}
                     {msg.tool_calls && msg.tool_calls.length > 0 && (
                       <div className="dave-tool-cards">
                         {msg.tool_calls.map((tc, i) => (
@@ -339,7 +416,6 @@ export default function DaveChat() {
               )
             })}
 
-            {/* Typing indicator */}
             {loading && (
               <div className="dave-msg dave">
                 <DaveAvatar />
