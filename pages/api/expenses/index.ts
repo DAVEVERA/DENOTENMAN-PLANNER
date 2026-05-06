@@ -8,7 +8,7 @@ import { sendExpenseRequestAlertEmail } from '@/lib/email'
 import crypto from 'crypto'
 import type { ClaimType, CLAIM_TYPES } from '@/types'
 
-export const config = { api: { bodyParser: { sizeLimit: '14mb' } } }
+export const config = { api: { bodyParser: { sizeLimit: '135mb' } } }
 
 const VALID_TYPES: readonly string[] = ['reiskosten', 'overuren', 'overig']
 
@@ -70,8 +70,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         const buffer = Buffer.from(base64, 'base64')
-        if (buffer.byteLength > 10 * 1024 * 1024) {
-          return res.status(400).json({ success: false, message: 'Bestand mag maximaal 10 MB zijn' })
+        if (buffer.byteLength > 100 * 1024 * 1024) {
+          return res.status(400).json({ success: false, message: 'Bestand mag maximaal 100 MB zijn' })
         }
         if (!validateFileMagic(buffer, mime_type)) {
            return res.status(400).json({ success: false, message: 'Bestand is beschadigd of ongeldig' })

@@ -71,8 +71,8 @@ export default function ExpensesPage({ user }: Props) {
     let filename = ''
     
     if (uploadFile) {
-      if (uploadFile.size > 10 * 1024 * 1024) {
-        setFormErr('Bestand mag maximaal 10 MB zijn')
+      if (uploadFile.size > 100 * 1024 * 1024) {
+        setFormErr('Bestand mag maximaal 100 MB zijn')
         setSaving(false)
         return
       }
@@ -186,7 +186,7 @@ export default function ExpensesPage({ user }: Props) {
                   <input id="receipt_file" type="file" className="form-control file-input"
                     accept=".pdf,image/jpeg,image/png,image/webp"
                     onChange={e => setUploadFile(e.target.files?.[0] ?? null)} />
-                  <span className="form-hint">PDF, JPEG of PNG (max 10MB)</span>
+                  <span className="form-hint">PDF, JPEG of PNG (max 100MB)</span>
                 </div>
               </div>
               <div className="exp-form-footer">
