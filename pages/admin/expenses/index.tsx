@@ -77,14 +77,13 @@ export default function AdminExpensesPage({ user }: Props) {
   }
 
   async function exportCsv() {
-    const all = await fetch('/api/expenses').then(r => r.json())
-    const rows: ExpenseClaim[] = all.success ? all.data : []
+    const rows = claims // Exporteer wat momenteel gefilterd/zichtbaar is
     const header = 'ID;Medewerker;Type;Bedrag;Omschrijving;Datum;Referentiedatum;Status;Beoordeeld door;Beoordeeld op;Opmerking'
     const lines = rows.map(c => [
-      c.id, c.employee_name, c.claim_type, c.amount.toString().replace('.', ','),
-      `"${c.description.replace(/"/g, '""')}"`,
-      c.claim_date, c.reference_date ?? '',
-      c.status, c.reviewed_by ?? '', c.reviewed_at ? new Date(c.reviewed_at).toLocaleDateString('nl-NL') : '',
+      c.id, c.employee_name ?? '', c.claim_type ?? '', (c.amount ?? 0).toString().replace('.', ','),
+      `"${(c.description ?? '').replace(/"/g, '""')}"`,
+      c.claim_date ?? '', c.reference_date ?? '',
+      c.status ?? '', c.reviewed_by ?? '', c.reviewed_at ? new Date(c.reviewed_at).toLocaleDateString('nl-NL') : '',
       `"${(c.review_note ?? '').replace(/"/g, '""')}"`,
     ].join(';'))
     const csv = [header, ...lines].join('\n')
