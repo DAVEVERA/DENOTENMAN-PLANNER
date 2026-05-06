@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
 import { getExpenseClaim, updateExpenseClaimStatus, deleteExpenseClaim } from '@/lib/expenses'
+import { getEmployee } from '@/lib/scheduler'
+import { sendExpenseReviewEmail } from '@/lib/email'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -37,6 +39,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         session.user.display_name ?? session.user.user_id,
         review_note,
       )
+
+      // Stuur medewerker een e-mail (zowel bij goedkeuren als afkeuren)
+      if (updated && updated.employee_id) {
+        try {
+          const emp = await getEmployee(updated.employee_id)
+          if (emp && emp.email) {
+            await sendExpenseReviewEmail({
+              to: emp.email,
+              employeeName: emp.name,
+              claimType: updated.claim_type,
+              amount: updated.amount,
+              decision: status,
+              note: review_note,
+            })
+          }
+        } catch (mailErr) {
+          console.error('[api/expenses] Mislukt om review mail te sturen:', mailErr)
+        }
+      }
+
       return res.json({ success: true, data: updated })
     }
 

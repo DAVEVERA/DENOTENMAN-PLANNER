@@ -456,3 +456,56 @@ export async function sendExpenseRequestAlertEmail(opts: {
     `
   })
 }
+
+export async function sendExpenseReviewEmail(opts: {
+  to: string
+  employeeName: string
+  claimType: string
+  amount: number
+  decision: 'approved' | 'rejected'
+  note?: string
+}): Promise<void> {
+  assertSmtpConfigured()
+  const transport = getTransport()
+  
+  const statusNL = opts.decision === 'approved' ? 'goedgekeurd' : 'afgekeurd'
+  const color = opts.decision === 'approved' ? '#2E7D32' : '#C62828'
+  
+  await transport.sendMail({
+    from: process.env.SMTP_FROM ?? 'Planner <planner@denotenkar.nl>',
+    to: opts.to,
+    subject: `Declaratie ${statusNL}`,
+    text: `Hallo ${opts.employeeName},\n\nJe declaratie (${opts.claimType}) ter waarde van €${opts.amount.toFixed(2)} is ${statusNL}.\n\nBekijk je declaraties in de planner.`,
+    html: `
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f1ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ee;padding:40px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <tr><td style="background:${color};padding:28px 32px;text-align:center">
+          <p style="margin:0;font-size:22px;font-weight:700;color:#fff;letter-spacing:-.02em">
+            Declaratie ${statusNL}
+          </p>
+        </td></tr>
+        <tr><td style="padding:32px">
+          <p style="margin:0 0 16px;font-size:16px;color:#4a3728;line-height:1.6">
+            Hallo <strong>${opts.employeeName}</strong>,
+          </p>
+          <p style="margin:0 0 24px;font-size:16px;color:#4a3728;line-height:1.6">
+            Je declaratie (<strong>${opts.claimType}</strong>) ter waarde van <strong>€${opts.amount.toFixed(2).replace('.', ',')}</strong> is ${statusNL}.
+          </p>
+          ${opts.note ? `<p style="margin:0 0 24px;font-size:15px;color:#4a3728;line-height:1.6;font-style:italic"><strong>Opmerking beheerder:</strong><br/>${opts.note}</p>` : ''}
+          <p style="margin:0;font-size:14px;color:#8c7b6f">
+            Ga naar de <a href="${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://planner.denotenman.com'}/me/expenses" style="color:#C8882A;text-decoration:none;font-weight:500">planner</a> om al je declaraties te bekijken.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `
+  })
+}
