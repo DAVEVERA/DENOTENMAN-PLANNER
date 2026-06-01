@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
-import { getTimeLogs } from '@/lib/hours'
+import { getExportTimeLogs } from '@/lib/hours'
 import { getSettings } from '@/lib/settings'
 import { buildCSV, buildJSON, buildExcel, buildPDF } from '@/lib/export'
 import { sendExportEmail } from '@/lib/email'
@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     is_processed,
   } = req.body
 
-  const logs = await getTimeLogs({
+  const logs = await getExportTimeLogs({
     from, to,
     location:     location as Location | undefined,
     employee_id:  employee_id ? parseInt(employee_id) : undefined,

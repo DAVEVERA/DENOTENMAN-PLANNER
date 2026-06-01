@@ -6,12 +6,16 @@ let _supabase: SupabaseClient | null = null
 export function getSupabase(): SupabaseClient {
   if (_supabase) return _supabase
 
-  const url = process.env.SUPABASE_URL
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!url || !key) {
+    const missing = [
+      !url ? 'SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL' : null,
+      !key ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
+    ].filter(Boolean).join(', ')
     throw new Error(
-      'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variable.'
+      `Missing required Supabase environment variable(s): ${missing}.`
     )
   }
 

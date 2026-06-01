@@ -19,7 +19,12 @@ export default function LoginPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
-    const data = await r.json()
+    let data: { success?: boolean; message?: string }
+    try {
+      data = await r.json()
+    } catch {
+      data = { success: false, message: 'Inloggen mislukt door een serverfout.' }
+    }
     setLoading(false)
     if (data.success) router.push('/')
     else setError(data.message ?? 'Onjuiste inloggegevens')
