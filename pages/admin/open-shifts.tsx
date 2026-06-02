@@ -5,6 +5,7 @@ import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Employee, Location, Day, ShiftType } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES, WORK_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner' 
+import { formatShiftDate } from '@/lib/shiftDate'
 
 type Tab = 'open' | 'offered'
 
@@ -38,8 +39,9 @@ function currentWeek() {
 }
 
 function shiftLabel(s: Shift) {
-  const time = s.start_time ? `${s.start_time.slice(0,5)}–${s.end_time?.slice(0,5)}` : ''
-  return `${DAY_NL[s.day_of_week] ?? s.day_of_week}, week ${s.week_number} · ${s.shift_type}${time ? ' · ' + time : ''}`
+  const time = s.start_time ? `${s.start_time.slice(0,5)}-${s.end_time?.slice(0,5)}` : ''
+  const date = formatShiftDate(s.day_of_week, s.week_number, s.year)
+  return `${DAY_NL[s.day_of_week] ?? s.day_of_week} ${date}, week ${s.week_number} - ${s.shift_type}${time ? ' - ' + time : ''}`
 }
 
 export default function OpenShiftsAdminPage({ user }: Props) {
@@ -231,6 +233,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   }
 
   const displayList = tab === 'open' ? adminOpen : offered
+  const formDate = formatShiftDate(form.day_of_week, form.week_number, form.year)
 
   return (
     <AdminLayout user={user} title="Open diensten">
@@ -309,6 +312,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                     value={form.year} onChange={e => setForm(f => ({ ...f, year: +e.target.value }))} />
                 </div>
               </div>
+              <div className="date-preview">Exacte datum: {formDate}</div>
               <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Dag</label>
@@ -390,6 +394,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                     value={form.year} onChange={e => setForm(f => ({ ...f, year: +e.target.value }))} />
                 </div>
               </div>
+              <div className="date-preview">Exacte datum: {formDate}</div>
               <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Dag</label>
@@ -703,6 +708,15 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-label { font-size: .8125rem; font-weight: 600; color: var(--text-sub); }
+        .date-preview {
+          background: var(--surface-alt);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          color: var(--text-sub);
+          font-size: .875rem;
+          font-weight: 600;
+          padding: 8px 10px;
+        }
 
         .loc-toggle { display: flex; gap: 6px; }
         .loc-btn {

@@ -6,6 +6,9 @@ import type { ExpenseClaim } from '@/types'
 export async function getExpenseClaims(filters?: {
   employeeId?: number
   status?: ExpenseClaim['status']
+  claimType?: ExpenseClaim['claim_type']
+  from?: string
+  to?: string
 }): Promise<ExpenseClaim[]> {
   let q = supabase
     .from(T('expense_claims'))
@@ -14,6 +17,9 @@ export async function getExpenseClaims(filters?: {
 
   if (filters?.employeeId) q = q.eq('employee_id', filters.employeeId)
   if (filters?.status)     q = q.eq('status', filters.status)
+  if (filters?.claimType)  q = q.eq('claim_type', filters.claimType)
+  if (filters?.from)       q = q.gte('claim_date', filters.from)
+  if (filters?.to)         q = q.lte('claim_date', filters.to)
 
   const { data, error } = await q
   if (error) throw error

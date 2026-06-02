@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
@@ -76,26 +77,6 @@ export default function AdminExpensesPage({ user }: Props) {
     else showToast('❌ ' + (r.message ?? 'Fout'), false)
   }
 
-  async function exportCsv() {
-    const rows = claims // Exporteer wat momenteel gefilterd/zichtbaar is
-    const header = 'ID;Medewerker;Type;Bedrag;Omschrijving;Datum;Referentiedatum;Status;Beoordeeld door;Beoordeeld op;Opmerking'
-    const lines = rows.map(c => [
-      c.id, c.employee_name ?? '', c.claim_type ?? '', (c.amount ?? 0).toString().replace('.', ','),
-      `"${(c.description ?? '').replace(/"/g, '""')}"`,
-      c.claim_date ?? '', c.reference_date ?? '',
-      c.status ?? '', c.reviewed_by ?? '', c.reviewed_at ? new Date(c.reviewed_at).toLocaleDateString('nl-NL') : '',
-      `"${(c.review_note ?? '').replace(/"/g, '""')}"`,
-    ].join(';'))
-    const csv = [header, ...lines].join('\n')
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `declaraties-${new Date().toISOString().slice(0,10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   const totalApproved = claims
     .filter(c => c.status === 'approved')
     .reduce((sum, c) => sum + Number(c.amount), 0)
@@ -114,9 +95,9 @@ export default function AdminExpensesPage({ user }: Props) {
           </p>
         </div>
         <div className="page-actions">
-          <button id="admin-exp-export" className="btn btn-outline btn-sm" onClick={exportCsv}>
+          <Link id="admin-exp-export" className="btn btn-outline btn-sm" href="/admin/expenses/export">
             ⬇ Export CSV
-          </button>
+          </Link>
         </div>
       </div>
 

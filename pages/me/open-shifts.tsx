@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
+import { formatShiftDate } from '@/lib/shiftDate'
 
 interface Props { user: SessionUser }
 
@@ -14,8 +15,9 @@ const DAY_NL: Record<string, string> = {
 }
 
 function shiftDesc(s: Shift) {
-  const time = s.start_time ? `${s.start_time.slice(0,5)}–${s.end_time?.slice(0,5)}` : ''
-  return `${DAY_NL[s.day_of_week] ?? s.day_of_week} · ${s.shift_type}${time ? ' · ' + time : ''}`
+  const time = s.start_time ? `${s.start_time.slice(0,5)}-${s.end_time?.slice(0,5)}` : ''
+  const date = formatShiftDate(s.day_of_week, s.week_number, s.year)
+  return `${DAY_NL[s.day_of_week] ?? s.day_of_week} ${date} - ${s.shift_type}${time ? ' - ' + time : ''}`
 }
 
 export default function OpenShiftsPage({ user }: Props) {
@@ -137,7 +139,8 @@ export default function OpenShiftsPage({ user }: Props) {
                           <span className={`loc-dot loc-dot-${s.location}`} />
                           {LOC[s.location] ?? s.location}
                         </div>
-                        <div className="os-card-week">Week {s.week_number} · {s.year}</div>
+                        <div className="os-card-week">Week {s.week_number} - {s.year}</div>
+                        <div className="os-card-date">{formatShiftDate(s.day_of_week, s.week_number, s.year)}</div>
                         <div className="os-card-day">{DAY_NL[s.day_of_week] ?? s.day_of_week}</div>
                         <div className="os-card-type">{s.shift_type}</div>
                         {s.start_time && (
@@ -179,7 +182,7 @@ export default function OpenShiftsPage({ user }: Props) {
                       <div className="os-claim-info">
                         <span className={`loc-dot loc-dot-${s.location}`} />
                         <div>
-                          <div className="os-claim-label">{shiftDesc(s)} · Week {s.week_number}</div>
+                          <div className="os-claim-label">{shiftDesc(s)} - Week {s.week_number}</div>
                           <div className="os-claim-status">⏳ Wacht op goedkeuring van de beheerder</div>
                         </div>
                       </div>
@@ -220,7 +223,7 @@ export default function OpenShiftsPage({ user }: Props) {
                         <div className="os-claim-info">
                           <span className={`loc-dot loc-dot-${s.location}`} />
                           <div>
-                            <div className="os-claim-label">{shiftDesc(s)} · Week {s.week_number}</div>
+                            <div className="os-claim-label">{shiftDesc(s)} - Week {s.week_number}</div>
                             <div className="os-claim-status">
                               {hasClaimer
                                 ? `👋 Er is interesse — beheerder beoordeelt`
@@ -316,6 +319,7 @@ export default function OpenShiftsPage({ user }: Props) {
         .loc-dot-nootmagazijn { background: #7B4F2E; }
 
         .os-card-week { font-size: .8125rem; color: var(--text-muted); }
+        .os-card-date { font-size: .875rem; font-weight: 700; color: var(--text-sub); }
         .os-card-day { font-size: 1.25rem; font-weight: 800; line-height: 1.1; }
         .os-card-type { font-size: .875rem; font-weight: 600; color: var(--text-sub); }
         .os-card-time { font-size: .8125rem; color: var(--text-muted); }

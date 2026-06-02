@@ -3,7 +3,8 @@ import { getSession, can } from '@/lib/auth'
 import { getOpenShifts, saveShift, updateOpenShift, withdrawOpenShift, getEmployees } from '@/lib/scheduler'
 import { sendPushToAll } from '@/lib/push'
 import { sendOpenShiftAlertEmail } from '@/lib/email'
-import type { Location } from '@/types'
+import { formatShiftDate } from '@/lib/shiftDate'
+import type { Day, Location } from '@/types'
 
 const DAY_NL: Record<string, string> = {
   maandag: 'Maandag', dinsdag: 'Dinsdag', woensdag: 'Woensdag',
@@ -39,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const body = req.body
         const day  = DAY_NL[body.day_of_week] ?? body.day_of_week
+        const date = formatShiftDate(body.day_of_week as Day, Number(body.week_number), Number(body.year))
 
         const employees = await getEmployees(true)
         const emails = employees.map(e => e.email).filter(Boolean) as string[]
@@ -47,13 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           await sendOpenShiftAlertEmail({
             toBcc: emails,
             subject: '📢 Nieuwe open dienst beschikbaar!',
-            body: `Er is een nieuwe open dienst beschikbaar gezet door de beheerder:\n\nType: ${body.shift_type}-dienst\nDag: ${day} (Week ${body.week_number})\n\nLog in via de app om deze dienst te bekijken en eventueel over te nemen.`,
+            body: `Er is een nieuwe open dienst beschikbaar gezet door de beheerder:\n\nType: ${body.shift_type}-dienst\nDag: ${day} ${date} (Week ${body.week_number})\n\nLog in via de app om deze dienst te bekijken en eventueel over te nemen.`,
           })
         }
 
         await sendPushToAll({
           title: '📢 Nieuwe open dienst!',
-          body:  `Een ${body.shift_type}-dienst op ${day} (week ${body.week_number}) is beschikbaar. Klik om te claimen!`,
+          body:  `Een ${body.shift_type}-dienst op ${day} ${date} (week ${body.week_number}) is beschikbaar. Klik om te claimen!`,
           url:   '/me/open-shifts',
         })
       } catch (err) {
