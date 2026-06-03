@@ -3,7 +3,9 @@ import { getSession, can } from '@/lib/auth'
 import { supabase, T } from '@/lib/db'
 import { getShift, getEmployees } from '@/lib/scheduler'
 import { sendPushToAll } from '@/lib/push'
-import { sendOpenShiftAlertEmail } from '@/lib/email'
+import { sendOpenShiftSubmissionEmails } from '@/lib/email'
+import { formatShiftDate } from '@/lib/shiftDate'
+import type { Day } from '@/types'
 
 const DAY_NL: Record<string, string> = {
   maandag: 'Maandag', dinsdag: 'Dinsdag', woensdag: 'Woensdag',
@@ -34,22 +36,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('id', parseInt(shift_id))
       if (error) throw error
 
-      // Notify all employees
+      // Notifications are best-effort; the offer itself should not fail on SMTP/push issues.
       try {
         const employees = await getEmployees(true)
-        const emails = employees.map(e => e.id !== employeeId ? e.email : null).filter(Boolean) as string[]
-
-        if (emails.length > 0) {
-          const day = DAY_NL[shift.day_of_week] ?? shift.day_of_week
-          await sendOpenShiftAlertEmail({
-            toBcc: emails,
-            subject: '🔄 Nieuwe dienst aangeboden',
-            body: `${shift.employee_name} biedt een ${shift.shift_type}-dienst aan op ${day} (Week ${shift.week_number}).\n\nLog in via de app om deze dienst te bekijken en eventueel over te nemen.`,
+        const submitter = employees.find(e => e.id === employeeId)
+        const adminEmail = process.env.ADMIN_EMAIL ?? 'info@denotenman.com'
+        const day = DAY_NL[shift.day_of_week] ?? shift.day_of_week
+        const date = formatShiftDate(shift.day_of_week as Day, shift.week_number, shift.year)
+        const shiftLabel = `${shift.shift_type}-dienst op ${day} ${date} (week ${shift.week_number})`
+        const emails = employees
+          .map(e => {
+            if (e.id === employeeId) return null
+            if (!e.email) return null
+            if (e.email.toLowerCase() === adminEmail.toLowerCase()) return null
+            return e.email
           })
-        }
+          .filter(Boolean) as string[]
+
+        await sendOpenShiftSubmissionEmails({
+          adminEmail,
+          submitterEmail: submitter?.email ?? null,
+          submitterName: shift.employee_name,
+          otherEmployeeEmails: emails,
+          shiftLabel,
+          adminBody: `${shift.employee_name} heeft een open dienst ingezonden.\n\nDienst: ${shiftLabel}\n\nBekijk deze in de admin planner.`,
+          submitterBody: `Hallo ${shift.employee_name},\n\nJe open dienst is succesvol ingezonden.\n\nDienst: ${shiftLabel}\n\nJe ontvangt bericht zodra iemand zich inschrijft en de dienst is verwerkt.`,
+          employeeBody: `Er is een open dienst ingezonden waarop je kunt inschrijven.\n\nDienst: ${shiftLabel}\nAangeboden door: ${shift.employee_name}\n\nLog in via de app om deze dienst te bekijken en je in te schrijven.`,
+        })
 
         await sendPushToAll({
-          title: '🔄 Dienst aangeboden',
+          title: 'Dienst aangeboden',
           body: `${shift.employee_name} biedt een ${shift.shift_type}-dienst aan (week ${shift.week_number}, ${shift.day_of_week}). Klik om over te nemen!`,
           url: '/me/open-shifts',
         })

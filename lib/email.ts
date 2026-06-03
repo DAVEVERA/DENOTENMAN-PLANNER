@@ -249,6 +249,91 @@ export async function sendOpenShiftAlertEmail(opts: {
   })
 }
 
+export async function sendOpenShiftSubmissionEmails(opts: {
+  adminEmail?: string
+  submitterEmail?: string | null
+  submitterName: string
+  otherEmployeeEmails: string[]
+  shiftLabel: string
+  adminBody: string
+  submitterBody: string
+  employeeBody: string
+}): Promise<void> {
+  assertSmtpConfigured()
+
+  const transport = getTransport()
+  const adminEmail = opts.adminEmail ?? process.env.ADMIN_EMAIL ?? 'info@denotenman.com'
+  const recipients = Array.from(new Set(opts.otherEmployeeEmails.filter(Boolean)))
+  const escapeHtml = (value: string) => value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+  const card = (title: string, body: string, ctaUrl: string, ctaLabel: string) => `
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f1ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ee;padding:40px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <tr><td style="background:#2C6E49;padding:28px 32px;text-align:center">
+          <p style="margin:0;font-size:22px;font-weight:700;color:#fff">De Notenman - Planner</p>
+        </td></tr>
+        <tr><td style="padding:32px">
+          <p style="margin:0 0 16px;font-size:18px;font-weight:600;color:#1a140e">${escapeHtml(title)}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#4a3728;line-height:1.6">${escapeHtml(body).replace(/\n/g, '<br/>')}</p>
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:24px 0">
+            <tr><td align="center">
+              <table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate">
+                <tr><td style="background:#2C6E49;border-radius:8px;text-align:center">
+                  <a href="${ctaUrl}" target="_blank" rel="noopener noreferrer" style="display:block;background:#2C6E49;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;border:1px solid #2C6E49">${escapeHtml(ctaLabel)} &rarr;</a>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+  const sends: Promise<unknown>[] = [
+    transport.sendMail({
+      from: FROM,
+      to: adminEmail,
+      subject: `Nieuwe open dienst ingezonden: ${opts.submitterName}`,
+      text: opts.adminBody,
+      html: card('Nieuwe open dienst ingezonden', opts.adminBody, `${APP_URL}/admin/open-shifts`, 'Bekijk in admin'),
+    }),
+  ]
+
+  if (opts.submitterEmail) {
+    sends.push(transport.sendMail({
+      from: FROM,
+      to: `${opts.submitterName} <${opts.submitterEmail}>`,
+      subject: `Open dienst succesvol ingezonden: ${opts.shiftLabel}`,
+      text: opts.submitterBody,
+      html: card('Open dienst succesvol ingezonden', opts.submitterBody, `${APP_URL}/me/open-shifts`, 'Bekijk open diensten'),
+    }))
+  }
+
+  if (recipients.length > 0) {
+    sends.push(transport.sendMail({
+      from: FROM,
+      bcc: recipients.join(', '),
+      subject: `Open dienst beschikbaar: ${opts.shiftLabel}`,
+      text: opts.employeeBody,
+      html: card('Open dienst beschikbaar', opts.employeeBody, `${APP_URL}/me/open-shifts`, 'Inschrijven'),
+    }))
+  }
+
+  await Promise.all(sends)
+}
+
 export async function sendLeaveRequestAlertEmail(opts: {
   employeeName: string
   leaveType: string
