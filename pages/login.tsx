@@ -81,6 +81,12 @@ export default function LoginPage() {
             />
           </div>
 
+          <div className="forgot-row">
+            <Link href="/forgot-password">
+              Wachtwoord vergeten?
+            </Link>
+          </div>
+
           <button
             type="submit"
             className="btn btn-primary login-btn"
@@ -90,9 +96,6 @@ export default function LoginPage() {
             {loading ? <><Spinner /> Bezig…</> : 'Inloggen'}
           </button>
 
-          <Link href="/forgot-password" className="forgot-link">
-            Wachtwoord vergeten?
-          </Link>
         </form>
 
         <p className="login-footer">
@@ -194,20 +197,26 @@ export default function LoginPage() {
           justify-content: center;
           gap: 8px;
         }
+        .forgot-row {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: -6px;
+        }
+        .forgot-row :global(a) {
+          color: #FFCF6B;
+          font-size: .875rem;
+          font-weight: 600;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+          transition: color .14s;
+        }
+        .forgot-row :global(a:hover) { color: #fff; }
         .login-footer {
           font-size: .75rem;
           color: rgba(255,255,255,.22);
           text-align: center;
           margin: 0;
         }
-        .forgot-link {
-          align-self: center;
-          color: rgba(255,255,255,.55);
-          font-size: .8125rem;
-          text-decoration: none;
-          transition: color .14s;
-        }
-        .forgot-link:hover { color: #fff; }
       `}</style>
     </div>
   )
