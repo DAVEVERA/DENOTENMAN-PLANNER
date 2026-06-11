@@ -1,6 +1,7 @@
 import { supabase, T, unwrap } from './db'
 import type { Shift, Employee, Location } from '@/types'
 import { DAYS } from '@/types'
+import { attachOpenShiftClaims } from './open-shift-claims'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -171,7 +172,7 @@ export async function getOpenShifts(location?: Location): Promise<Shift[]> {
   if (location && location !== 'both') q = q.eq('location', location)
   const { data, error } = await q.order('year').order('week_number').order('day_of_week')
   if (error) throw error
-  return data ?? []
+  return attachOpenShiftClaims(data ?? [])
 }
 
 /**

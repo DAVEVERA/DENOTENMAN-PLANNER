@@ -1,41 +1,43 @@
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
-import type { GetServerSideProps } from 'next'
-import { getSession } from '@/lib/auth'
 import Spinner from '@/components/ui/Spinner'
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const router = useRouter()
-  const [form, setForm]     = useState({ username: '', password: '' })
-  const [error, setError]   = useState('')
+  const token = typeof router.query.token === 'string' ? router.query.token : ''
+  const [form, setForm] = useState({ password: '', confirmPassword: '' })
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError('')
-    const r    = await fetch('/api/auth/login', {
+    setError(''); setMessage('')
+    if (form.password !== form.confirmPassword) {
+      setError('De wachtwoorden komen niet overeen.')
+      return
+    }
+    setLoading(true)
+    const r = await fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ token, password: form.password }),
     })
-    let data: { success?: boolean; message?: string }
-    try {
-      data = await r.json()
-    } catch {
-      data = { success: false, message: 'Inloggen mislukt door een serverfout.' }
-    }
+    const data = await r.json().catch(() => ({ success: false, message: 'Wachtwoord herstellen mislukt.' }))
     setLoading(false)
-    if (data.success) router.push('/')
-    else setError(data.message ?? 'Onjuiste inloggegevens')
+    if (data.success) {
+      setMessage('Je wachtwoord is gewijzigd. Je kunt nu inloggen.')
+      setForm({ password: '', confirmPassword: '' })
+    } else {
+      setError(data.message ?? 'Wachtwoord herstellen mislukt.')
+    }
   }
 
   return (
     <div className="login-shell">
       <div className="login-card">
-
-        {/* Brand */}
         <div className="login-brand">
           <Image
             src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
@@ -45,58 +47,50 @@ export default function LoginPage() {
             style={{ width: 'auto', height: '52px', display: 'block', margin: '0 auto' }}
             priority
           />
-          <p className="login-subtitle">Planner — inloggen</p>
+          <p className="login-subtitle">Nieuw wachtwoord kiezen</p>
         </div>
 
-        {/* Gebruikersnaam + wachtwoord */}
         <form onSubmit={handleSubmit} className="login-form">
-          {error && (
-            <div className="login-error" role="alert">{error}</div>
-          )}
+          {!token && <div className="login-error" role="alert">Herstel-link ontbreekt.</div>}
+          {error && <div className="login-error" role="alert">{error}</div>}
+          {message && <div className="login-success" role="status">{message}</div>}
 
           <div className="form-group">
-            <label htmlFor="username" className="form-label">Gebruikersnaam</label>
-            <input
-              id="username"
-              className="form-control"
-              type="text"
-              autoFocus
-              autoComplete="username"
-              required
-              value={form.username}
-              onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">Wachtwoord</label>
+            <label htmlFor="password" className="form-label">Nieuw wachtwoord</label>
             <input
               id="password"
               className="form-control"
               type="password"
-              autoComplete="current-password"
+              autoFocus
+              autoComplete="new-password"
               required
+              minLength={8}
               value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
             />
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary login-btn"
-            disabled={loading}
-            id="login-submit-btn"
-          >
-            {loading ? <><Spinner /> Bezig…</> : 'Inloggen'}
-          </button>
+          <div className="form-group">
+            <label htmlFor="confirmPassword" className="form-label">Herhaal wachtwoord</label>
+            <input
+              id="confirmPassword"
+              className="form-control"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={form.confirmPassword}
+              onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
+            />
+          </div>
 
-          <Link href="/forgot-password" className="forgot-link">
-            Wachtwoord vergeten?
-          </Link>
+          <button type="submit" className="btn btn-primary login-btn" disabled={loading || !token}>
+            {loading ? <><Spinner /> Opslaan...</> : 'Wachtwoord opslaan'}
+          </button>
         </form>
 
         <p className="login-footer">
-          Geen toegang? Neem contact op met de beheerder.
+          <Link href="/login">Terug naar inloggen</Link>
         </p>
       </div>
 
@@ -109,7 +103,6 @@ export default function LoginPage() {
           background: #0d0a08;
           padding: 24px 16px;
         }
-
         .login-card {
           width: 100%;
           max-width: 380px;
@@ -121,7 +114,6 @@ export default function LoginPage() {
           flex-direction: column;
           gap: 20px;
         }
-
         .login-brand {
           text-align: center;
           display: flex;
@@ -130,38 +122,30 @@ export default function LoginPage() {
           gap: 10px;
           padding-bottom: 4px;
         }
-
-        /* Logo is zwart op transparant — invert voor witte weergave op donkere achtergrond */
-        .login-brand :global(img) {
-          filter: invert(1) brightness(2);
-        }
-
+        .login-brand :global(img) { filter: invert(1) brightness(2); }
         .login-subtitle {
           font-size: .8125rem;
           color: rgba(255,255,255,.35);
           margin: 0;
           letter-spacing: .02em;
         }
-
-        /* Form */
-        .login-form {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
+        .login-form { display: flex; flex-direction: column; gap: 14px; }
+        .login-error, .login-success {
+          border-radius: 8px;
+          padding: 10px 12px;
+          font-size: .875rem;
         }
         .login-error {
           background: rgba(239,68,68,.12);
           border: 1px solid rgba(239,68,68,.3);
           color: #fca5a5;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-size: .875rem;
         }
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
+        .login-success {
+          background: rgba(34,197,94,.12);
+          border: 1px solid rgba(34,197,94,.3);
+          color: #86efac;
         }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-label {
           font-size: .8125rem;
           font-weight: 500;
@@ -196,25 +180,13 @@ export default function LoginPage() {
         }
         .login-footer {
           font-size: .75rem;
-          color: rgba(255,255,255,.22);
+          color: rgba(255,255,255,.45);
           text-align: center;
           margin: 0;
         }
-        .forgot-link {
-          align-self: center;
-          color: rgba(255,255,255,.55);
-          font-size: .8125rem;
-          text-decoration: none;
-          transition: color .14s;
-        }
-        .forgot-link:hover { color: #fff; }
+        .login-footer :global(a) { color: rgba(255,255,255,.65); text-decoration: none; }
+        .login-footer :global(a:hover) { color: #fff; }
       `}</style>
     </div>
   )
-}
-
-export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
-  const session = await getSession(req as any, res as any)
-  if (session.user) return { redirect: { destination: '/', permanent: false } }
-  return { props: {} }
 }

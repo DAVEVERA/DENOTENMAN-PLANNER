@@ -30,6 +30,10 @@ export default function ProfilePage({ user }: Props) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [avatarFile, setAvatarFile]       = useState<{ base64: string; mime: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState('')
+  const [passwordError, setPasswordError] = useState('')
 
   // Formulier state
   const [form, setForm] = useState({
@@ -117,6 +121,37 @@ export default function ProfilePage({ user }: Props) {
     setAvatarFile(null)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setPasswordSaving(true); setPasswordError(''); setPasswordMessage('')
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordSaving(false)
+      setPasswordError('De nieuwe wachtwoorden komen niet overeen.')
+      return
+    }
+
+    const r = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      }),
+    })
+    const d = await r.json().catch(() => ({ success: false, message: 'Wachtwoord wijzigen mislukt.' }))
+    setPasswordSaving(false)
+
+    if (!d.success) {
+      setPasswordError(d.message ?? 'Wachtwoord wijzigen mislukt.')
+      return
+    }
+
+    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    setPasswordMessage('Wachtwoord gewijzigd.')
+    setTimeout(() => setPasswordMessage(''), 3000)
   }
 
   const locProp = (user.location && user.location !== 'both' ? user.location : 'markt') as Exclude<Location, 'both'>
@@ -316,6 +351,59 @@ export default function ProfilePage({ user }: Props) {
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? <><Spinner /> Opslaan…</> : 'Profiel opslaan'}
             </button>
+          </div>
+        </form>
+
+        <form onSubmit={handlePasswordSubmit} className="password-section">
+          <div className="section-card">
+            <h2 className="section-title">Wachtwoord wijzigen</h2>
+            {passwordError && <div className="alert alert-danger" role="alert">{passwordError}</div>}
+            {passwordMessage && <div className="alert alert-success" role="status">{passwordMessage}</div>}
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="current-password" className="form-label">Huidig wachtwoord</label>
+                <input
+                  id="current-password"
+                  className="form-control"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={passwordForm.currentPassword}
+                  onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="new-password" className="form-label">Nieuw wachtwoord</label>
+                <input
+                  id="new-password"
+                  className="form-control"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={passwordForm.newPassword}
+                  onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="confirm-password" className="form-label">Herhaal nieuw wachtwoord</label>
+                <input
+                  id="confirm-password"
+                  className="form-control"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={passwordForm.confirmPassword}
+                  onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="form-footer">
+              <button type="submit" className="btn btn-outline" disabled={passwordSaving}>
+                {passwordSaving ? <><Spinner /> Opslaanâ€¦</> : 'Wachtwoord wijzigen'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

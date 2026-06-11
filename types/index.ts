@@ -71,6 +71,18 @@ export interface Shift {
   shift_category: ShiftCategory | null
   created_by: string
   created_at: string
+  claims?: OpenShiftClaim[]
+}
+
+export interface OpenShiftClaim {
+  id: number
+  shift_id: number
+  employee_id: number
+  employee_name: string
+  status: 'pending' | 'accepted' | 'declined' | 'withdrawn'
+  created_at: string
+  reviewed_by: string | null
+  reviewed_at: string | null
 }
 
 export interface LeaveRequest {

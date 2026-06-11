@@ -41,10 +41,7 @@ export default function OpenShiftsPage({ user }: Props) {
     const all: Shift[] = r.success ? r.data : []
 
     // Available to claim: admin-posted (no employee_id) OR offered by others (employee_id !== mine)
-    const available = all.filter(s =>
-      (!s.employee_id || s.employee_id !== user.employee_id) &&
-      !(s.open_invite_status === 'pending' && s.open_invite_emp_id === user.employee_id)
-    )
+    const available = all.filter(s => !s.employee_id || s.employee_id !== user.employee_id)
     const mine = all.filter(s => s.employee_id === user.employee_id)
 
     setAllOpen(available)
@@ -96,8 +93,8 @@ export default function OpenShiftsPage({ user }: Props) {
   }
 
   // Separate: available (no claim from me yet) vs. my pending claims
-  const available    = allOpen.filter(s => s.open_invite_emp_id !== user.employee_id)
-  const myClaims     = allOpen.filter(s => s.open_invite_emp_id === user.employee_id)
+  const available    = allOpen.filter(s => !s.claims?.some(c => c.employee_id === user.employee_id && c.status === 'pending'))
+  const myClaims     = allOpen.filter(s => s.claims?.some(c => c.employee_id === user.employee_id && c.status === 'pending'))
 
   return (
     <TeamLayout user={user} location={locProp}>
@@ -217,7 +214,7 @@ export default function OpenShiftsPage({ user }: Props) {
               ) : (
                 <div className="os-claim-list">
                   {myOffered.map(s => {
-                    const hasClaimer = !!s.open_invite_emp_id
+                    const claimCount = s.claims?.filter(c => c.status === 'pending').length ?? 0
                     return (
                       <div key={s.id} className="os-claim-row">
                         <div className="os-claim-info">
@@ -225,13 +222,13 @@ export default function OpenShiftsPage({ user }: Props) {
                           <div>
                             <div className="os-claim-label">{shiftDesc(s)} - Week {s.week_number}</div>
                             <div className="os-claim-status">
-                              {hasClaimer
+                              {claimCount > 0
                                 ? `👋 Er is interesse — beheerder beoordeelt`
                                 : '🔓 Zichtbaar voor collega\'s'}
                             </div>
                           </div>
                         </div>
-                        {!hasClaimer && (
+                        {claimCount === 0 && (
                           <button
                             className="btn btn-outline btn-sm"
                             disabled={actionId === s.id}

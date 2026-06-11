@@ -41,6 +41,15 @@ function resolveAppUrl(): string {
 }
 const APP_URL = resolveAppUrl()
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 /** Stuur een uitnodigingsemail naar een nieuwe medewerker. */
 export async function sendInviteEmail(opts: {
   to:           string
@@ -157,6 +166,80 @@ De Notenman – Administratie
           <p style="margin:0;font-size:12px;color:#9e8070">De Notenman – Personeelsplanner</p>
         </td></tr>
 
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+`,
+  })
+}
+
+export async function sendPasswordResetEmail(opts: {
+  to: string
+  toName: string
+  token: string
+}): Promise<void> {
+  assertSmtpConfigured()
+
+  const transport = getTransport()
+  const resetUrl = `${APP_URL}/reset-password?token=${encodeURIComponent(opts.token)}`
+  const safeName = escapeHtml(opts.toName)
+
+  await transport.sendMail({
+    from: FROM,
+    to: `${opts.toName} <${opts.to}>`,
+    subject: 'Wachtwoord herstellen - De Notenman Planner',
+    text: `Hallo ${opts.toName},
+
+We hebben een verzoek ontvangen om je wachtwoord voor de planner opnieuw in te stellen.
+
+Klik op deze link om een nieuw wachtwoord te kiezen:
+${resetUrl}
+
+Deze link is 1 uur geldig. Heb je dit niet aangevraagd? Dan kun je deze mail negeren.
+
+Groeten,
+De Notenman - Administratie
+`,
+    html: `
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f1ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ee;padding:40px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <tr><td style="background:#2C6E49;padding:28px 32px;text-align:center">
+          <p style="margin:0;font-size:22px;font-weight:700;color:#fff">De Notenman - Planner</p>
+        </td></tr>
+        <tr><td style="padding:32px">
+          <p style="margin:0 0 16px;font-size:18px;font-weight:600;color:#1a140e">Wachtwoord herstellen</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#4a3728;line-height:1.6">
+            Hallo ${safeName},<br>
+            Klik op de knop hieronder om een nieuw wachtwoord te kiezen. Deze link is 1 uur geldig.
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px">
+            <tr><td align="center">
+              <table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate">
+                <tr>
+                  <td style="background:#2C6E49;border-radius:8px;text-align:center">
+                    <a href="${resetUrl}" target="_blank" rel="noopener noreferrer"
+                       style="display:block;background:#2C6E49;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;border:1px solid #2C6E49">
+                      Nieuw wachtwoord kiezen &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+          <p style="margin:0 0 16px;font-size:12px;color:#9e8070;text-align:center">
+            Knop werkt niet? <a href="${resetUrl}" target="_blank" rel="noopener" style="color:#2C6E49;text-decoration:underline">Open deze link</a>
+          </p>
+          <p style="margin:0;font-size:13px;color:#7B4F2E;line-height:1.5">
+            Heb je dit niet aangevraagd? Dan kun je deze mail negeren.
+          </p>
+        </td></tr>
       </table>
     </td></tr>
   </table>

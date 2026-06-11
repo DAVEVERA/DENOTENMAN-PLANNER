@@ -13,7 +13,7 @@ import { getIronSession } from 'iron-session'
 import { sessionOptions } from './session'
 import type { SessionUser } from '@/types'
 import { supabase, T } from './db'
-import { sendInviteEmail } from './email'
+import { sendInviteEmail, sendPasswordResetEmail } from './email'
 export { can } from './capabilities'
 
 // ─── Type definities ─────────────────────────────────────────────────────────
@@ -29,6 +29,12 @@ interface StoredUser {
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
 
 const USERS_TABLE = () => T('users')
+const PASSWORD_RESET_TOKENS_TABLE = () => T('password_reset_tokens')
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000
+
+function hashResetToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex')
+}
 
 async function dbLoadUsers(): Promise<StoredUser[]> {
   const { data, error } = await supabase.from(USERS_TABLE()).select('*')
@@ -52,6 +58,19 @@ async function dbFindByEmployeeId(employeeId: number): Promise<StoredUser | null
     .eq('employee_id', employeeId)
     .maybeSingle()
   return data ?? null
+}
+
+async function getPasswordResetEmail(user: StoredUser): Promise<string | null> {
+  if (user.username.includes('@')) return user.username
+  if (!user.employee_id) return null
+
+  const { data } = await supabase
+    .from(T('employees'))
+    .select('email')
+    .eq('id', user.employee_id)
+    .maybeSingle()
+
+  return data?.email ?? null
 }
 
 async function dbUpsertUser(user: StoredUser): Promise<void> {
@@ -139,6 +158,84 @@ export async function changePassword(username: string, newPassword: string): Pro
   if (!user) return false
   user.password_hash = bcrypt.hashSync(newPassword, 10)
   await dbUpsertUser(user)
+  return true
+}
+
+export async function changeOwnPassword(
+  username: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<boolean> {
+  const user = await dbFindUser(username)
+  if (!user || !bcrypt.compareSync(currentPassword, user.password_hash)) return false
+  user.password_hash = bcrypt.hashSync(newPassword, 10)
+  await dbUpsertUser(user)
+  return true
+}
+
+export async function requestPasswordReset(usernameOrEmail: string): Promise<boolean> {
+  const username = usernameOrEmail.trim().slice(0, 120)
+  if (!username) return false
+
+  const user = await dbFindUser(username)
+  if (!user) return false
+
+  const to = await getPasswordResetEmail(user)
+  if (!to) return false
+
+  const token = crypto.randomBytes(32).toString('base64url')
+  const tokenHash = hashResetToken(token)
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString()
+
+  await supabase
+    .from(PASSWORD_RESET_TOKENS_TABLE())
+    .update({ used_at: new Date().toISOString() })
+    .eq('username', user.username)
+    .is('used_at', null)
+
+  const { error } = await supabase
+    .from(PASSWORD_RESET_TOKENS_TABLE())
+    .insert({
+      username: user.username,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+    })
+  if (error) throw new Error('[auth] requestPasswordReset: ' + error.message)
+
+  await sendPasswordResetEmail({
+    to,
+    toName: user.display_name || user.username,
+    token,
+  })
+
+  return true
+}
+
+export async function resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
+  const cleanToken = token.trim()
+  if (!cleanToken) return false
+
+  const tokenHash = hashResetToken(cleanToken)
+  const now = new Date().toISOString()
+  const { data: resetToken, error } = await supabase
+    .from(PASSWORD_RESET_TOKENS_TABLE())
+    .select('id, username, expires_at, used_at')
+    .eq('token_hash', tokenHash)
+    .is('used_at', null)
+    .gt('expires_at', now)
+    .maybeSingle()
+
+  if (error) throw new Error('[auth] resetPasswordWithToken: ' + error.message)
+  if (!resetToken) return false
+
+  const changed = await changePassword(resetToken.username, newPassword)
+  if (!changed) return false
+
+  await supabase
+    .from(PASSWORD_RESET_TOKENS_TABLE())
+    .update({ used_at: now })
+    .eq('id', resetToken.id)
+
   return true
 }
 

@@ -90,7 +90,10 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   // Employee-offered shifts (has employee_id, is_open=1)
   const offered   = openShifts.filter(s => s.employee_id !== null && s.is_open === 1)
 
-  const pendingCount = openShifts.filter(s => s.open_invite_status === 'pending').length
+  const pendingCount = openShifts.reduce(
+    (total, s) => total + (s.claims?.filter(c => c.status === 'pending').length ?? 0),
+    0,
+  )
 
   async function createOpenShift(e: React.FormEvent) {
     e.preventDefault()
@@ -189,13 +192,13 @@ export default function OpenShiftsAdminPage({ user }: Props) {
     setEditShift(shift)
   }
 
-  async function approve(shiftId: number, approved: boolean) {
+  async function approve(shiftId: number, approved: boolean, employeeId?: number) {
     setActionId(shiftId)
     try {
       const r = await fetch('/api/shifts/approve', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shift_id: shiftId, approved }),
+        body: JSON.stringify({ shift_id: shiftId, employee_id: employeeId, approved }),
       }).then(r => r.json())
       if (r.success) {
         showToast(approved ? '✅ Claim goedgekeurd' : '❌ Claim afgewezen')
@@ -471,9 +474,12 @@ export default function OpenShiftsAdminPage({ user }: Props) {
       ) : (
         <div className="os-list">
           {displayList.map(shift => {
-            const hasClaim    = !!shift.open_invite_emp_id
-            const isPending   = shift.open_invite_status === 'pending'
-            const claimer     = empName(shift.open_invite_emp_id)
+            const pendingClaims = shift.claims?.filter(c => c.status === 'pending') ?? []
+            const hasClaim    = pendingClaims.length > 0 || !!shift.open_invite_emp_id
+            const isPending   = pendingClaims.length > 0
+            const claimer     = pendingClaims.length === 1
+              ? pendingClaims[0].employee_name
+              : `${pendingClaims.length} inschrijvingen`
             const isActioning = actionId === shift.id
 
             return (
@@ -496,28 +502,32 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                 {/* Right: actions */}
                 <div className="os-card-actions">
                   {isPending ? (
-                    <>
-                      <div className="claim-info">
-                        <span className="claim-avatar">{claimer.charAt(0).toUpperCase()}</span>
-                        <span className="claim-name">{claimer} wil overnemen</span>
-                      </div>
-                      <button
-                        className="btn btn-success btn-sm"
-                        disabled={isActioning}
-                        onClick={() => approve(shift.id, true)}
-                      >
-                        {isActioning ? <Spinner /> : '✓ Goedkeuren'}
-                      </button>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        disabled={isActioning}
-                        onClick={() => approve(shift.id, false)}
-                      >
-                        Afwijzen
-                      </button>
-                    </>
+                    <div className="claim-list">
+                      {pendingClaims.map(claim => (
+                        <div key={claim.id} className="claim-choice">
+                          <div className="claim-info">
+                            <span className="claim-avatar">{claim.employee_name.charAt(0).toUpperCase()}</span>
+                            <span className="claim-name">{claim.employee_name}</span>
+                          </div>
+                          <button
+                            className="btn btn-success btn-sm"
+                            disabled={isActioning}
+                            onClick={() => approve(shift.id, true, claim.employee_id)}
+                          >
+                            {isActioning ? <Spinner /> : 'Goedkeuren'}
+                          </button>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            disabled={isActioning}
+                            onClick={() => approve(shift.id, false, claim.employee_id)}
+                          >
+                            Afwijzen
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   ) : hasClaim ? (
-                    <span className="os-badge invited-badge">Uitgenodigd: {claimer}</span>
+                    <span className="os-badge invited-badge">Uitgenodigd: {empName(shift.open_invite_emp_id)}</span>
                   ) : tab === 'open' ? (
                     <div className="invite-select">
                       <select
@@ -652,6 +662,13 @@ export default function OpenShiftsAdminPage({ user }: Props) {
           display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; flex-wrap: wrap;
         }
         .claim-info { display: flex; align-items: center; gap: 8px; margin-right: var(--s2); }
+        .claim-list { display: flex; flex-direction: column; gap: var(--s2); min-width: 300px; }
+        .claim-choice {
+          display: grid;
+          grid-template-columns: minmax(120px, 1fr) auto auto;
+          align-items: center;
+          gap: var(--s2);
+        }
         .claim-avatar {
           width: 32px; height: 32px; border-radius: 50%;
           background: linear-gradient(135deg, var(--brand), #e9a940);
@@ -731,6 +748,8 @@ export default function OpenShiftsAdminPage({ user }: Props) {
           .os-title-row { flex-direction: column; }
           .os-card { flex-direction: column; align-items: stretch; }
           .os-card-actions { flex-wrap: wrap; }
+          .claim-list { min-width: 0; }
+          .claim-choice { grid-template-columns: 1fr; }
           .form-row-2 { grid-template-columns: 1fr; }
         }
       `}</style>

@@ -1,41 +1,31 @@
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
-import type { GetServerSideProps } from 'next'
-import { getSession } from '@/lib/auth'
+import Image from 'next/image'
 import Spinner from '@/components/ui/Spinner'
 
-export default function LoginPage() {
-  const router = useRouter()
-  const [form, setForm]     = useState({ username: '', password: '' })
-  const [error, setError]   = useState('')
+export default function ForgotPasswordPage() {
+  const [username, setUsername] = useState('')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError('')
-    const r    = await fetch('/api/auth/login', {
+    setLoading(true); setError(''); setMessage('')
+    const r = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ username }),
     })
-    let data: { success?: boolean; message?: string }
-    try {
-      data = await r.json()
-    } catch {
-      data = { success: false, message: 'Inloggen mislukt door een serverfout.' }
-    }
+    const data = await r.json().catch(() => ({ success: false, message: 'Aanvraag mislukt door een serverfout.' }))
     setLoading(false)
-    if (data.success) router.push('/')
-    else setError(data.message ?? 'Onjuiste inloggegevens')
+    if (data.success) setMessage(data.message)
+    else setError(data.message ?? 'Aanvraag mislukt.')
   }
 
   return (
     <div className="login-shell">
       <div className="login-card">
-
-        {/* Brand */}
         <div className="login-brand">
           <Image
             src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
@@ -45,17 +35,15 @@ export default function LoginPage() {
             style={{ width: 'auto', height: '52px', display: 'block', margin: '0 auto' }}
             priority
           />
-          <p className="login-subtitle">Planner — inloggen</p>
+          <p className="login-subtitle">Wachtwoord herstellen</p>
         </div>
 
-        {/* Gebruikersnaam + wachtwoord */}
         <form onSubmit={handleSubmit} className="login-form">
-          {error && (
-            <div className="login-error" role="alert">{error}</div>
-          )}
+          {error && <div className="login-error" role="alert">{error}</div>}
+          {message && <div className="login-success" role="status">{message}</div>}
 
           <div className="form-group">
-            <label htmlFor="username" className="form-label">Gebruikersnaam</label>
+            <label htmlFor="username" className="form-label">Gebruikersnaam of e-mailadres</label>
             <input
               id="username"
               className="form-control"
@@ -63,40 +51,18 @@ export default function LoginPage() {
               autoFocus
               autoComplete="username"
               required
-              value={form.username}
-              onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+              value={username}
+              onChange={e => setUsername(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">Wachtwoord</label>
-            <input
-              id="password"
-              className="form-control"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary login-btn"
-            disabled={loading}
-            id="login-submit-btn"
-          >
-            {loading ? <><Spinner /> Bezig…</> : 'Inloggen'}
+          <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
+            {loading ? <><Spinner /> Versturen...</> : 'Herstel-link versturen'}
           </button>
-
-          <Link href="/forgot-password" className="forgot-link">
-            Wachtwoord vergeten?
-          </Link>
         </form>
 
         <p className="login-footer">
-          Geen toegang? Neem contact op met de beheerder.
+          <Link href="/login">Terug naar inloggen</Link>
         </p>
       </div>
 
@@ -109,7 +75,6 @@ export default function LoginPage() {
           background: #0d0a08;
           padding: 24px 16px;
         }
-
         .login-card {
           width: 100%;
           max-width: 380px;
@@ -121,7 +86,6 @@ export default function LoginPage() {
           flex-direction: column;
           gap: 20px;
         }
-
         .login-brand {
           text-align: center;
           display: flex;
@@ -130,38 +94,30 @@ export default function LoginPage() {
           gap: 10px;
           padding-bottom: 4px;
         }
-
-        /* Logo is zwart op transparant — invert voor witte weergave op donkere achtergrond */
-        .login-brand :global(img) {
-          filter: invert(1) brightness(2);
-        }
-
+        .login-brand :global(img) { filter: invert(1) brightness(2); }
         .login-subtitle {
           font-size: .8125rem;
           color: rgba(255,255,255,.35);
           margin: 0;
           letter-spacing: .02em;
         }
-
-        /* Form */
-        .login-form {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
+        .login-form { display: flex; flex-direction: column; gap: 14px; }
+        .login-error, .login-success {
+          border-radius: 8px;
+          padding: 10px 12px;
+          font-size: .875rem;
         }
         .login-error {
           background: rgba(239,68,68,.12);
           border: 1px solid rgba(239,68,68,.3);
           color: #fca5a5;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-size: .875rem;
         }
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
+        .login-success {
+          background: rgba(34,197,94,.12);
+          border: 1px solid rgba(34,197,94,.3);
+          color: #86efac;
         }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-label {
           font-size: .8125rem;
           font-weight: 500;
@@ -196,25 +152,13 @@ export default function LoginPage() {
         }
         .login-footer {
           font-size: .75rem;
-          color: rgba(255,255,255,.22);
+          color: rgba(255,255,255,.45);
           text-align: center;
           margin: 0;
         }
-        .forgot-link {
-          align-self: center;
-          color: rgba(255,255,255,.55);
-          font-size: .8125rem;
-          text-decoration: none;
-          transition: color .14s;
-        }
-        .forgot-link:hover { color: #fff; }
+        .login-footer :global(a) { color: rgba(255,255,255,.65); text-decoration: none; }
+        .login-footer :global(a:hover) { color: #fff; }
       `}</style>
     </div>
   )
-}
-
-export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
-  const session = await getSession(req as any, res as any)
-  if (session.user) return { redirect: { destination: '/', permanent: false } }
-  return { props: {} }
 }

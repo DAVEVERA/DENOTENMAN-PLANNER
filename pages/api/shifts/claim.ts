@@ -3,6 +3,7 @@ import { getSession, can } from '@/lib/auth'
 import { supabase, T } from '@/lib/db'
 import { getShift, getEmployee } from '@/lib/scheduler'
 import { sendPushToEmployee } from '@/lib/push'
+import { createOpenShiftClaim, withdrawOpenShiftClaim } from '@/lib/open-shift-claims'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -21,17 +22,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const shift = await getShift(parseInt(shift_id))
       if (!shift) return res.status(404).json({ success: false, message: 'Dienst niet gevonden' })
       if (!shift.is_open) return res.status(400).json({ success: false, message: 'Dienst is niet open' })
-      if (shift.open_invite_status === 'pending')
-        return res.status(400).json({ success: false, message: 'Er is al een claim op deze dienst' })
+      if (shift.employee_id === employeeId)
+        return res.status(400).json({ success: false, message: 'Je kunt niet op je eigen aangeboden dienst inschrijven' })
 
-      const { error } = await supabase.from(T('shifts'))
-        .update({ open_invite_emp_id: employeeId, open_invite_status: 'pending' })
-        .eq('id', parseInt(shift_id))
-      if (error) throw error
+      const emp = await getEmployee(employeeId)
+      const claim = await createOpenShiftClaim(shift, employeeId, emp?.name ?? session.user.display_name)
+      if ('error' in claim) return res.status(400).json({ success: false, message: claim.error })
 
       // Notify all admins via push
       try {
-        const emp = await getEmployee(employeeId)
         const { data: adminUsers } = await supabase
           .from(T('users'))
           .select('employee_id')
@@ -54,12 +53,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // DELETE: withdraw claim
     if (req.method === 'DELETE') {
       const { shift_id } = req.body
-      const { error } = await supabase.from(T('shifts'))
-        .update({ open_invite_emp_id: null, open_invite_status: null })
-        .eq('id', parseInt(shift_id))
-        .eq('open_invite_emp_id', employeeId)
-      if (error) throw error
-      return res.json({ success: true })
+      const ok = await withdrawOpenShiftClaim(parseInt(shift_id), employeeId)
+      return res.json({ success: ok })
     }
 
     res.status(405).json({ success: false })

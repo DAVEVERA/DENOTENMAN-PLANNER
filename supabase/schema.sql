@@ -54,6 +54,25 @@ create index if not exists planner20_shifts_week     on planner20_shifts (week_n
 create index if not exists planner20_shifts_employee on planner20_shifts (employee_id, week_number, year);
 create index if not exists planner20_shifts_open     on planner20_shifts (is_open) where is_open = 1;
 
+-- planner20_open_shift_claims
+create table if not exists planner20_open_shift_claims (
+  id            serial      primary key,
+  shift_id      integer     not null references planner20_shifts(id) on delete cascade,
+  employee_id   integer     not null references planner20_employees(id) on delete cascade,
+  employee_name text        not null,
+  status        text        not null default 'pending',
+  reviewed_by   text,
+  reviewed_at   timestamptz,
+  created_at    timestamptz not null default now()
+);
+create unique index if not exists planner20_open_shift_claims_active_unique
+  on planner20_open_shift_claims (shift_id, employee_id)
+  where status in ('pending', 'accepted');
+create index if not exists planner20_open_shift_claims_shift
+  on planner20_open_shift_claims (shift_id, status, created_at);
+create index if not exists planner20_open_shift_claims_employee
+  on planner20_open_shift_claims (employee_id, status, created_at desc);
+
 -- planner20_patterns
 create table if not exists planner20_patterns (
   id               serial      primary key,
@@ -207,7 +226,7 @@ on conflict (id) do update set
   user_level     = excluded.user_level,
   location       = excluded.location;
 
-select setval('planner20_employees_id_seq', (select max(id) from planner20_employees));
+select setval('planner20_employees_id_seq', 205);
 
 -- planner20_users (vervangt config/users.json — werkt in serverless/Vercel)
 create table if not exists planner20_users (
@@ -217,6 +236,20 @@ create table if not exists planner20_users (
   employee_id   integer references planner20_employees(id) on delete set null,
   display_name  text not null default ''
 );
+
+-- Eenmalige wachtwoordherstel-links voor planner20_users.
+-- Alleen de SHA-256 hash van de token wordt opgeslagen; de ruwe token staat alleen in de e-mail-link.
+create table if not exists planner20_password_reset_tokens (
+  id          bigserial   primary key,
+  username    text        not null references planner20_users(username) on delete cascade,
+  token_hash  text        not null unique,
+  expires_at  timestamptz not null,
+  used_at     timestamptz,
+  created_at  timestamptz not null default now()
+);
+create index if not exists planner20_password_reset_tokens_active
+  on planner20_password_reset_tokens (username, expires_at)
+  where used_at is null;
 
 -- Seed: admin account (wachtwoord: admin123)
 insert into planner20_users (username, password_hash, role, employee_id, display_name)
@@ -228,4 +261,3 @@ values (
   'Administrator'
 )
 on conflict (username) do nothing;
-

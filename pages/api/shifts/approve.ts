@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
-import { supabase, T } from '@/lib/db'
 import { getShift, getEmployee, closeRemainingOpenShifts } from '@/lib/scheduler'
 import { sendPushToEmployee } from '@/lib/push'
+import { approveOpenShiftClaim, declineOpenShiftClaim } from '@/lib/open-shift-claims'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -12,26 +12,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // PATCH: approve or decline a claim/offer
     if (req.method === 'PATCH') {
-      const { shift_id, approved } = req.body
+      const { shift_id, employee_id, approved } = req.body
       if (!shift_id) return res.status(400).json({ success: false, message: 'shift_id verplicht' })
 
       const shift = await getShift(parseInt(shift_id))
       if (!shift) return res.status(404).json({ success: false, message: 'Dienst niet gevonden' })
+      const targetEmployeeId = employee_id ? parseInt(employee_id) : shift.open_invite_emp_id
 
       if (approved) {
-        const claimerId = shift.open_invite_emp_id
+        const claimerId = targetEmployeeId
         if (!claimerId) return res.status(400).json({ success: false, message: 'Geen claimer gevonden' })
+        const approvedClaim = await approveOpenShiftClaim(shift, claimerId, session.user.user_id)
+        if (!approvedClaim.ok) return res.status(400).json({ success: false, message: approvedClaim.error })
         const claimer = await getEmployee(claimerId)
-
-        const { error } = await supabase.from(T('shifts')).update({
-          employee_id:        claimerId,
-          employee_name:      claimer?.name ?? shift.employee_name,
-          is_open:            0,
-          open_invite_status: 'accepted',
-          shift_category:     'regular',
-          open_invite_emp_id: null,
-        }).eq('id', parseInt(shift_id))
-        if (error) throw error
 
         // ── Auto-close: sluit overige open diensten voor dezelfde slot ──
         try {
@@ -69,12 +62,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       } else {
         // Decline
-        const claimerId = shift.open_invite_emp_id
-        const { error } = await supabase.from(T('shifts')).update({
-          open_invite_emp_id: null,
-          open_invite_status: null,
-        }).eq('id', parseInt(shift_id))
-        if (error) throw error
+        const claimerId = targetEmployeeId
+        if (!claimerId) return res.status(400).json({ success: false, message: 'Geen claimer gevonden' })
+        const ok = await declineOpenShiftClaim(parseInt(shift_id), claimerId, session.user.user_id)
+        if (!ok) return res.status(400).json({ success: false, message: 'Claim kon niet worden afgewezen' })
 
         // Notify claimer of decline
         if (claimerId) {
