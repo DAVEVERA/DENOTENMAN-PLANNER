@@ -44,31 +44,43 @@ export default function ExportPage({ user }: Props) {
     if (empFilter)  body.employee_id = empFilter
     if (processed !== '') body.is_processed = processed
 
-    const r = await fetch('/api/hours/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    try {
+      const r = await fetch('/api/hours/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (sendEmail) {
-      const sent = r.headers.get('X-Email-Sent') === '1'
-      setLoading(false)
-      if (sent) {
-        setEmailSent(true)
-      } else {
-        setEmailError('E-mail verzenden mislukt. Controleer de SMTP-instellingen in de beheerinstellingen.')
+      if (!r.ok) {
+        const err = await r.json().catch(() => null)
+        setEmailError(err?.message ?? `Export mislukt (status ${r.status}). Probeer het opnieuw.`)
+        setLoading(false)
+        return
       }
-      return
-    }
 
-    const blob = await r.blob()
-    const ext  = format === 'excel' ? 'xlsx' : format
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href = url; a.download = `uren-${from}-${to}.${ext}`
-    document.body.appendChild(a); a.click(); a.remove()
-    URL.revokeObjectURL(url)
-    setLoading(false)
+      if (sendEmail) {
+        const sent = r.headers.get('X-Email-Sent') === '1'
+        setLoading(false)
+        if (sent) {
+          setEmailSent(true)
+        } else {
+          setEmailError('E-mail verzenden mislukt. Controleer de SMTP-instellingen in de beheerinstellingen.')
+        }
+        return
+      }
+
+      const blob = await r.blob()
+      const ext  = format === 'excel' ? 'xlsx' : format
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href = url; a.download = `uren-${from}-${to}.${ext}`
+      document.body.appendChild(a); a.click(); a.remove()
+      URL.revokeObjectURL(url)
+      setLoading(false)
+    } catch {
+      setEmailError('Export mislukt door een netwerkfout. Controleer je verbinding en probeer het opnieuw.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -212,7 +224,6 @@ export default function ExportPage({ user }: Props) {
           border-radius: var(--radius-lg); padding: var(--s5);
         }
         .section-title { font-size: .875rem; font-weight: 700; color: var(--text-muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 var(--s3); }
-        .section-title + * { }
         .export-card .section-title { margin-top: var(--s5); }
         .export-card .section-title:first-child { margin-top: 0; }
         .date-range { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin-bottom: var(--s4); }
@@ -284,5 +295,6 @@ function thisQuarter() {
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   const session = await getSession(req as any, res as any)
   if (!session.user) return { redirect: { destination: '/login', permanent: false } }
+  if (session.user.role === 'employee') return { redirect: { destination: '/me', permanent: false } }
   return { props: { user: session.user } }
 }

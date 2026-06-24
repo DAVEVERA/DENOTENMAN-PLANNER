@@ -99,6 +99,8 @@ export interface LeaveRequest {
   created_at: string
 }
 
+export type SubmissionStatus = 'direct' | 'pending' | 'approved' | 'rejected'
+
 export interface TimeLog {
   id: number
   employee_id: number
@@ -113,6 +115,10 @@ export interface TimeLog {
   note: string | null
   is_processed: number
   processed_at: string | null
+  submission_status: SubmissionStatus
+  reviewed_by: string | null
+  reviewed_at: string | null
+  review_note: string | null
   created_by: string
   created_at: string
 }

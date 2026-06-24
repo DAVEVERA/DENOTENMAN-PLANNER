@@ -5,7 +5,7 @@ import type { SessionUser } from '@/types'
 import { LOCATION_LABELS } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
-  ScheduleIcon, LeaveIcon,
+  ScheduleIcon, LeaveIcon, HoursIcon,
   MyScheduleIcon, SettingsIcon, ProfileIcon, DocumentIcon,
 } from '@/components/ui/Icons'
 
@@ -29,6 +29,7 @@ export default function TeamLayout({ user, children, location }: Props) {
   const onMe          = router.pathname === '/me'
   const onOpenShifts  = router.pathname === '/me/open-shifts'
   const onLeave       = router.pathname === '/me/leave'
+  const onHours       = router.pathname === '/me/hours'
   const onProfile     = router.pathname === '/me/profile'
   const onDocuments   = router.pathname === '/me/documents'
   const onExpenses    = router.pathname === '/me/expenses'
@@ -82,6 +83,12 @@ export default function TeamLayout({ user, children, location }: Props) {
               aria-current={onLeave ? 'page' : undefined}>
               <LeaveIcon size={20} />
               Verlof
+            </Link>
+            <Link href="/me/hours"
+              className={`tn-link${onHours ? ' active' : ''}`}
+              aria-current={onHours ? 'page' : undefined}>
+              <HoursIcon size={20} />
+              Mijn uren
             </Link>
             <Link href="/me/open-shifts"
               className={`tn-link${onOpenShifts ? ' active' : ''}`}
@@ -172,6 +179,13 @@ export default function TeamLayout({ user, children, location }: Props) {
           {onLeave && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon"><LeaveIcon size={22} /></span>
           <span className="tbn-label">Verlof</span>
+        </Link>
+        <Link href="/me/hours"
+          className={`tbn-item${onHours ? ' active' : ''}`}
+          aria-current={onHours ? 'page' : undefined}>
+          {onHours && <span className="tbn-bar" aria-hidden="true" />}
+          <span className="tbn-icon"><HoursIcon size={22} /></span>
+          <span className="tbn-label">Uren</span>
         </Link>
         <Link href="/me/profile"
           className={`tbn-item${onProfile ? ' active' : ''}`}

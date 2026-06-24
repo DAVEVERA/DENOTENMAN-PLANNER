@@ -18,14 +18,46 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  direct:   'Ingevoerd',
+  pending:  'In behandeling',
+  approved: 'Goedgekeurd',
+  rejected: 'Afgewezen',
+}
+const STATUS_CLASS: Record<string, string> = {
+  direct:   'badge-draft',
+  pending:  'badge-pending',
+  approved: 'badge-approved',
+  rejected: 'badge-danger',
+}
+
 const today = new Date().toISOString().slice(0, 10)
 const firstOfMonth = today.slice(0, 8) + '01'
+
+const EMPTY_FORM = {
+  log_date: today,
+  location: 'markt' as Location,
+  clock_in: '',
+  clock_out: '',
+  break_minutes: '0',
+  note: '',
+}
 
 export default function MyHoursPage({ user }: Props) {
   const [logs, setLogs]       = useState<TimeLog[]>([])
   const [from, setFrom]       = useState(firstOfMonth)
   const [to, setTo]           = useState(today)
   const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm]       = useState(EMPTY_FORM)
+  const [saving, setSaving]   = useState(false)
+  const [formErr, setFormErr] = useState('')
+  const [toast, setToast]     = useState<{ msg: string; ok: boolean } | null>(null)
+
+  function showToast(msg: string, ok = true) {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const load = useCallback(async () => {
     if (!user.employee_id) return
@@ -38,16 +70,138 @@ export default function MyHoursPage({ user }: Props) {
 
   useEffect(() => { load() }, [load])
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true); setFormErr('')
+
+    if (!form.clock_in || !form.clock_out) {
+      setFormErr('Vul inklok- en uitkloktijd in')
+      setSaving(false)
+      return
+    }
+    if (form.clock_in >= form.clock_out) {
+      setFormErr('Uitkloktijd moet na inkloktijd liggen')
+      setSaving(false)
+      return
+    }
+
+    const r = await fetch('/api/hours', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        log_date: form.log_date,
+        location: form.location,
+        clock_in: form.clock_in,
+        clock_out: form.clock_out,
+        break_minutes: parseInt(form.break_minutes) || 0,
+        note: form.note || null,
+      }),
+    }).then(r => r.json())
+
+    setSaving(false)
+    if (!r.success) { setFormErr(r.message ?? 'Indienen mislukt'); return }
+    showToast('Uren ingediend ter goedkeuring!')
+    setForm(EMPTY_FORM)
+    setShowForm(false)
+    load()
+  }
+
+  async function withdraw(id: number) {
+    if (!confirm('Registratie intrekken?')) return
+    const r = await fetch(`/api/hours/${id}`, { method: 'DELETE' }).then(r => r.json())
+    if (r.success) { showToast('Registratie ingetrokken.', true); load() }
+    else showToast(r.message ?? 'Fout', false)
+  }
+
   const totalHours   = logs.reduce((acc, l) => acc + calcHours(l.clock_in, l.clock_out, l.break_minutes), 0)
   const totalOvertime = logs.reduce((acc, l) => acc + l.overtime_hours, 0)
-  const processed    = logs.filter(l => l.is_processed).length
+  const pending      = logs.filter(l => l.submission_status === 'pending')
+  const rest         = logs.filter(l => l.submission_status !== 'pending')
 
   const locProp = (user.location && user.location !== 'both' ? user.location : 'markt') as Exclude<Location, 'both'>
 
   return (
     <TeamLayout user={user} location={locProp}>
-      <div className="hours-page">
-        <h1 className="page-title">Mijn uren</h1>
+      {toast && (
+        <div className={`hrs-toast ${toast.ok ? 'ok' : 'err'}`} role="alert">{toast.msg}</div>
+      )}
+
+      <div className="hrs-page">
+        <div className="hrs-head">
+          <div>
+            <h1 className="hrs-h1">Mijn uren</h1>
+            <p className="hrs-sub">Bekijk je gewerkte uren en dien nieuwe registraties in.</p>
+          </div>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => setShowForm(s => !s)}
+          >
+            {showForm ? 'Annuleren' : '+ Uren registreren'}
+          </button>
+        </div>
+
+        {/* ── Formulier ── */}
+        {showForm && (
+          <div className="hrs-form-card">
+            <h2 className="hrs-form-title">Uren registreren</h2>
+            <form onSubmit={handleSubmit}>
+              {formErr && <div className="alert alert-danger" role="alert">{formErr}</div>}
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label required" htmlFor="hrs_date">Datum</label>
+                  <input id="hrs_date" type="date" className="form-control"
+                    value={form.log_date} onChange={e => setForm(f => ({ ...f, log_date: e.target.value }))}
+                    max={today} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label required" htmlFor="hrs_loc">Locatie</label>
+                  <select id="hrs_loc" className="form-control" value={form.location}
+                    onChange={e => setForm(f => ({ ...f, location: e.target.value as Location }))}>
+                    <option value="markt">De Notenkar (Markt)</option>
+                    <option value="nootmagazijn">Het Nootmagazijn</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label required" htmlFor="hrs_in">Begintijd</label>
+                  <input id="hrs_in" type="time" className="form-control"
+                    value={form.clock_in} onChange={e => setForm(f => ({ ...f, clock_in: e.target.value }))}
+                    required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label required" htmlFor="hrs_out">Eindtijd</label>
+                  <input id="hrs_out" type="time" className="form-control"
+                    value={form.clock_out} onChange={e => setForm(f => ({ ...f, clock_out: e.target.value }))}
+                    required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="hrs_break">Pauze (minuten)</label>
+                  <input id="hrs_break" type="number" className="form-control"
+                    value={form.break_minutes} onChange={e => setForm(f => ({ ...f, break_minutes: e.target.value }))}
+                    min="0" max="480" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="hrs_note">Notitie (optioneel)</label>
+                  <input id="hrs_note" className="form-control"
+                    value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                    placeholder="bijv. extra uren of bijzonderheden" />
+                </div>
+              </div>
+
+              {form.clock_in && form.clock_out && form.clock_in < form.clock_out && (
+                <div className="hrs-preview">
+                  Berekend: <strong>{calcHours(form.clock_in, form.clock_out, parseInt(form.break_minutes) || 0).toFixed(1)} uur</strong>
+                  {parseInt(form.break_minutes) > 0 && <span> (incl. {form.break_minutes} min pauze)</span>}
+                </div>
+              )}
+
+              <div className="hrs-form-footer">
+                <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                  {saving ? <Spinner /> : 'Indienen ter goedkeuring'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* ── Filters ── */}
         <div className="filters">
@@ -77,10 +231,12 @@ export default function MyHoursPage({ user }: Props) {
               <span className="stat-label">overwerk</span>
             </div>
           )}
-          <div className="stat-item">
-            <span className="stat-val">{processed}/{logs.length}</span>
-            <span className="stat-label">verwerkt</span>
-          </div>
+          {pending.length > 0 && (
+            <div className="stat-item stat-pending">
+              <span className="stat-val">{pending.length}</span>
+              <span className="stat-label">in behandeling</span>
+            </div>
+          )}
         </div>
 
         {/* ── Log list ── */}
@@ -90,46 +246,78 @@ export default function MyHoursPage({ user }: Props) {
           <div className="empty-state">
             <div className="empty-icon">⏱️</div>
             <div>Geen uren gevonden voor deze periode.</div>
+            {!showForm && (
+              <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => setShowForm(true)}>
+                Eerste uren registreren
+              </button>
+            )}
           </div>
         ) : (
-          <div className="log-list">
-            {logs.map(log => {
-              const hours = calcHours(log.clock_in, log.clock_out, log.break_minutes)
-              return (
-                <div key={log.id} className="log-row">
-                  <div className="log-date">{fmtDate(log.log_date)}</div>
-                  <div className="log-times">
-                    {log.clock_in ? (
-                      <span className="time-range">
-                        {log.clock_in.slice(0,5)} – {log.clock_out?.slice(0,5) ?? '?'}
-                        {log.break_minutes > 0 && <span className="break-info"> (pauze {log.break_minutes}m)</span>}
-                      </span>
-                    ) : (
-                      <span className="text-muted">Geen tijden</span>
-                    )}
-                  </div>
-                  <div className="log-hours">{hours > 0 ? `${hours.toFixed(1)}u` : '–'}</div>
-                  <div className="log-loc">
-                    <span className={`loc-dot loc-${log.location}`} />
-                    {log.location === 'markt' ? 'Markt' : 'Nootmagazijn'}
-                  </div>
-                  {log.overtime_hours > 0 && (
-                    <div className="log-overtime">+{log.overtime_hours}u overwerk</div>
-                  )}
-                  {log.note && <div className="log-note">{log.note}</div>}
-                  <div className="log-status">
-                    <span className={`proc-dot ${log.is_processed ? 'done' : 'open'}`} />
-                  </div>
+          <>
+            {/* Pending submissions */}
+            {pending.length > 0 && (
+              <section className="hrs-section">
+                <div className="hrs-sec-head">
+                  <h2 className="hrs-sec-title">In behandeling</h2>
+                  <span className="badge badge-pending">{pending.length}</span>
                 </div>
-              )
-            })}
-          </div>
+                <div className="log-list">
+                  {pending.map(log => (
+                    <LogRow key={log.id} log={log} onWithdraw={withdraw} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* All other entries */}
+            {rest.length > 0 && (
+              <section className="hrs-section">
+                <div className="hrs-sec-head">
+                  <h2 className="hrs-sec-title">Urenhistorie</h2>
+                  <span className="badge badge-draft">{rest.length}</span>
+                </div>
+                <div className="log-list">
+                  {rest.map(log => (
+                    <LogRow key={log.id} log={log} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </div>
 
       <style jsx>{`
-        .hours-page { max-width: 680px; }
-        .page-title { font-size: 1.375rem; font-weight: 700; margin: 0 0 var(--s4); }
+        .hrs-toast {
+          position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+          padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: .9375rem;
+          box-shadow: 0 8px 24px rgba(0,0,0,.2); z-index: 9999; white-space: nowrap;
+          animation: toast-in .2s ease;
+        }
+        .hrs-toast.ok  { background: #1A1412; color: #fff; }
+        .hrs-toast.err { background: var(--danger); color: #fff; }
+        @keyframes toast-in { from { opacity:0; transform:translateX(-50%) translateY(-8px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+
+        .hrs-page { max-width: 800px; }
+        .hrs-head {
+          display: flex; align-items: flex-start; justify-content: space-between;
+          flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s6);
+        }
+        .hrs-h1 { font-size: 1.75rem; font-weight: 800; margin: 0 0 4px; }
+        .hrs-sub { color: var(--text-muted); margin: 0; font-size: .9375rem; }
+
+        .hrs-form-card {
+          background: var(--surface); border: 1.5px solid var(--brand);
+          border-radius: var(--radius-xl); padding: var(--s5);
+          margin-bottom: var(--s6);
+        }
+        .hrs-form-title { font-size: 1.0625rem; font-weight: 700; margin: 0 0 var(--s4); }
+        .hrs-form-footer { display: flex; justify-content: flex-end; margin-top: var(--s4); }
+        .hrs-preview {
+          background: var(--surface-alt); border: 1px solid var(--border);
+          border-radius: var(--radius); padding: var(--s3) var(--s4);
+          font-size: .9375rem; color: var(--text-sub); margin-top: var(--s3);
+        }
 
         .filters { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); flex-wrap: wrap; }
         .date-range { display: flex; align-items: center; gap: 6px; }
@@ -144,43 +332,25 @@ export default function MyHoursPage({ user }: Props) {
         .stat-item { display: flex; flex-direction: column; gap: 1px; }
         .stat-val { font-size: 1.375rem; font-weight: 700; line-height: 1; }
         .stat-label { font-size: .75rem; color: var(--text-muted); }
+        .stat-pending .stat-val { color: #C8882A; }
 
         .loading-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
         .empty-state { text-align: center; padding: var(--s10) var(--s6); }
         .empty-icon { font-size: 2.5rem; margin-bottom: var(--s3); }
 
-        .log-list { display: flex; flex-direction: column; gap: 1px; }
-        .log-row {
-          display: grid; grid-template-columns: 120px 1fr auto auto auto auto;
-          align-items: center; gap: var(--s3);
-          padding: var(--s3) var(--s4);
-          background: var(--surface); border: 1px solid var(--border);
-          border-radius: var(--radius);
-          font-size: .9375rem;
+        .hrs-section { margin-bottom: var(--s6); }
+        .hrs-sec-head {
+          display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3);
+          padding-bottom: var(--s3); border-bottom: 1.5px solid var(--border);
         }
-        .log-row + .log-row { margin-top: 3px; }
-        .log-date { font-size: .875rem; color: var(--text-sub); }
-        .time-range { font-weight: 500; }
-        .break-info { font-size: .8125rem; color: var(--text-muted); }
-        .log-hours { font-weight: 700; color: var(--brand); min-width: 36px; text-align: right; }
-        .log-loc { display: flex; align-items: center; gap: 5px; font-size: .8125rem; color: var(--text-sub); }
-        .loc-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .loc-dot.loc-markt        { background: var(--markt); }
-        .loc-dot.loc-nootmagazijn { background: var(--noot); }
-        .log-overtime { font-size: .8125rem; color: var(--brand); }
-        .log-note { font-size: .8125rem; color: var(--text-muted); grid-column: 2 / span 3; }
-        .log-status { display: flex; justify-content: flex-end; }
-        .proc-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .proc-dot.done { background: #4CAF50; }
-        .proc-dot.open { background: var(--border); }
+        .hrs-sec-title { font-size: 1rem; font-weight: 700; margin: 0; flex: 1; }
+
+        .log-list { display: flex; flex-direction: column; gap: 0;
+          border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 
         @media (max-width: 600px) {
-          .log-row { grid-template-columns: 1fr auto auto; gap: var(--s2); padding: var(--s3); }
-          .log-loc, .log-overtime, .log-note { display: none; }
-          .log-date { font-size: .8125rem; }
-        }
-        @media (max-width: 480px) {
-          .hours-page { max-width: 100%; }
+          .hrs-head { flex-direction: column; }
+          .hrs-page { max-width: 100%; }
           .filters { flex-direction: column; align-items: stretch; }
           .date-range { flex-wrap: wrap; }
           .date-range input { flex: 1; min-width: 120px; }
@@ -188,6 +358,91 @@ export default function MyHoursPage({ user }: Props) {
         }
       `}</style>
     </TeamLayout>
+  )
+}
+
+function LogRow({ log, onWithdraw }: { log: TimeLog; onWithdraw?: (id: number) => void }) {
+  const hours = calcHours(log.clock_in, log.clock_out, log.break_minutes)
+  const isPending = log.submission_status === 'pending'
+
+  return (
+    <div className="log-row">
+      <div className="log-main">
+        <div className="log-date">{fmtDate(log.log_date)}</div>
+        <div className="log-times">
+          {log.clock_in ? (
+            <span className="time-range">
+              {log.clock_in.slice(0,5)} – {log.clock_out?.slice(0,5) ?? '?'}
+              {log.break_minutes > 0 && <span className="break-info"> (pauze {log.break_minutes}m)</span>}
+            </span>
+          ) : (
+            <span className="text-muted">Geen tijden</span>
+          )}
+        </div>
+        <div className="log-hours">{hours > 0 ? `${hours.toFixed(1)}u` : '–'}</div>
+      </div>
+      <div className="log-meta">
+        <div className="log-loc">
+          <span className={`loc-dot loc-${log.location}`} />
+          {log.location === 'markt' ? 'Markt' : 'Nootmagazijn'}
+        </div>
+        {log.overtime_hours > 0 && (
+          <div className="log-overtime">+{log.overtime_hours}u overwerk</div>
+        )}
+        <span className={`badge ${STATUS_CLASS[log.submission_status] ?? 'badge-draft'}`}>
+          {STATUS_LABEL[log.submission_status] ?? log.submission_status}
+        </span>
+        {isPending && onWithdraw && (
+          <button className="btn btn-ghost btn-xs" onClick={() => onWithdraw(log.id)}>Intrekken</button>
+        )}
+      </div>
+      {log.note && <div className="log-note">{log.note}</div>}
+      {log.review_note && (
+        <div className="log-review-note">
+          <strong>Opmerking beheerder:</strong> {log.review_note}
+        </div>
+      )}
+
+      <style jsx>{`
+        .log-row {
+          padding: var(--s3) var(--s4);
+          background: var(--surface); border-bottom: 1px solid var(--border);
+          font-size: .9375rem;
+        }
+        .log-row:last-child { border-bottom: none; }
+        .log-row:hover { background: var(--surface-alt); }
+
+        .log-main {
+          display: flex; align-items: center; gap: var(--s3);
+          flex-wrap: wrap;
+        }
+        .log-date { font-size: .875rem; color: var(--text-sub); min-width: 110px; }
+        .time-range { font-weight: 500; }
+        .break-info { font-size: .8125rem; color: var(--text-muted); }
+        .log-hours { font-weight: 700; color: var(--brand); margin-left: auto; }
+
+        .log-meta {
+          display: flex; align-items: center; gap: var(--s3);
+          margin-top: var(--s2); flex-wrap: wrap;
+        }
+        .log-loc { display: flex; align-items: center; gap: 5px; font-size: .8125rem; color: var(--text-sub); }
+        .loc-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .loc-dot.loc-markt        { background: var(--markt); }
+        .loc-dot.loc-nootmagazijn { background: var(--noot); }
+        .log-overtime { font-size: .8125rem; color: var(--brand); }
+        .log-note { font-size: .8125rem; color: var(--text-muted); margin-top: var(--s2); }
+        .log-review-note {
+          font-size: .8125rem; color: var(--text-sub); margin-top: var(--s2);
+          padding: var(--s2) var(--s3); background: var(--surface-alt);
+          border-radius: var(--radius); font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+          .log-main { gap: var(--s2); }
+          .log-date { min-width: auto; flex: 1; }
+        }
+      `}</style>
+    </div>
   )
 }
 

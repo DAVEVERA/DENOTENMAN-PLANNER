@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { getSession } from '@/lib/auth'
@@ -36,6 +36,32 @@ export default function AdminExpensesPage({ user }: Props) {
   const [reviewNote, setReviewNote] = useState('')
   const [saving, setSaving]         = useState(false)
   const [toast, setToast]           = useState<{ msg: string; ok: boolean } | null>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!reviewing) return
+    const modal = modalRef.current
+    if (!modal) return
+
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    first?.focus()
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setReviewing(null); return }
+      if (e.key !== 'Tab') return
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first?.focus() }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [reviewing])
 
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok })
@@ -189,7 +215,7 @@ export default function AdminExpensesPage({ user }: Props) {
       {/* ── Review modal ── */}
       {reviewing && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setReviewing(null)} role="presentation">
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="rev-title">
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="rev-title" ref={modalRef}>
             <div className="modal-header">
               <h3 id="rev-title">Declaratie beoordelen</h3>
               <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setReviewing(null)} aria-label="Sluiten">✕</button>

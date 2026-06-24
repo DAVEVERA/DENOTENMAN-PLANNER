@@ -1,5 +1,5 @@
 import { supabase, T, unwrap } from './db'
-import type { TimeLog, Location, HoursSummary, Shift, Day } from '@/types'
+import type { TimeLog, Location, HoursSummary, Shift, Day, SubmissionStatus } from '@/types'
 import { DAYS, WORK_TYPES } from '@/types'
 import { calcHoursWorked } from './dateUtils'
 
@@ -13,12 +13,87 @@ export async function logHours(
     .single())
 }
 
+export async function submitEmployeeHours(data: {
+  employee_id: number
+  employee_name: string
+  log_date: string
+  location: Location
+  clock_in: string
+  clock_out: string
+  break_minutes: number
+  note: string | null
+  created_by: string
+}): Promise<TimeLog> {
+  return unwrap<TimeLog>(await supabase
+    .from(T('time_logs'))
+    .insert({
+      ...data,
+      overtime_hours: 0,
+      shift_id: null,
+      is_processed: 0,
+      processed_at: null,
+      submission_status: 'pending',
+      reviewed_by: null,
+      reviewed_at: null,
+      review_note: null,
+    })
+    .select()
+    .single())
+}
+
+export async function getPendingSubmissions(): Promise<TimeLog[]> {
+  return unwrap<TimeLog[]>(await supabase
+    .from(T('time_logs'))
+    .select('*')
+    .eq('submission_status', 'pending')
+    .order('created_at', { ascending: false }))
+}
+
+export async function reviewHourSubmission(
+  id: number,
+  status: 'approved' | 'rejected',
+  reviewedBy: string,
+  reviewNote?: string,
+): Promise<TimeLog> {
+  return unwrap<TimeLog>(await supabase
+    .from(T('time_logs'))
+    .update({
+      submission_status: status,
+      reviewed_by: reviewedBy,
+      reviewed_at: new Date().toISOString(),
+      review_note: reviewNote ?? null,
+    })
+    .eq('id', id)
+    .select()
+    .single())
+}
+
+export async function getEmployeeTimeLog(id: number): Promise<TimeLog | null> {
+  const { data } = await supabase
+    .from(T('time_logs'))
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  return data ?? null
+}
+
+export async function deleteEmployeeSubmission(id: number): Promise<boolean> {
+  const { error } = await supabase
+    .from(T('time_logs'))
+    .delete()
+    .eq('id', id)
+    .eq('submission_status', 'pending')
+  return !error
+}
+
 export async function getTimeLogs(opts: {
   employee_id?: number
   from?: string
   to?: string
   location?: Location
   is_processed?: number
+  submission_status?: SubmissionStatus
+  exclude_rejected?: boolean
 }): Promise<TimeLog[]> {
   let q = supabase.from(T('time_logs')).select('*').order('log_date', { ascending: false })
   if (opts.employee_id) q = q.eq('employee_id', opts.employee_id)
@@ -26,6 +101,8 @@ export async function getTimeLogs(opts: {
   if (opts.to) q = q.lte('log_date', opts.to)
   if (opts.location && opts.location !== 'both') q = q.eq('location', opts.location)
   if (opts.is_processed !== undefined) q = q.eq('is_processed', opts.is_processed)
+  if (opts.submission_status) q = q.eq('submission_status', opts.submission_status)
+  if (opts.exclude_rejected) q = q.neq('submission_status', 'rejected')
   return unwrap<TimeLog[]>(await q)
 }
 
@@ -117,6 +194,10 @@ function shiftToTimeLog(shift: Shift): TimeLog | null {
     note: shift.note ?? null,
     is_processed: 0,
     processed_at: null,
+    submission_status: 'direct',
+    reviewed_by: null,
+    reviewed_at: null,
+    review_note: null,
     created_by: shift.created_by,
     created_at: shift.created_at,
   }

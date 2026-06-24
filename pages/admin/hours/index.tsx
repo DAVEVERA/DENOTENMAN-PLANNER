@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import LocationBadge from '@/components/ui/LocationBadge'
 import { CloseIcon } from '@/components/ui/Icons'
@@ -43,20 +43,75 @@ export default function HoursPage({ user }: Props) {
   const [editId, setEditId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState<Partial<TimeLog>>({})
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [pendingLogs, setPendingLogs] = useState<TimeLog[]>([])
+  const [reviewing, setReviewing]     = useState<TimeLog | null>(null)
+  const [reviewNote, setReviewNote]   = useState('')
+  const [reviewSaving, setReviewSaving] = useState(false)
+  const [toast, setToast]             = useState<{ msg: string; ok: boolean } | null>(null)
+  const reviewModalRef = useRef<HTMLDivElement>(null)
+
+  function showToast(msg: string, ok = true) {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  useEffect(() => {
+    if (!reviewing) return
+    const modal = reviewModalRef.current
+    if (!modal) return
+    const focusable = modal.querySelectorAll<HTMLElement>('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')
+    const first = focusable[0]; const last = focusable[focusable.length - 1]
+    first?.focus()
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setReviewing(null); return }
+      if (e.key !== 'Tab') return
+      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last?.focus() } }
+      else { if (document.activeElement === last) { e.preventDefault(); first?.focus() } }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [reviewing])
 
   const loadAll = useCallback(async () => {
     setLoading(true)
-    const [lRes, eRes] = await Promise.all([
+    const [lRes, eRes, pRes] = await Promise.all([
       fetch(`/api/hours?from=${from}&to=${to}${empFilter ? `&employee_id=${empFilter}` : ''}${locFilter ? `&location=${locFilter}` : ''}${processed !== '' ? `&is_processed=${processed}` : ''}`),
       fetch('/api/employees?all=1'),
+      fetch('/api/hours?pending=1'),
     ])
-    const [lData, eData] = await Promise.all([lRes.json(), eRes.json()])
+    const [lData, eData, pData] = await Promise.all([lRes.json(), eRes.json(), pRes.json()])
     setLogs(lData.success ? lData.data : [])
     setEmployees(eData.success ? eData.data : [])
+    setPendingLogs(pData.success ? pData.data : [])
     setLoading(false)
   }, [from, to, empFilter, locFilter, processed])
 
   useEffect(() => { loadAll() }, [loadAll])
+
+  async function approveSubmission(id: number) {
+    setReviewSaving(true)
+    const r = await fetch(`/api/hours/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'approved', review_note: reviewNote }),
+    }).then(r => r.json())
+    setReviewSaving(false)
+    if (r.success) { showToast('Goedgekeurd'); setReviewing(null); setReviewNote(''); loadAll() }
+    else showToast(r.message ?? 'Fout', false)
+  }
+
+  async function rejectSubmission(id: number) {
+    if (!reviewNote.trim()) { alert('Voer een reden in voor afwijzing.'); return }
+    setReviewSaving(true)
+    const r = await fetch(`/api/hours/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'rejected', review_note: reviewNote }),
+    }).then(r => r.json())
+    setReviewSaving(false)
+    if (r.success) { showToast('Afgewezen.', false); setReviewing(null); setReviewNote(''); loadAll() }
+    else showToast(r.message ?? 'Fout', false)
+  }
 
   function toggleSelect(id: number) {
     setSelected(s => {
@@ -126,6 +181,89 @@ export default function HoursPage({ user }: Props) {
 
   return (
     <AdminLayout user={user} title="Urenregistratie">
+      {toast && (
+        <div className="adm-hrs-toast" style={{
+          position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
+          padding: '12px 24px', borderRadius: 999, fontWeight: 600, fontSize: '.9375rem',
+          boxShadow: '0 8px 24px rgba(0,0,0,.2)', zIndex: 9999, whiteSpace: 'nowrap',
+          background: toast.ok ? '#1A1412' : 'var(--danger)', color: '#fff',
+        }} role="alert">{toast.msg}</div>
+      )}
+
+      {/* ── Pending submissions banner ── */}
+      {pendingLogs.length > 0 && (
+        <div className="pending-banner">
+          <div className="pending-banner-head">
+            <span className="pending-banner-title">
+              Openstaande urenregistraties van medewerkers
+            </span>
+            <span className="badge badge-pending">{pendingLogs.length}</span>
+          </div>
+          <div className="pending-list">
+            {pendingLogs.map(log => {
+              const hrs = calcHours(log.clock_in, log.clock_out, log.break_minutes)
+              return (
+                <div key={log.id} className="pending-row">
+                  <span className="pending-name">{log.employee_name}</span>
+                  <span className="pending-date">{fmtDate(log.log_date)}</span>
+                  <span className="pending-times">
+                    {log.clock_in?.slice(0,5)} – {log.clock_out?.slice(0,5)}
+                  </span>
+                  <span className="pending-hours">{hrs.toFixed(1)}u</span>
+                  <LocationBadge location={log.location} size="xs" />
+                  <button
+                    className="btn btn-outline btn-xs"
+                    onClick={() => { setReviewing(log); setReviewNote('') }}
+                  >
+                    Beoordelen
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Review modal ── */}
+      {reviewing && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setReviewing(null)} role="presentation">
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="rev-hrs-title" ref={reviewModalRef}>
+            <div className="modal-header">
+              <h3 id="rev-hrs-title">Urenregistratie beoordelen</h3>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setReviewing(null)} aria-label="Sluiten">✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="rev-detail">
+                <div><span className="rev-lbl">Medewerker</span><span>{reviewing.employee_name}</span></div>
+                <div><span className="rev-lbl">Datum</span><span>{new Date(reviewing.log_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
+                <div><span className="rev-lbl">Werktijden</span><span>{reviewing.clock_in?.slice(0,5)} – {reviewing.clock_out?.slice(0,5)}</span></div>
+                <div><span className="rev-lbl">Pauze</span><span>{reviewing.break_minutes} minuten</span></div>
+                <div><span className="rev-lbl">Berekend</span><strong>{calcHours(reviewing.clock_in, reviewing.clock_out, reviewing.break_minutes).toFixed(1)} uur</strong></div>
+                <div><span className="rev-lbl">Locatie</span><span><LocationBadge location={reviewing.location} size="xs" /></span></div>
+                {reviewing.note && (
+                  <div className="rev-full"><span className="rev-lbl">Notitie medewerker</span><span>{reviewing.note}</span></div>
+                )}
+              </div>
+              <div className="form-group" style={{ marginTop: 'var(--s4)' }}>
+                <label className="form-label" htmlFor="review_hrs_note">Opmerking (verplicht bij afwijzen)</label>
+                <textarea id="review_hrs_note" className="form-control" rows={3}
+                  value={reviewNote} onChange={e => setReviewNote(e.target.value)}
+                  placeholder="Bijv. 'Tijden kloppen niet met het rooster'" />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline btn-sm" onClick={() => setReviewing(null)}>Annuleren</button>
+              <button className="btn btn-danger btn-sm" disabled={reviewSaving} onClick={() => rejectSubmission(reviewing.id)}>
+                {reviewSaving ? <Spinner /> : 'Afwijzen'}
+              </button>
+              <button className="btn btn-success btn-sm" disabled={reviewSaving} onClick={() => approveSubmission(reviewing.id)}>
+                {reviewSaving ? <Spinner /> : 'Goedkeuren'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Filters ── */}
       <div className="hours-controls">
         <div className="filters-row">
@@ -258,7 +396,7 @@ export default function HoursPage({ user }: Props) {
         <>
           {/* Desktop table */}
           <div className="table-wrap desktop-only">
-            <table className="data-table">
+            <table className="data-table" aria-label="Urenregistratie overzicht">
               <thead>
                 <tr>
                   <th>
@@ -426,6 +564,34 @@ export default function HoursPage({ user }: Props) {
       )}
 
       <style jsx>{`
+        /* ── Pending banner ── */
+        .pending-banner {
+          background: var(--surface); border: 2px solid #C8882A;
+          border-radius: var(--radius-lg); padding: var(--s4);
+          margin-bottom: var(--s5);
+        }
+        .pending-banner-head {
+          display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3);
+        }
+        .pending-banner-title { font-weight: 700; font-size: .9375rem; }
+        .pending-list { display: flex; flex-direction: column; gap: var(--s2); }
+        .pending-row {
+          display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+          padding: var(--s2) var(--s3); background: var(--surface-alt);
+          border-radius: var(--radius); font-size: .875rem;
+        }
+        .pending-name { font-weight: 600; min-width: 120px; }
+        .pending-date { color: var(--text-sub); min-width: 70px; }
+        .pending-times { font-weight: 500; }
+        .pending-hours { font-weight: 700; color: var(--brand); }
+        .rev-detail {
+          display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3);
+          background: var(--surface-alt); border-radius: var(--radius); padding: var(--s4);
+        }
+        .rev-detail > div { display: flex; flex-direction: column; gap: 2px; }
+        .rev-full { grid-column: 1 / -1; }
+        .rev-lbl { font-size: .75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+
         /* ── Controls ── */
         .hours-controls { margin-bottom: var(--s4); }
         .filters-row {
@@ -548,5 +714,6 @@ export default function HoursPage({ user }: Props) {
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   const session = await getSession(req as any, res as any)
   if (!session.user) return { redirect: { destination: '/login', permanent: false } }
+  if (session.user.role === 'employee') return { redirect: { destination: '/me', permanent: false } }
   return { props: { user: session.user } }
 }
