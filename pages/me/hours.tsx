@@ -1,18 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import TeamLayout from '@/components/layout/TeamLayout'
 import { getSession } from '@/lib/auth'
+import { calcHoursWorked } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, TimeLog, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
-
-function calcHours(clockIn: string | null, clockOut: string | null, brk: number) {
-  if (!clockIn || !clockOut) return 0
-  const [ih, im] = clockIn.split(':').map(Number)
-  const [oh, om] = clockOut.split(':').map(Number)
-  return Math.max(0, (oh * 60 + om - (ih * 60 + im) - brk) / 60)
-}
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -31,25 +25,22 @@ const STATUS_CLASS: Record<string, string> = {
   rejected: 'badge-danger',
 }
 
-const today = new Date().toISOString().slice(0, 10)
-const firstOfMonth = today.slice(0, 8) + '01'
+function getToday() {
+  return new Date().toISOString().slice(0, 10)
+}
 
-const EMPTY_FORM = {
-  log_date: today,
-  location: 'markt' as Location,
-  clock_in: '',
-  clock_out: '',
-  break_minutes: '0',
-  note: '',
+function makeEmptyForm(): { log_date: string; location: Location; clock_in: string; clock_out: string; break_minutes: string; note: string } {
+  const d = getToday()
+  return { log_date: d, location: 'markt', clock_in: '', clock_out: '', break_minutes: '0', note: '' }
 }
 
 export default function MyHoursPage({ user }: Props) {
   const [logs, setLogs]       = useState<TimeLog[]>([])
-  const [from, setFrom]       = useState(firstOfMonth)
-  const [to, setTo]           = useState(today)
+  const [from, setFrom]       = useState(() => { const d = getToday(); return d.slice(0, 8) + '01' })
+  const [to, setTo]           = useState(getToday)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm]       = useState(EMPTY_FORM)
+  const [form, setForm]       = useState(makeEmptyForm)
   const [saving, setSaving]   = useState(false)
   const [formErr, setFormErr] = useState('')
   const [toast, setToast]     = useState<{ msg: string; ok: boolean } | null>(null)
@@ -79,8 +70,8 @@ export default function MyHoursPage({ user }: Props) {
       setSaving(false)
       return
     }
-    if (form.clock_in >= form.clock_out) {
-      setFormErr('Uitkloktijd moet na inkloktijd liggen')
+    if (form.clock_out <= form.clock_in) {
+      setFormErr('Uitkloktijd moet na inkloktijd liggen. Nachtdiensten worden nog niet ondersteund.')
       setSaving(false)
       return
     }
@@ -101,8 +92,9 @@ export default function MyHoursPage({ user }: Props) {
     setSaving(false)
     if (!r.success) { setFormErr(r.message ?? 'Indienen mislukt'); return }
     showToast('Uren ingediend ter goedkeuring!')
-    setForm(EMPTY_FORM)
+    setForm(makeEmptyForm())
     setShowForm(false)
+    setFormErr('')
     load()
   }
 
@@ -113,7 +105,7 @@ export default function MyHoursPage({ user }: Props) {
     else showToast(r.message ?? 'Fout', false)
   }
 
-  const totalHours   = logs.reduce((acc, l) => acc + calcHours(l.clock_in, l.clock_out, l.break_minutes), 0)
+  const totalHours   = logs.reduce((acc, l) => acc + calcHoursWorked(l.clock_in, l.clock_out, l.break_minutes), 0)
   const totalOvertime = logs.reduce((acc, l) => acc + l.overtime_hours, 0)
   const pending      = logs.filter(l => l.submission_status === 'pending')
   const rest         = logs.filter(l => l.submission_status !== 'pending')
@@ -134,7 +126,7 @@ export default function MyHoursPage({ user }: Props) {
           </div>
           <button
             className="btn btn-primary btn-sm"
-            onClick={() => setShowForm(s => !s)}
+            onClick={() => { setShowForm(s => !s); setFormErr('') }}
           >
             {showForm ? 'Annuleren' : '+ Uren registreren'}
           </button>
@@ -151,7 +143,7 @@ export default function MyHoursPage({ user }: Props) {
                   <label className="form-label required" htmlFor="hrs_date">Datum</label>
                   <input id="hrs_date" type="date" className="form-control"
                     value={form.log_date} onChange={e => setForm(f => ({ ...f, log_date: e.target.value }))}
-                    max={today} required />
+                    max={getToday()} required />
                 </div>
                 <div className="form-group">
                   <label className="form-label required" htmlFor="hrs_loc">Locatie</label>
@@ -189,7 +181,7 @@ export default function MyHoursPage({ user }: Props) {
 
               {form.clock_in && form.clock_out && form.clock_in < form.clock_out && (
                 <div className="hrs-preview">
-                  Berekend: <strong>{calcHours(form.clock_in, form.clock_out, parseInt(form.break_minutes) || 0).toFixed(1)} uur</strong>
+                  Berekend: <strong>{calcHoursWorked(form.clock_in, form.clock_out, parseInt(form.break_minutes) || 0).toFixed(1)} uur</strong>
                   {parseInt(form.break_minutes) > 0 && <span> (incl. {form.break_minutes} min pauze)</span>}
                 </div>
               )}
@@ -247,7 +239,7 @@ export default function MyHoursPage({ user }: Props) {
             <div className="empty-icon">⏱️</div>
             <div>Geen uren gevonden voor deze periode.</div>
             {!showForm && (
-              <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => setShowForm(true)}>
+              <button className="btn btn-primary btn-sm empty-cta" onClick={() => setShowForm(true)}>
                 Eerste uren registreren
               </button>
             )}
@@ -337,6 +329,7 @@ export default function MyHoursPage({ user }: Props) {
         .loading-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
         .empty-state { text-align: center; padding: var(--s10) var(--s6); }
         .empty-icon { font-size: 2.5rem; margin-bottom: var(--s3); }
+        .empty-cta { margin-top: 12px; }
 
         .hrs-section { margin-bottom: var(--s6); }
         .hrs-sec-head {
@@ -362,7 +355,7 @@ export default function MyHoursPage({ user }: Props) {
 }
 
 function LogRow({ log, onWithdraw }: { log: TimeLog; onWithdraw?: (id: number) => void }) {
-  const hours = calcHours(log.clock_in, log.clock_out, log.break_minutes)
+  const hours = calcHoursWorked(log.clock_in, log.clock_out, log.break_minutes)
   const isPending = log.submission_status === 'pending'
 
   return (

@@ -8,7 +8,7 @@ import { sendExpenseRequestAlertEmail } from '@/lib/email'
 import crypto from 'crypto'
 import type { ClaimType, CLAIM_TYPES } from '@/types'
 
-export const config = { api: { bodyParser: { sizeLimit: '14mb' } } }
+export const config = { api: { bodyParser: { sizeLimit: '20mb' } } }
 
 const VALID_TYPES: readonly string[] = ['reiskosten', 'overuren', 'overig']
 

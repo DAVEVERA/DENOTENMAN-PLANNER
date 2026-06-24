@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
-import { updateTimeLog, deleteTimeLog, markLogsProcessed, reviewHourSubmission, getEmployeeTimeLog, deleteEmployeeSubmission } from '@/lib/hours'
+import { updateTimeLog, deleteTimeLog, markLogsProcessed, reviewHourSubmission, deleteEmployeeSubmission } from '@/lib/hours'
 import { getEmployee } from '@/lib/scheduler'
 import { sendHourReviewEmail } from '@/lib/email'
 
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // PATCH: review submission or mark processed
       if (req.method === 'PATCH') {
-        const { status, review_note } = req.body ?? {}
+        const { status, review_note, action } = req.body ?? {}
 
         if (status === 'approved' || status === 'rejected') {
           const updated = await reviewHourSubmission(
@@ -56,26 +56,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.json({ success: true, data: updated })
         }
 
-        await markLogsProcessed([id])
-        return res.json({ success: true })
+        if (action === 'process') {
+          await markLogsProcessed([id])
+          return res.json({ success: true })
+        }
+
+        return res.status(400).json({ success: false, message: 'Ongeldige actie' })
       }
 
       return res.status(405).json({ success: false })
     }
 
     // Employee: can only delete own pending submissions
-    if (can(session.user, 'view_own')) {
-      if (req.method === 'DELETE') {
-        const log = await getEmployeeTimeLog(id)
-        if (!log) return res.status(404).json({ success: false, message: 'Niet gevonden' })
-        if (log.employee_id !== session.user.employee_id)
-          return res.status(403).json({ success: false, message: 'Geen toegang' })
-        if (log.submission_status !== 'pending')
-          return res.status(400).json({ success: false, message: 'Alleen openstaande registraties kunnen worden ingetrokken' })
+    if (can(session.user, 'view_own') && req.method === 'DELETE') {
+      if (!session.user.employee_id)
+        return res.status(400).json({ success: false, message: 'Geen medewerker gekoppeld' })
 
-        await deleteEmployeeSubmission(id)
-        return res.json({ success: true })
-      }
+      await deleteEmployeeSubmission(id, session.user.employee_id)
+      return res.json({ success: true })
     }
 
     res.status(403).json({ success: false })

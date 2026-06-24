@@ -115,8 +115,8 @@ export default function AdminExpensesPage({ user }: Props) {
 
       <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Declaraties</h1>
-          <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: '.9375rem' }}>
+          <h1 className="page-title">Declaraties</h1>
+          <p className="page-subtitle">
             Beheer en verwerk ingediende declaraties van medewerkers.
           </p>
         </div>
@@ -143,7 +143,7 @@ export default function AdminExpensesPage({ user }: Props) {
       </div>
 
       {/* ── Filter ── */}
-      <div className="toolbar" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="toolbar exp-toolbar">
         {(['pending', 'approved', 'rejected', 'all'] as const).map(s => (
           <button
             key={s}
@@ -158,11 +158,11 @@ export default function AdminExpensesPage({ user }: Props) {
 
       {/* ── Tabel ── */}
       {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', padding: 'var(--s8)', color: 'var(--text-muted)' }}>
+        <div className="loading-row">
           <Spinner /> Laden…
         </div>
       ) : claims.length === 0 ? (
-        <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)' }}>
+        <div className="empty-state">
           Geen declaraties gevonden.
         </div>
       ) : (
@@ -174,7 +174,7 @@ export default function AdminExpensesPage({ user }: Props) {
                 <th>Type</th>
                 <th>Omschrijving</th>
                 <th>Datum</th>
-                <th style={{ textAlign: 'right' }}>Bedrag</th>
+                <th className="text-right">Bedrag</th>
                 <th>Status</th>
                 <th>Acties</th>
               </tr>
@@ -184,12 +184,12 @@ export default function AdminExpensesPage({ user }: Props) {
                 <tr key={c.id}>
                   <td className="fw-500">{c.employee_name}</td>
                   <td>{CLAIM_LABEL[c.claim_type] ?? c.claim_type}</td>
-                  <td style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.attachment_url && <span title="Bevat bijlage" style={{ marginRight: '4px' }}>📎</span>}
+                  <td className="exp-desc-cell">
+                    {c.attachment_url && <span title="Bevat bijlage" className="exp-clip">📎</span>}
                     {c.description}
                   </td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{new Date(c.claim_date).toLocaleDateString('nl-NL')}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtEur(c.amount)}</td>
+                  <td className="nowrap">{new Date(c.claim_date).toLocaleDateString('nl-NL')}</td>
+                  <td className="exp-amount-cell">{fmtEur(c.amount)}</td>
                   <td><span className={`badge ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span></td>
                   <td>
                     {c.status === 'pending' ? (
@@ -200,7 +200,7 @@ export default function AdminExpensesPage({ user }: Props) {
                         Beoordelen
                       </button>
                     ) : (
-                      <span style={{ fontSize: '.8125rem', color: 'var(--text-muted)' }}>
+                      <span className="exp-reviewer">
                         {c.reviewed_by ?? '—'}
                       </span>
                     )}
@@ -228,9 +228,9 @@ export default function AdminExpensesPage({ user }: Props) {
                 <div><span className="rev-lbl">Datum</span><span>{new Date(reviewing.claim_date).toLocaleDateString('nl-NL')}</span></div>
                 <div className="rev-full"><span className="rev-lbl">Omschrijving</span><span>{reviewing.description}</span></div>
                 {reviewing.attachment_url && (
-                  <div className="rev-full" style={{ marginTop: '8px' }}>
+                  <div className="rev-full rev-attachment">
                     <span className="rev-lbl">Bonnetje / Bijlage</span>
-                    <div style={{ marginTop: '4px' }}>
+                    <div className="rev-attachment-link">
                       <a href={reviewing.attachment_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
                         📎 Bekijk bestand
                       </a>
@@ -259,6 +259,20 @@ export default function AdminExpensesPage({ user }: Props) {
       )}
 
       <style jsx>{`
+        .page-title { font-size: 1.5rem; font-weight: 800; margin: 0; }
+        .page-subtitle { color: var(--text-muted); margin: 4px 0 0; font-size: .9375rem; }
+        .exp-toolbar { margin-bottom: var(--s4); }
+        .loading-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
+        .empty-state { padding: var(--s8); text-align: center; color: var(--text-muted); }
+        .text-right { text-align: right; }
+        .nowrap { white-space: nowrap; }
+        .exp-desc-cell { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .exp-clip { margin-right: 4px; }
+        .exp-amount-cell { text-align: right; font-weight: 700; white-space: nowrap; }
+        .exp-reviewer { font-size: .8125rem; color: var(--text-muted); }
+        .rev-attachment { margin-top: 8px; }
+        .rev-attachment-link { margin-top: 4px; }
+
         .adm-exp-toast {
           position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
           padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: .9375rem;

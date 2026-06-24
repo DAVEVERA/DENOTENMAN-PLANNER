@@ -117,7 +117,7 @@ export default function TeamLayout({ user, children, location }: Props) {
             <Link href="/me/support"
               className={`tn-link${onSupport ? ' active' : ''}`}
               aria-current={onSupport ? 'page' : undefined}>
-              <span style={{fontSize:'1.1rem',lineHeight:1}}>🎫</span>
+              <span className="support-icon">🎫</span>
               Support
             </Link>
           </nav>
@@ -224,6 +224,7 @@ export default function TeamLayout({ user, children, location }: Props) {
       </nav>
 
       <style jsx>{`
+        .support-icon { font-size: 1.1rem; line-height: 1; }
 
         .team-shell {
           min-height: 100vh;

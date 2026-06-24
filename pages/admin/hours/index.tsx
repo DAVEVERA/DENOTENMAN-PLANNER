@@ -3,18 +3,12 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import LocationBadge from '@/components/ui/LocationBadge'
 import { CloseIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
+import { calcHoursWorked } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, TimeLog, Employee, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
-
-function calcHours(clockIn: string | null, clockOut: string | null, brk: number) {
-  if (!clockIn || !clockOut) return 0
-  const [ih, im] = clockIn.split(':').map(Number)
-  const [oh, om] = clockOut.split(':').map(Number)
-  return Math.max(0, (oh * 60 + om - (ih * 60 + im) - brk) / 60)
-}
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
@@ -176,18 +170,13 @@ export default function HoursPage({ user }: Props) {
     loadAll()
   }
 
-  const totalHours = logs.reduce((acc, l) => acc + calcHours(l.clock_in, l.clock_out, l.break_minutes), 0)
+  const totalHours = logs.reduce((acc, l) => acc + calcHoursWorked(l.clock_in, l.clock_out, l.break_minutes), 0)
   const unprocessed = logs.filter(l => !l.is_processed).length
 
   return (
     <AdminLayout user={user} title="Urenregistratie">
       {toast && (
-        <div className="adm-hrs-toast" style={{
-          position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
-          padding: '12px 24px', borderRadius: 999, fontWeight: 600, fontSize: '.9375rem',
-          boxShadow: '0 8px 24px rgba(0,0,0,.2)', zIndex: 9999, whiteSpace: 'nowrap',
-          background: toast.ok ? '#1A1412' : 'var(--danger)', color: '#fff',
-        }} role="alert">{toast.msg}</div>
+        <div className={`adm-hrs-toast ${toast.ok ? 'ok' : 'err'}`} role="alert">{toast.msg}</div>
       )}
 
       {/* ── Pending submissions banner ── */}
@@ -201,7 +190,7 @@ export default function HoursPage({ user }: Props) {
           </div>
           <div className="pending-list">
             {pendingLogs.map(log => {
-              const hrs = calcHours(log.clock_in, log.clock_out, log.break_minutes)
+              const hrs = calcHoursWorked(log.clock_in, log.clock_out, log.break_minutes)
               return (
                 <div key={log.id} className="pending-row">
                   <span className="pending-name">{log.employee_name}</span>
@@ -238,13 +227,13 @@ export default function HoursPage({ user }: Props) {
                 <div><span className="rev-lbl">Datum</span><span>{new Date(reviewing.log_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
                 <div><span className="rev-lbl">Werktijden</span><span>{reviewing.clock_in?.slice(0,5)} – {reviewing.clock_out?.slice(0,5)}</span></div>
                 <div><span className="rev-lbl">Pauze</span><span>{reviewing.break_minutes} minuten</span></div>
-                <div><span className="rev-lbl">Berekend</span><strong>{calcHours(reviewing.clock_in, reviewing.clock_out, reviewing.break_minutes).toFixed(1)} uur</strong></div>
+                <div><span className="rev-lbl">Berekend</span><strong>{calcHoursWorked(reviewing.clock_in, reviewing.clock_out, reviewing.break_minutes).toFixed(1)} uur</strong></div>
                 <div><span className="rev-lbl">Locatie</span><span><LocationBadge location={reviewing.location} size="xs" /></span></div>
                 {reviewing.note && (
                   <div className="rev-full"><span className="rev-lbl">Notitie medewerker</span><span>{reviewing.note}</span></div>
                 )}
               </div>
-              <div className="form-group" style={{ marginTop: 'var(--s4)' }}>
+              <div className="form-group rev-note-group">
                 <label className="form-label" htmlFor="review_hrs_note">Opmerking (verplicht bij afwijzen)</label>
                 <textarea id="review_hrs_note" className="form-control" rows={3}
                   value={reviewNote} onChange={e => setReviewNote(e.target.value)}
@@ -277,7 +266,7 @@ export default function HoursPage({ user }: Props) {
           <button
             className="btn btn-outline btn-sm filters-toggle"
             onClick={() => setFiltersOpen(v => !v)}
-            aria-expanded={filtersOpen}
+            aria-expanded={filtersOpen ? 'true' : 'false'}
           >
             {filtersOpen ? 'Minder filters' : 'Meer filters'}
           </button>
@@ -412,7 +401,8 @@ export default function HoursPage({ user }: Props) {
                   <th>Gewerkt</th>
                   <th>Overwerk</th>
                   <th>Notitie</th>
-                  <th>Status</th>
+                  <th>Verwerkt</th>
+                  <th>Registratie</th>
                   <th></th>
                 </tr>
               </thead>
@@ -436,9 +426,10 @@ export default function HoursPage({ user }: Props) {
                         <td><input aria-label="Wijzig inkloktijd" type="time" className="form-control form-control-xs" value={editForm.clock_in ?? ''} onChange={e => setEditForm(f => ({ ...f, clock_in: e.target.value }))} /></td>
                         <td><input aria-label="Wijzig uitkloktijd" type="time" className="form-control form-control-xs" value={editForm.clock_out ?? ''} onChange={e => setEditForm(f => ({ ...f, clock_out: e.target.value }))} /></td>
                         <td><input aria-label="Wijzig pauze" type="number" className="form-control form-control-xs" value={editForm.break_minutes ?? 0} onChange={e => setEditForm(f => ({ ...f, break_minutes: parseInt(e.target.value) || 0 }))} /></td>
-                        <td className="text-sub">{calcHours(editForm.clock_in ?? null, editForm.clock_out ?? null, editForm.break_minutes ?? 0).toFixed(1)}u</td>
+                        <td className="text-sub">{calcHoursWorked(editForm.clock_in ?? null, editForm.clock_out ?? null, editForm.break_minutes ?? 0).toFixed(1)}u</td>
                         <td><input aria-label="Wijzig overwerk" type="number" step="0.5" className="form-control form-control-xs" value={editForm.overtime_hours ?? 0} onChange={e => setEditForm(f => ({ ...f, overtime_hours: parseFloat(e.target.value) || 0 }))} /></td>
                         <td><input aria-label="Wijzig notitie" className="form-control form-control-xs" value={editForm.note ?? ''} onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))} /></td>
+                        <td></td>
                         <td></td>
                         <td>
                           <div className="row-actions">
@@ -455,12 +446,25 @@ export default function HoursPage({ user }: Props) {
                         <td className="text-sub">{log.clock_in?.slice(0,5) ?? '–'}</td>
                         <td className="text-sub">{log.clock_out?.slice(0,5) ?? '–'}</td>
                         <td className="text-sub">{log.break_minutes}m</td>
-                        <td className="fw-500">{calcHours(log.clock_in, log.clock_out, log.break_minutes).toFixed(1)}u</td>
+                        <td className="fw-500">{calcHoursWorked(log.clock_in, log.clock_out, log.break_minutes).toFixed(1)}u</td>
                         <td className="text-sub">{log.overtime_hours > 0 ? `+${log.overtime_hours}u` : '–'}</td>
                         <td className="text-muted text-sm">{log.note ?? ''}</td>
                         <td>
                           <span className={`badge badge-pill ${log.is_processed ? 'badge-approved' : 'badge-warning'}`}>
                             {log.is_processed ? 'Verwerkt' : 'Open'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge badge-pill ${
+                            log.submission_status === 'approved' ? 'badge-approved' :
+                            log.submission_status === 'rejected' ? 'badge-danger' :
+                            log.submission_status === 'pending' ? 'badge-pending' :
+                            'badge-draft'
+                          }`}>
+                            {log.submission_status === 'approved' ? 'Goedgekeurd' :
+                             log.submission_status === 'rejected' ? 'Afgewezen' :
+                             log.submission_status === 'pending' ? 'In behandeling' :
+                             'Direct'}
                           </span>
                         </td>
                         <td>
@@ -474,7 +478,7 @@ export default function HoursPage({ user }: Props) {
                   </tr>
                 ))}
                 {logs.length === 0 && (
-                  <tr><td colSpan={12} className="empty-row">Geen urenregistraties gevonden.</td></tr>
+                  <tr><td colSpan={13} className="empty-row">Geen urenregistraties gevonden.</td></tr>
                 )}
               </tbody>
             </table>
@@ -487,7 +491,7 @@ export default function HoursPage({ user }: Props) {
             ) : (
               <div className="log-cards">
                 {logs.map(log => {
-                  const hours = calcHours(log.clock_in, log.clock_out, log.break_minutes)
+                  const hours = calcHoursWorked(log.clock_in, log.clock_out, log.break_minutes)
                   const isEditing = editId === log.id
                   return (
                     <div key={log.id} className={`log-card${log.is_processed ? ' processed' : ''}`}>
@@ -495,31 +499,31 @@ export default function HoursPage({ user }: Props) {
                         <div className="log-card-edit">
                           <div className="edit-grid">
                             <div className="form-group">
-                              <label className="form-label">Datum</label>
-                              <input type="date" className="form-control" value={editForm.log_date ?? ''} onChange={e => setEditForm(f => ({ ...f, log_date: e.target.value }))} />
+                              <label className="form-label" htmlFor={`mob_date_${log.id}`}>Datum</label>
+                              <input id={`mob_date_${log.id}`} type="date" className="form-control" value={editForm.log_date ?? ''} onChange={e => setEditForm(f => ({ ...f, log_date: e.target.value }))} />
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Locatie</label>
-                              <select className="form-control" value={editForm.location ?? 'markt'} onChange={e => setEditForm(f => ({ ...f, location: e.target.value as Location }))}>
+                              <label className="form-label" htmlFor={`mob_loc_${log.id}`}>Locatie</label>
+                              <select id={`mob_loc_${log.id}`} className="form-control" value={editForm.location ?? 'markt'} onChange={e => setEditForm(f => ({ ...f, location: e.target.value as Location }))}>
                                 <option value="markt">Markt</option>
                                 <option value="nootmagazijn">Nootmagazijn</option>
                               </select>
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Inklok</label>
-                              <input type="time" className="form-control" value={editForm.clock_in ?? ''} onChange={e => setEditForm(f => ({ ...f, clock_in: e.target.value }))} />
+                              <label className="form-label" htmlFor={`mob_in_${log.id}`}>Inklok</label>
+                              <input id={`mob_in_${log.id}`} type="time" className="form-control" value={editForm.clock_in ?? ''} onChange={e => setEditForm(f => ({ ...f, clock_in: e.target.value }))} />
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Uitklok</label>
-                              <input type="time" className="form-control" value={editForm.clock_out ?? ''} onChange={e => setEditForm(f => ({ ...f, clock_out: e.target.value }))} />
+                              <label className="form-label" htmlFor={`mob_out_${log.id}`}>Uitklok</label>
+                              <input id={`mob_out_${log.id}`} type="time" className="form-control" value={editForm.clock_out ?? ''} onChange={e => setEditForm(f => ({ ...f, clock_out: e.target.value }))} />
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Pauze (min)</label>
-                              <input type="number" className="form-control" value={editForm.break_minutes ?? 0} onChange={e => setEditForm(f => ({ ...f, break_minutes: parseInt(e.target.value) || 0 }))} />
+                              <label className="form-label" htmlFor={`mob_brk_${log.id}`}>Pauze (min)</label>
+                              <input id={`mob_brk_${log.id}`} type="number" className="form-control" value={editForm.break_minutes ?? 0} onChange={e => setEditForm(f => ({ ...f, break_minutes: parseInt(e.target.value) || 0 }))} />
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Notitie</label>
-                              <input className="form-control" value={editForm.note ?? ''} onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))} />
+                              <label className="form-label" htmlFor={`mob_note_${log.id}`}>Notitie</label>
+                              <input id={`mob_note_${log.id}`} className="form-control" value={editForm.note ?? ''} onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))} />
                             </div>
                           </div>
                           <div className="edit-actions">
@@ -564,6 +568,17 @@ export default function HoursPage({ user }: Props) {
       )}
 
       <style jsx>{`
+        /* ── Toast ── */
+        .adm-hrs-toast {
+          position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+          padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: .9375rem;
+          box-shadow: 0 8px 24px rgba(0,0,0,.2); z-index: 9999; white-space: nowrap;
+          color: #fff;
+        }
+        .adm-hrs-toast.ok  { background: #1A1412; }
+        .adm-hrs-toast.err { background: var(--danger); }
+        .rev-note-group { margin-top: var(--s4); }
+
         /* ── Pending banner ── */
         .pending-banner {
           background: var(--surface); border: 2px solid #C8882A;

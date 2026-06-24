@@ -222,7 +222,7 @@ export default function ExpensesPage({ user }: Props) {
                       </div>
                       <div className="exp-row-amount">{fmtEur(c.amount)}</div>
                       <span className={`badge ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div className="exp-row-actions">
                         {c.attachment_url && (
                           <a href={c.attachment_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-xs" title="Bekijk bonnetje">
                             Bonnetje
@@ -279,6 +279,7 @@ export default function ExpensesPage({ user }: Props) {
       </div>
 
       <style jsx>{`
+        .exp-row-actions { display: flex; gap: 8px; }
         .exp-toast {
           position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
           padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: .9375rem;

@@ -64,6 +64,7 @@ export async function reviewHourSubmission(
       review_note: reviewNote ?? null,
     })
     .eq('id', id)
+    .eq('submission_status', 'pending')
     .select()
     .single())
 }
@@ -77,13 +78,13 @@ export async function getEmployeeTimeLog(id: number): Promise<TimeLog | null> {
   return data ?? null
 }
 
-export async function deleteEmployeeSubmission(id: number): Promise<boolean> {
-  const { error } = await supabase
+export async function deleteEmployeeSubmission(id: number, employeeId: number): Promise<void> {
+  unwrap(await supabase
     .from(T('time_logs'))
     .delete()
     .eq('id', id)
-    .eq('submission_status', 'pending')
-  return !error
+    .eq('employee_id', employeeId)
+    .eq('submission_status', 'pending'))
 }
 
 export async function getTimeLogs(opts: {
@@ -113,7 +114,7 @@ export async function getExportTimeLogs(opts: {
   location?: Location
   is_processed?: number
 }): Promise<TimeLog[]> {
-  const logs = await getTimeLogs(opts)
+  const logs = await getTimeLogs({ ...opts, exclude_rejected: true })
   const plannedLogs = await getPlannedShiftLogs(opts, logs)
 
   return [...logs, ...plannedLogs].sort((a, b) =>
@@ -270,7 +271,7 @@ export async function markLogsProcessed(ids: number[]): Promise<void> {
 export async function getHoursSummary(
   from: string, to: string, location?: Location,
 ): Promise<HoursSummary[]> {
-  const logs = await getTimeLogs({ from, to, location })
+  const logs = await getTimeLogs({ from, to, location, exclude_rejected: true })
 
   const byEmp = new Map<number, { name: string; contract: number; logged: number; overtime: number }>()
 
