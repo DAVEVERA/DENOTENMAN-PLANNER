@@ -133,12 +133,24 @@ create table if not exists planner20_time_logs (
   note            text,
   is_processed    smallint    not null default 0,
   processed_at    timestamptz,
+  submission_status text      not null default 'direct',
+  reviewed_by     text,
+  reviewed_at     timestamptz,
+  review_note     text,
   created_by      text        not null default '',
   created_at      timestamptz not null default now()
 );
+alter table planner20_time_logs add column if not exists submission_status text not null default 'direct';
+alter table planner20_time_logs add column if not exists reviewed_by      text;
+alter table planner20_time_logs add column if not exists reviewed_at      timestamptz;
+alter table planner20_time_logs add column if not exists review_note      text;
+
 create index if not exists planner20_time_logs_date      on planner20_time_logs (log_date desc);
 create index if not exists planner20_time_logs_employee  on planner20_time_logs (employee_id, log_date desc);
 create index if not exists planner20_time_logs_processed on planner20_time_logs (is_processed, log_date desc);
+create index if not exists idx_time_logs_submission_status
+  on planner20_time_logs (submission_status)
+  where submission_status = 'pending';
 
 -- planner20_leave_requests
 create table if not exists planner20_leave_requests (

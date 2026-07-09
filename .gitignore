@@ -22,6 +22,7 @@ build.log
 # Scratch / dev utilities (never commit)
 scratch/
 
-# Local DB dumps / exports
-*.sql
+# Local DB dumps / exports (schema migrations are tracked, see migrations/ and supabase/migrations/)
+dump_*.sql
+*.dump.sql
 *.csv.local

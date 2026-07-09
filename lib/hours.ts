@@ -95,6 +95,8 @@ export async function getTimeLogs(opts: {
   is_processed?: number
   submission_status?: SubmissionStatus
   exclude_rejected?: boolean
+  /** Only 'direct' (admin-entered) and 'approved' (reviewed by Fedor) logs — excludes pending AND rejected. Use for export/reporting/payroll totals. */
+  only_finalized?: boolean
 }): Promise<TimeLog[]> {
   let q = supabase.from(T('time_logs')).select('*').order('log_date', { ascending: false })
   if (opts.employee_id) q = q.eq('employee_id', opts.employee_id)
@@ -103,7 +105,8 @@ export async function getTimeLogs(opts: {
   if (opts.location && opts.location !== 'both') q = q.eq('location', opts.location)
   if (opts.is_processed !== undefined) q = q.eq('is_processed', opts.is_processed)
   if (opts.submission_status) q = q.eq('submission_status', opts.submission_status)
-  if (opts.exclude_rejected) q = q.neq('submission_status', 'rejected')
+  if (opts.only_finalized) q = q.in('submission_status', ['direct', 'approved'])
+  else if (opts.exclude_rejected) q = q.neq('submission_status', 'rejected')
   return unwrap<TimeLog[]>(await q)
 }
 
@@ -114,7 +117,7 @@ export async function getExportTimeLogs(opts: {
   location?: Location
   is_processed?: number
 }): Promise<TimeLog[]> {
-  const logs = await getTimeLogs({ ...opts, exclude_rejected: true })
+  const logs = await getTimeLogs({ ...opts, only_finalized: true })
   const plannedLogs = await getPlannedShiftLogs(opts, logs)
 
   return [...logs, ...plannedLogs].sort((a, b) =>
@@ -271,7 +274,7 @@ export async function markLogsProcessed(ids: number[]): Promise<void> {
 export async function getHoursSummary(
   from: string, to: string, location?: Location,
 ): Promise<HoursSummary[]> {
-  const logs = await getTimeLogs({ from, to, location, exclude_rejected: true })
+  const logs = await getTimeLogs({ from, to, location, only_finalized: true })
 
   const byEmp = new Map<number, { name: string; contract: number; logged: number; overtime: number }>()
 
