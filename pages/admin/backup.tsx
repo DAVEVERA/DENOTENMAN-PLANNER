@@ -19,7 +19,7 @@ interface HistoryEntry {
   id: number
   action: string
   performed_by: string
-  record_counts: Record<string, number>
+  record_counts: Record<string, number | { min: string; max: string } | null>
   created_at: string
 }
 
@@ -225,9 +225,11 @@ export default function BackupPage({ user }: Props) {
                   <td><span className={`action-badge ${h.action}`}>{h.action === 'export' ? '📤 Export' : '📥 Import'}</span></td>
                   <td>{h.performed_by}</td>
                   <td className="details-cell">
-                    {h.record_counts && Object.entries(h.record_counts).map(([k, v]) => (
-                      <span key={k} className="detail-chip">{k}: {typeof v === 'number' ? v : String(v)}</span>
-                    ))}
+                    {h.record_counts && Object.entries(h.record_counts).map(([k, v]) => {
+                      if (v == null) return null
+                      const label = typeof v === 'number' ? v : `${v.min} t/m ${v.max}`
+                      return <span key={k} className="detail-chip">{k}: {label}</span>
+                    })}
                   </td>
                 </tr>
               ))}

@@ -26,3 +26,4 @@ scratch/
 dump_*.sql
 *.dump.sql
 *.csv.local
+docs/backups/

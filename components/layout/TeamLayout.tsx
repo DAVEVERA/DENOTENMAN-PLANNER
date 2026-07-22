@@ -267,8 +267,12 @@ export default function TeamLayout({ user, children, location }: Props) {
           align-items: center;
           gap: 4px;
           flex: 1;
+          min-width: 0;
           padding-left: var(--s4);
+          overflow-x: auto;
+          scrollbar-width: none;
         }
+        .team-nav::-webkit-scrollbar { display: none; }
         .tn-link {
           display: flex;
           flex-direction: row;

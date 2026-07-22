@@ -6,7 +6,7 @@ import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Employee, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
-import { InviteIcon } from '@/components/ui/Icons'
+import { InviteIcon, CloseIcon } from '@/components/ui/Icons'
 
 interface Props { user: SessionUser }
 
@@ -38,6 +38,13 @@ export default function EmployeesPage({ user }: Props) {
   }
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    if (!adding) return
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAdding(false) }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [adding])
 
   const visible = employees.filter(e => {
     if (!showInactive && !e.is_active) return false
@@ -105,10 +112,15 @@ export default function EmployeesPage({ user }: Props) {
 
       {/* Add form */}
       {adding && (
-        <div className="add-card">
-          <h4 className="add-card-title">Nieuwe medewerker</h4>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setAdding(false)} role="presentation">
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="add-emp-title">
+            <div className="modal-header">
+              <h3 id="add-emp-title">Nieuwe medewerker</h3>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setAdding(false)} aria-label="Sluiten"><CloseIcon /></button>
+            </div>
           <form onSubmit={addEmployee}>
-            {error && <div className="alert alert-danger">{error}</div>}
+            <div className="modal-body">
+            {error && <div className="alert alert-danger" role="alert">{error}</div>}
             <div className="form-grid-3">
               <div className="form-group">
                 <label htmlFor="new_name" className="form-label required">Naam</label>
@@ -146,13 +158,15 @@ export default function EmployeesPage({ user }: Props) {
                 <input id="new_rate" type="number" step="0.01" className="form-control" value={newForm.hourly_rate} onChange={e => setNewForm(f => ({ ...f, hourly_rate: e.target.value }))} placeholder="bijv. 13.50" title="Uurtarief in euro's" />
               </div>
             </div>
-            <div className="add-card-footer">
+            </div>
+            <div className="modal-footer">
               <button type="button" className="btn btn-outline btn-sm" onClick={() => setAdding(false)}>Annuleren</button>
               <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
                 {saving ? <Spinner /> : 'Toevoegen'}
               </button>
             </div>
           </form>
+          </div>
         </div>
       )}
 
@@ -244,16 +258,9 @@ export default function EmployeesPage({ user }: Props) {
           flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s5);
         }
         .filters { display: flex; align-items: center; gap: var(--s3); }
-        .add-card {
-          background: var(--surface); border: 1px solid var(--border);
-          border-radius: var(--radius-lg); padding: var(--s5);
-          margin-bottom: var(--s5);
-        }
-        .add-card-title { font-size: 1rem; font-weight: 600; margin: 0 0 var(--s4); }
         .form-grid-3 {
           display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3);
         }
-        .add-card-footer { display: flex; gap: var(--s2); justify-content: flex-end; margin-top: var(--s4); }
 
         .table-wrap {
           background: var(--surface); border: 1px solid var(--border);

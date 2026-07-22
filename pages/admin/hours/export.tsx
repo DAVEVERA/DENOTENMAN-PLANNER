@@ -8,7 +8,18 @@ import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser }
 
-const today = new Date().toISOString().slice(0, 10)
+// Local calendar date as YYYY-MM-DD. `.toISOString()` converts to UTC first,
+// which shifts the date back a day whenever the local zone is ahead of UTC
+// (e.g. CEST) — that off-by-one caused "Dit kwartaal" and "Vorige maand" to
+// return the wrong range (docs/DEBUGFILE_PRIORITY_ONE.md).
+function toLocalISODate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const today = toLocalISODate(new Date())
 const firstOfMonth = today.slice(0, 8) + '01'
 
 const FORMAT_OPTIONS = [
@@ -279,16 +290,16 @@ export default function ExportPage({ user }: Props) {
 function prevMonth() {
   const d = new Date()
   d.setDate(1); d.setMonth(d.getMonth() - 1)
-  const from = d.toISOString().slice(0, 10)
+  const from = toLocalISODate(d)
   d.setMonth(d.getMonth() + 1); d.setDate(0)
-  return { from, to: d.toISOString().slice(0, 10) }
+  return { from, to: toLocalISODate(d) }
 }
 
 function thisQuarter() {
   const d = new Date()
   const q = Math.floor(d.getMonth() / 3)
-  const from = new Date(d.getFullYear(), q * 3, 1).toISOString().slice(0, 10)
-  const to   = new Date(d.getFullYear(), q * 3 + 3, 0).toISOString().slice(0, 10)
+  const from = toLocalISODate(new Date(d.getFullYear(), q * 3, 1))
+  const to   = toLocalISODate(new Date(d.getFullYear(), q * 3 + 3, 0))
   return { from, to }
 }
 
