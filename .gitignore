@@ -10,10 +10,14 @@ node_modules/
 # Editor / OS
 .vscode/
 .idea/
+.claude/settings.local.json
+.mcp.json
+*.code-workspace
 *.DS_Store
 Thumbs.db
 
 # Build & lint artifacts
+*.tsbuildinfo
 *.log
 lint_*.txt
 eslint_output.txt
