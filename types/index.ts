@@ -63,6 +63,9 @@ export interface Shift {
   buddy: string | null
   note: string | null
   admin_note: string | null      // AM-002: admin-only notitie, gefilterd uit medewerker-responses
+  open_note: string | null       // Privénotitie bij een open dienst
+  open_note_author_employee_id: number | null
+  opened_at: string | null       // Startpunt voor herinneringen over open diensten
   break_minutes: number          // AM-004: pauzeminuten (default 0; 60 = "-1 uur" toggle)
   location: Location
   is_open: number
@@ -83,6 +86,21 @@ export interface OpenShiftClaim {
   created_at: string
   reviewed_by: string | null
   reviewed_at: string | null
+}
+
+export type OpenShiftReminderStage = 'one_and_half_weeks' | 'two_weeks'
+
+export interface OpenShiftReminder {
+  id: number
+  shift_id: number
+  reminder_stage: OpenShiftReminderStage
+  status: 'processing' | 'completed' | 'failed'
+  claimed_at: string
+  email_sent_at: string | null
+  push_sent_at: string | null
+  completed_at: string | null
+  last_error: string | null
+  created_at: string
 }
 
 export interface LeaveRequest {
@@ -125,7 +143,8 @@ export interface TimeLog {
 
 export interface PushSubscriptionRow {
   id: number
-  employee_id: number
+  employee_id: number | null
+  user_id: string | null
   endpoint: string
   p256dh: string
   auth: string

@@ -5,6 +5,7 @@ import { getShift, getEmployees } from '@/lib/scheduler'
 import { sendPushToAll } from '@/lib/push'
 import { sendOpenShiftSubmissionEmails } from '@/lib/email'
 import { formatShiftDate } from '@/lib/shiftDate'
+import { parseOpenShiftNote } from '@/lib/open-shift-note'
 import type { Day } from '@/types'
 
 const DAY_NL: Record<string, string> = {
@@ -23,8 +24,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // POST: offer own shift
     if (req.method === 'POST') {
-      const { shift_id } = req.body
+      const { shift_id, open_note } = req.body
       if (!shift_id) return res.status(400).json({ success: false, message: 'shift_id verplicht' })
+
+      const parsedNote = parseOpenShiftNote(open_note)
+      if (parsedNote.error) return res.status(400).json({ success: false, message: parsedNote.error })
 
       const shift = await getShift(parseInt(shift_id))
       if (!shift) return res.status(404).json({ success: false, message: 'Dienst niet gevonden' })
@@ -32,7 +36,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(403).json({ success: false, message: 'Dit is niet jouw dienst' })
 
       const { error } = await supabase.from(T('shifts'))
-        .update({ is_open: 1, shift_category: 'offered', open_invite_emp_id: null, open_invite_status: null })
+        .update({
+          is_open: 1,
+          shift_category: 'offered',
+          open_invite_emp_id: null,
+          open_invite_status: null,
+          open_note: parsedNote.value,
+          open_note_author_employee_id: employeeId,
+          opened_at: new Date().toISOString(),
+        })
         .eq('id', parseInt(shift_id))
       if (error) throw error
 
@@ -80,7 +92,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'DELETE') {
       const { shift_id } = req.body
       const { error } = await supabase.from(T('shifts'))
-        .update({ is_open: 0, shift_category: 'regular', open_invite_emp_id: null, open_invite_status: null })
+        .update({
+          is_open: 0,
+          shift_category: 'regular',
+          open_invite_emp_id: null,
+          open_invite_status: null,
+          open_note: null,
+          open_note_author_employee_id: null,
+          opened_at: null,
+        })
         .eq('id', parseInt(shift_id))
         .eq('employee_id', employeeId)
       if (error) throw error

@@ -1,6 +1,6 @@
 import webpush from 'web-push'
 import { supabase, T, unwrap } from './db'
-import type { PushSubscriptionRow } from '@/types'
+import type { PushSubscriptionRow, SessionUser } from '@/types'
 
 let vapidReady = false
 
@@ -19,12 +19,13 @@ function init() {
 init()
 
 export async function savePushSubscription(
-  employeeId: number,
+  user: Pick<SessionUser, 'user_id' | 'employee_id'>,
   sub: { endpoint: string; keys: { p256dh: string; auth: string } },
   userAgent?: string,
 ): Promise<void> {
   await supabase.from(T('push_subscriptions')).upsert({
-    employee_id: employeeId,
+    employee_id: user.employee_id,
+    user_id:     user.user_id,
     endpoint:    sub.endpoint,
     p256dh:      sub.keys.p256dh,
     auth:        sub.keys.auth,
@@ -48,15 +49,28 @@ export async function sendPushToEmployee(
   ))
 }
 
-export async function sendPushToAll(payload: { title: string; body: string; url?: string }): Promise<void> {
-  if (!vapidReady) return
+export interface PushDeliveryResult {
+  configured: boolean
+  total: number
+  fulfilled: number
+  rejected: number
+}
+
+export async function sendPushToAll(payload: { title: string; body: string; url?: string }): Promise<PushDeliveryResult> {
+  if (!vapidReady) return { configured: false, total: 0, fulfilled: 0, rejected: 0 }
   const subs = unwrap<PushSubscriptionRow[]>(await supabase.from(T('push_subscriptions')).select('*'))
-  await Promise.allSettled(subs.map(s =>
+  const results = await Promise.allSettled(subs.map(s =>
     webpush.sendNotification(
       { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
       JSON.stringify(payload),
     ),
   ))
+  return {
+    configured: true,
+    total: results.length,
+    fulfilled: results.filter(result => result.status === 'fulfilled').length,
+    rejected: results.filter(result => result.status === 'rejected').length,
+  }
 }
 
 /** Aantal actieve push-abonnementen (voor diagnostiek in admin dashboard) */

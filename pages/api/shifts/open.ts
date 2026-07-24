@@ -4,6 +4,8 @@ import { getOpenShifts, saveShift, updateOpenShift, withdrawOpenShift, getEmploy
 import { sendPushToAll } from '@/lib/push'
 import { sendOpenShiftAlertEmail } from '@/lib/email'
 import { formatShiftDate } from '@/lib/shiftDate'
+import { filterShiftsForUser } from '@/lib/shift-visibility'
+import { parseOpenShiftNote } from '@/lib/open-shift-note'
 import type { Day, Location } from '@/types'
 
 const DAY_NL: Record<string, string> = {
@@ -20,8 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'GET') {
       if (!can(session.user, 'read')) return res.status(403).json({ success: false })
       const location = req.query.location as Location | undefined
+      res.setHeader('Cache-Control', 'no-store, max-age=0')
       const shifts = await getOpenShifts(location)
-      return res.json({ success: true, data: shifts })
+      return res.json({ success: true, data: filterShiftsForUser(shifts, session.user) })
     }
 
     // ── POST: create new open shift (admin only) ──────────────────────
@@ -29,7 +32,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!can(session.user, 'manage_shifts'))
         return res.status(403).json({ success: false, message: 'Alleen beheerders mogen open diensten plaatsen' })
 
-      const result = await saveShift({ ...req.body, is_open: 1, employee_id: null }, session.user.user_id)
+      const parsedNote = parseOpenShiftNote(req.body.open_note)
+      if (parsedNote.error) return res.status(400).json({ success: false, message: parsedNote.error })
+
+      const result = await saveShift({
+        ...req.body,
+        is_open: 1,
+        employee_id: null,
+        open_note: parsedNote.value,
+        open_note_author_employee_id: session.user.employee_id,
+        opened_at: new Date().toISOString(),
+      }, session.user.user_id)
 
       if ('error' in result) {
         console.error('[shifts/open POST] saveShift error:', result.error)
@@ -75,7 +88,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const sid = parseInt(shift_id)
       if (isNaN(sid)) return res.status(400).json({ success: false, message: 'Ongeldig shift_id' })
 
-      const result = await updateOpenShift(sid, fields)
+      const hasOpenNote = Object.prototype.hasOwnProperty.call(fields, 'open_note')
+      const parsedNote = hasOpenNote ? parseOpenShiftNote(fields.open_note) : null
+      if (parsedNote?.error) return res.status(400).json({ success: false, message: parsedNote.error })
+
+      const result = await updateOpenShift(sid, {
+        ...fields,
+        ...(parsedNote ? { open_note: parsedNote.value } : {}),
+      })
       if ('error' in result) {
         console.error('[shifts/open PUT] updateOpenShift error:', result.error)
         return res.status(400).json({ success: false, message: result.error })

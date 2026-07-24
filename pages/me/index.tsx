@@ -57,6 +57,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
   const [loading, setLoading] = useState(true)
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null)
   const [offering, setOffering] = useState(false)
+  const [offerNote, setOfferNote] = useState('')
   const [toast, setToast] = useState<string | null>(null)
 
   const numWeeks = view === 'week' ? 1 : view === 'month' ? 4 : 13
@@ -105,10 +106,11 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
     const r = await fetch('/api/shifts/offer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shift_id: shift.id }),
+      body: JSON.stringify({ shift_id: shift.id, open_note: offerNote }),
     }).then(r => r.json())
     setOffering(false)
     setSelectedShift(null)
+    setOfferNote('')
     if (r.success) {
       showToast('✅ Dienst aangeboden! Collega\'s ontvangen een melding.')
       load()
@@ -141,11 +143,11 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
       {/* ── Offer confirm modal ── */}
       {selectedShift && (
         <div className="offer-overlay" onClick={e => e.target === e.currentTarget && setSelectedShift(null)}>
-          <div className="offer-modal" role="dialog" aria-modal="true">
+          <div className="offer-modal" role="dialog" aria-modal="true" aria-labelledby="offer-modal-title">
             <div className="offer-modal-head">
               <span className="offer-modal-icon">🔄</span>
               <div>
-                <div className="offer-modal-title">Dienst aanbieden</div>
+                <div className="offer-modal-title" id="offer-modal-title">Dienst aanbieden</div>
                 <div className="offer-modal-sub">
                   {selectedShift.shift_type} · {selectedShift.day_of_week} · week {selectedShift.week_number}
                 </div>
@@ -155,8 +157,21 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
               Wil je deze dienst aanbieden aan je collega&apos;s? Ze ontvangen een melding en kunnen hem overnemen.
               De beheerder keurt de overname goed.
             </p>
+            <div className="offer-note-group">
+              <label className="form-label" htmlFor="offer-note">Notitie (optioneel)</label>
+              <textarea
+                id="offer-note"
+                className="form-control"
+                rows={3}
+                maxLength={1000}
+                value={offerNote}
+                onChange={event => setOfferNote(event.target.value)}
+                placeholder="Bijvoorbeeld waarom je de dienst aanbiedt…"
+              />
+              <span className="offer-note-hint">Alleen zichtbaar voor jou, managers en admins.</span>
+            </div>
             <div className="offer-modal-actions">
-              <button className="btn btn-outline" onClick={() => setSelectedShift(null)}>Annuleren</button>
+              <button className="btn btn-outline" onClick={() => { setSelectedShift(null); setOfferNote('') }}>Annuleren</button>
               <button className="btn btn-primary" disabled={offering} onClick={() => offerShift(selectedShift)}>
                 {offering ? <Spinner /> : '📢 Ja, bied aan'}
               </button>
@@ -267,8 +282,8 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                                 {...(isOffered ? { 'aria-disabled': 'true' } : {})}
                                 tabIndex={!isOffered ? 0 : -1}
                                 title={!isOffered ? 'Klik om aan te bieden' : 'Aangeboden aan collega\'s'}
-                                onClick={() => !isOffered && setSelectedShift(s)}
-                                onKeyDown={e => !isOffered && e.key === 'Enter' && setSelectedShift(s)}
+                                onClick={() => { if (!isOffered) { setOfferNote(''); setSelectedShift(s) } }}
+                                onKeyDown={e => { if (!isOffered && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOfferNote(''); setSelectedShift(s) } }}
                               >
                                 <span className="slot-type">{s.shift_type}</span>
                                 {s.start_time && (
@@ -405,6 +420,8 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .offer-modal-title { font-size: 1.125rem; font-weight: 700; }
         .offer-modal-sub { font-size: .875rem; color: var(--text-muted); margin-top: 2px; }
         .offer-modal-body { font-size: .9375rem; color: var(--text-sub); margin: 0 0 var(--s5); line-height: 1.5; }
+        .offer-note-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--s5); }
+        .offer-note-hint { font-size: .75rem; color: var(--text-muted); line-height: 1.4; }
         .offer-modal-actions { display: flex; gap: var(--s3); justify-content: flex-end; }
 
         /* ── Toast ── */

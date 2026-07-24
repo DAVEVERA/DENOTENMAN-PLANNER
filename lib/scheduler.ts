@@ -127,6 +127,9 @@ export async function saveShift(
     buddy:               data.buddy          ?? null,
     note:                data.note           ?? null,
     admin_note:          data.admin_note     ?? null,    // AM-002
+    open_note:           data.open_note      ?? null,
+    open_note_author_employee_id: data.open_note_author_employee_id ?? null,
+    opened_at:           data.opened_at      ?? (data.is_open ? new Date().toISOString() : null),
     break_minutes:       data.break_minutes  ?? 0,       // AM-004
     location:            data.location       ?? 'markt',
     is_open:             data.is_open        ?? 0,
@@ -181,7 +184,7 @@ export async function getOpenShifts(location?: Location): Promise<Shift[]> {
  */
 export async function updateOpenShift(
   shiftId: number,
-  fields: Partial<Pick<Shift, 'day_of_week' | 'week_number' | 'year' | 'shift_type' | 'start_time' | 'end_time' | 'location' | 'note'>>,
+  fields: Partial<Pick<Shift, 'day_of_week' | 'week_number' | 'year' | 'shift_type' | 'start_time' | 'end_time' | 'location' | 'open_note'>>,
 ): Promise<Shift | { error: string }> {
   const update: Record<string, unknown> = {}
   if (fields.day_of_week !== undefined)  update.day_of_week = fields.day_of_week
@@ -191,7 +194,7 @@ export async function updateOpenShift(
   if (fields.start_time !== undefined)   update.start_time  = fmtTime(fields.start_time)
   if (fields.end_time !== undefined)     update.end_time    = fmtTime(fields.end_time)
   if (fields.location !== undefined)     update.location    = fields.location
-  if (fields.note !== undefined)         update.note        = fields.note
+  if (fields.open_note !== undefined)    update.open_note   = fields.open_note
 
   const { data, error } = await supabase
     .from(T('shifts'))
@@ -223,6 +226,9 @@ export async function withdrawOpenShift(shiftId: number): Promise<boolean> {
     open_invite_emp_id: null,
     open_invite_status: null,
     shift_category: 'regular',
+    open_note: null,
+    open_note_author_employee_id: null,
+    opened_at: null,
   }).eq('id', shiftId)
   return !error
 }

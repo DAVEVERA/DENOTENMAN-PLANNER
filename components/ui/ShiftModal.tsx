@@ -32,6 +32,9 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
     full_day:       shift?.full_day       ?? 0,
     note:           shift?.note           ?? '',
     admin_note:     shift?.admin_note     ?? '',   // AM-002
+    open_note:      shift?.open_note      ?? null,
+    open_note_author_employee_id: shift?.open_note_author_employee_id ?? null,
+    opened_at:      shift?.opened_at      ?? null,
     break_minutes:  shift?.break_minutes  ?? 0,    // AM-004
     buddy:          shift?.buddy          ?? '',
     location:       shift?.location       ?? location,

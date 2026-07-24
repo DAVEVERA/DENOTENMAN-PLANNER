@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
 import { getWeekShifts, getEmployeeShifts, saveShift } from '@/lib/scheduler'
 import { currentWeekYear } from '@/lib/dateUtils'
+import { filterShiftsForUser } from '@/lib/shift-visibility'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
@@ -18,11 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ? await getEmployeeShifts(empId, week || undefined, year)
       : await getWeekShifts(week || currentWeekYear().week, year, location)
 
-    // AM-002: verberg admin_note voor medewerkers
-    const isEmployee = session.user.role === 'employee'
-    const data = isEmployee
-      ? shifts.map(({ admin_note: _an, ...s }) => s)
-      : shifts
+    // Verberg beheer- en privénotities server-side voor onbevoegde medewerkers.
+    const data = filterShiftsForUser(shifts, session.user)
 
     return res.json({ success: true, data })
   }

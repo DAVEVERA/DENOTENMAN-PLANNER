@@ -203,7 +203,7 @@ export default function IndividualView({ user, initialWeek, initialYear }: Props
                           <span className="iv-pill-loc">{s.location === 'markt' ? 'Markt' : 'Nootmag.'}</span>
                         )}
                         {s.note && (
-                          <span className="iv-pill-note" title={s.note}>💬</span>
+                          <span className="iv-pill-note"><strong>Notitie:</strong> {s.note}</span>
                         )}
                       </div>
                     ))}
@@ -280,7 +280,12 @@ export default function IndividualView({ user, initialWeek, initialYear }: Props
         .iv-pill-type { font-weight: 700; }
         .iv-pill-time { font-size: .75rem; color: var(--text-sub); }
         .iv-pill-loc { font-size: .6875rem; color: var(--text-muted); }
-        .iv-pill-note { font-size: .75rem; }
+        .iv-pill-note {
+          display: block; margin-top: 3px; padding: 5px 6px;
+          border-radius: 4px; background: rgba(255,255,255,.65);
+          font-size: .75rem; line-height: 1.35; color: var(--text-sub);
+          overflow-wrap: anywhere;
+        }
 
         /* ── Responsive ── */
         @media (max-width: 1024px) {

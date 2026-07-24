@@ -592,6 +592,22 @@ VAPID_PRIVATE_KEY=<gegenereerde private sleutel>
 VAPID_SUBJECT=mailto:info@denotenkar.nl
 ```
 
+Iedere gebruiker schakelt push daarna eenmalig in via de knop **Pushmeldingen inschakelen** op de pagina Open diensten. Dit werkt ook voor een adminaccount zonder gekoppelde medewerker.
+
+**Automatische herinneringen voor open diensten**
+
+De Vercel-cronjob controleert dagelijks om 08:00 UTC of diensten langer dan 1,5 week of 2 weken openstaan. Stel in Vercel een lange, willekeurige waarde in:
+
+```
+CRON_SECRET=<lange willekeurige geheime waarde>
+```
+
+Voer ook de bijbehorende Supabase-migratie uit:
+
+```
+supabase/migrations/20260724_open_shift_notes_and_reminders.sql
+```
+
 **Database (Supabase)**
 
 ```

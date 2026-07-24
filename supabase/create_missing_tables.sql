@@ -60,12 +60,18 @@ create index if not exists planner20_employee_documents_employee
 -- ─── Push Subscriptions (Web Push Notifications) ──────────────────────────────
 create table if not exists planner20_push_subscriptions (
   id              serial primary key,
-  employee_id     integer      not null references planner20_employees(id) on delete cascade,
+  employee_id     integer      references planner20_employees(id) on delete cascade,
+  user_id         text,
   endpoint        text         not null unique,
   p256dh          text         not null,
   auth            text         not null,
   created_at      timestamptz  not null default now()
 );
 
+alter table planner20_push_subscriptions alter column employee_id drop not null;
+alter table planner20_push_subscriptions add column if not exists user_id text;
+
 create index if not exists planner20_push_subscriptions_employee
   on planner20_push_subscriptions (employee_id);
+create index if not exists planner20_push_subscriptions_user
+  on planner20_push_subscriptions (user_id);

@@ -5,6 +5,8 @@ import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 import { formatShiftDate } from '@/lib/shiftDate'
+import { getOpenShiftReminderStage, getOpenShiftReminderText } from '@/lib/open-shift-age'
+import PushNotificationButton from '@/components/ui/PushNotificationButton'
 
 interface Props { user: SessionUser }
 
@@ -25,7 +27,6 @@ export default function OpenShiftsPage({ user }: Props) {
   const [myOffered, setMyOffered]     = useState<Shift[]>([])
   const [loading, setLoading]         = useState(true)
   const [actionId, setActionId]       = useState<number | null>(null)
-  const [claimedId, setClaimedId]     = useState<number | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
 
   const locProp = (user.location && user.location !== 'both' ? user.location : 'markt') as Exclude<Location, 'both'>
@@ -35,21 +36,41 @@ export default function OpenShiftsPage({ user }: Props) {
     setTimeout(() => setToast(null), 3500)
   }
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const r = await fetch('/api/shifts/open').then(r => r.json())
-    const all: Shift[] = r.success ? r.data : []
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true)
+    try {
+      const r = await fetch('/api/shifts/open', { cache: 'no-store' }).then(r => r.json())
+      const all: Shift[] = r.success ? r.data : []
 
-    // Available to claim: admin-posted (no employee_id) OR offered by others (employee_id !== mine)
-    const available = all.filter(s => !s.employee_id || s.employee_id !== user.employee_id)
-    const mine = all.filter(s => s.employee_id === user.employee_id)
+      // Een dienst blijft zichtbaar zolang is_open=1, ongeacht hoe lang die al openstaat.
+      const available = all.filter(s => !s.employee_id || s.employee_id !== user.employee_id)
+      const mine = all.filter(s => s.employee_id === user.employee_id)
 
-    setAllOpen(available)
-    setMyOffered(mine)
-    setLoading(false)
+      setAllOpen(available)
+      setMyOffered(mine)
+    } catch (err) {
+      console.error('[open-shifts medewerker] vernieuwen mislukt', err)
+    } finally {
+      if (showLoading) setLoading(false)
+    }
   }, [user.employee_id])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    void load()
+
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void load(false)
+    }
+    const timer = window.setInterval(refresh, 60_000)
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [load])
 
   async function claim(shiftId: number) {
     setActionId(shiftId)
@@ -60,7 +81,6 @@ export default function OpenShiftsPage({ user }: Props) {
     }).then(r => r.json())
     setActionId(null)
     if (r.success) {
-      setClaimedId(shiftId)
       showToast('✅ Claim ingediend! De beheerder beoordeelt je claim.')
       load()
     } else {
@@ -95,6 +115,7 @@ export default function OpenShiftsPage({ user }: Props) {
   // Separate: available (no claim from me yet) vs. my pending claims
   const available    = allOpen.filter(s => !s.claims?.some(c => c.employee_id === user.employee_id && c.status === 'pending'))
   const myClaims     = allOpen.filter(s => s.claims?.some(c => c.employee_id === user.employee_id && c.status === 'pending'))
+  const longOpenCount = [...allOpen, ...myOffered].filter(shift => getOpenShiftReminderStage(shift)).length
 
   return (
     <TeamLayout user={user} location={locProp}>
@@ -104,9 +125,20 @@ export default function OpenShiftsPage({ user }: Props) {
 
       <div className="os-page">
         <div className="os-page-head">
-          <h1 className="os-h1">Open diensten</h1>
-          <p className="os-sub">Claim een beschikbare dienst of bekijk jouw aangeboden diensten.</p>
+          <div>
+            <h1 className="os-h1">Open diensten</h1>
+            <p className="os-sub">Claim een beschikbare dienst of bekijk jouw aangeboden diensten.</p>
+          </div>
+          <PushNotificationButton />
         </div>
+
+        {longOpenCount > 0 && (
+          <div className="os-age-summary" role="status">
+            <span aria-hidden="true">⚠️</span>
+            <strong>{longOpenCount} {longOpenCount === 1 ? 'dienst staat' : 'diensten staan'} al langer open.</strong>
+            <span>Kijk als team nog eens wie kan bijspringen.</span>
+          </div>
+        )}
 
         {loading ? (
           <div className="os-loading"><Spinner /> Laden…</div>
@@ -130,8 +162,9 @@ export default function OpenShiftsPage({ user }: Props) {
                 <div className="os-grid">
                   {available.map(s => {
                     const isMine = s.employee_id === user.employee_id
+                    const reminderStage = getOpenShiftReminderStage(s)
                     return (
-                      <div key={s.id} className={`os-card loc-${s.location}`}>
+                      <div key={s.id} className={`os-card loc-${s.location}${reminderStage ? ' is-long-open' : ''}`}>
                         <div className="os-card-loc">
                           <span className={`loc-dot loc-dot-${s.location}`} />
                           {LOC[s.location] ?? s.location}
@@ -148,7 +181,15 @@ export default function OpenShiftsPage({ user }: Props) {
                         {s.employee_id && !isMine && (
                           <div className="os-card-offered-by">aangeboden door {s.employee_name}</div>
                         )}
-                        {s.note && <div className="os-card-note">📝 {s.note}</div>}
+                        {s.note && <div className="os-card-note"><strong>Dienstnotitie:</strong> {s.note}</div>}
+                        {s.open_note && (
+                          <div className="os-private-note"><strong>🔒 Jouw notitie:</strong> {s.open_note}</div>
+                        )}
+                        {reminderStage && (
+                          <div className={`os-age-alert ${reminderStage === 'two_weeks' ? 'critical' : ''}`} role="note">
+                            ⚠️ {getOpenShiftReminderText(reminderStage)}
+                          </div>
+                        )}
 
                         {!isMine && (
                           <button
@@ -215,8 +256,9 @@ export default function OpenShiftsPage({ user }: Props) {
                 <div className="os-claim-list">
                   {myOffered.map(s => {
                     const claimCount = s.claims?.filter(c => c.status === 'pending').length ?? 0
+                    const reminderStage = getOpenShiftReminderStage(s)
                     return (
-                      <div key={s.id} className="os-claim-row">
+                      <div key={s.id} className={`os-claim-row${reminderStage ? ' is-long-open' : ''}`}>
                         <div className="os-claim-info">
                           <span className={`loc-dot loc-dot-${s.location}`} />
                           <div>
@@ -226,6 +268,15 @@ export default function OpenShiftsPage({ user }: Props) {
                                 ? `👋 Er is interesse — beheerder beoordeelt`
                                 : '🔓 Zichtbaar voor collega\'s'}
                             </div>
+                            {s.note && <div className="os-card-note"><strong>Dienstnotitie:</strong> {s.note}</div>}
+                            {s.open_note && (
+                              <div className="os-private-note"><strong>🔒 Jouw notitie:</strong> {s.open_note}</div>
+                            )}
+                            {reminderStage && (
+                              <div className={`os-age-alert ${reminderStage === 'two_weeks' ? 'critical' : ''}`} role="note">
+                                ⚠️ {getOpenShiftReminderText(reminderStage)}
+                              </div>
+                            )}
                           </div>
                         </div>
                         {claimCount === 0 && (
@@ -260,9 +311,15 @@ export default function OpenShiftsPage({ user }: Props) {
         @keyframes toast-in { from { opacity:0; transform:translateX(-50%) translateY(-8px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
 
         .os-page { max-width: 860px; }
-        .os-page-head { margin-bottom: var(--s7); }
+        .os-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); margin-bottom: var(--s7); }
         .os-h1 { font-size: 1.75rem; font-weight: 800; margin: 0 0 4px; }
         .os-sub { color: var(--text-muted); margin: 0; font-size: .9375rem; }
+        .os-age-summary {
+          display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+          margin: calc(var(--s7) * -0.5) 0 var(--s6); padding: 12px 14px;
+          border: 1px solid #F59E0B; border-radius: var(--radius-lg);
+          background: #FFFBEB; color: #78350F; font-size: .875rem;
+        }
 
         .os-loading { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
 
@@ -305,6 +362,7 @@ export default function OpenShiftsPage({ user }: Props) {
         .os-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.08); transform: translateY(-1px); }
         .os-card.loc-markt { border-top: 3px solid #2C6E49; }
         .os-card.loc-nootmagazijn { border-top: 3px solid #7B4F2E; }
+        .os-card.is-long-open { border-left: 4px solid #F59E0B; }
 
         .os-card-loc {
           display: flex; align-items: center; gap: 6px;
@@ -325,7 +383,18 @@ export default function OpenShiftsPage({ user }: Props) {
           background: rgba(124,58,237,.08); padding: 3px 8px;
           border-radius: 999px; align-self: flex-start;
         }
-        .os-card-note { font-size: .8125rem; color: var(--text-muted); font-style: italic; }
+        .os-card-note { font-size: .8125rem; color: var(--text-sub); line-height: 1.45; overflow-wrap: anywhere; }
+        .os-private-note {
+          margin-top: 4px; padding: 9px 10px; border-radius: var(--radius);
+          background: #F5F3FF; color: #4C1D95;
+          font-size: .8125rem; line-height: 1.45; overflow-wrap: anywhere;
+        }
+        .os-age-alert {
+          margin-top: 4px; padding: 9px 10px; border-radius: var(--radius);
+          background: #FFFBEB; border: 1px solid #FDE68A;
+          color: #92400E; font-size: .8125rem; line-height: 1.45;
+        }
+        .os-age-alert.critical { background: #FFF7ED; border-color: #FDBA74; color: #9A3412; }
 
         .os-claim-btn {
           margin-top: var(--s2); padding: 10px; font-size: .9375rem;
@@ -339,13 +408,17 @@ export default function OpenShiftsPage({ user }: Props) {
           background: var(--surface); border: 1px solid var(--border);
           border-radius: var(--radius-lg); padding: var(--s3) var(--s4);
         }
+        .os-claim-row.is-long-open { border-left: 4px solid #F59E0B; }
         .os-claim-info { display: flex; align-items: center; gap: var(--s3); flex: 1; }
         .os-claim-label { font-size: .9375rem; font-weight: 600; }
         .os-claim-status { font-size: .8125rem; color: var(--text-muted); margin-top: 2px; }
 
         @media (max-width: 480px) {
+          .os-page-head { flex-direction: column; }
+          .os-page-head :global(button) { width: 100%; justify-content: center; }
           .os-grid { grid-template-columns: 1fr; }
           .os-claim-row { flex-direction: column; align-items: stretch; }
+          .os-age-summary { align-items: flex-start; }
         }
       `}</style>
     </TeamLayout>

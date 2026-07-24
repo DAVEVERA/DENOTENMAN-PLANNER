@@ -17,15 +17,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select('id', { count: 'exact', head: true })
         .eq('is_active', 1),
 
-      // "Open diensten" = unfilled admin-created shifts only, matching the
-      // Open diensten tab (pages/admin/open-shifts.tsx). Employee-offered
-      // shifts (is_open=1 but employee_id set) belong to the "Aangeboden"
-      // tab and must not be counted here.
+      // Eén totaal voor beheer-openingen en door medewerkers aangeboden diensten.
       supabase
         .from(T('shifts'))
         .select('id', { count: 'exact', head: true })
-        .eq('is_open', 1)
-        .is('employee_id', null),
+        .eq('is_open', 1),
 
       supabase
         .from(T('leave_requests'))

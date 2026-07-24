@@ -6,8 +6,8 @@ import type { SessionUser, Shift, Employee, Location, Day, ShiftType } from '@/t
 import { DAYS, DAY_SHORT, SHIFT_TYPES, WORK_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner' 
 import { formatShiftDate } from '@/lib/shiftDate'
-
-type Tab = 'open' | 'offered'
+import { getOpenShiftReminderStage, getOpenShiftReminderText } from '@/lib/open-shift-age'
+import PushNotificationButton from '@/components/ui/PushNotificationButton'
 
 interface Props { user: SessionUser }
 
@@ -27,7 +27,7 @@ interface NewShiftForm {
   start_time: string
   end_time: string
   location: Exclude<Location, 'both'>
-  note: string
+  open_note: string
 }
 
 function currentWeek() {
@@ -45,7 +45,6 @@ function shiftLabel(s: Shift) {
 }
 
 export default function OpenShiftsAdminPage({ user }: Props) {
-  const [tab, setTab]           = useState<Tab>('open')
   const [openShifts, setOpenShifts] = useState<Shift[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading]   = useState(true)
@@ -69,31 +68,47 @@ export default function OpenShiftsAdminPage({ user }: Props) {
     start_time:   '',
     end_time:     '',
     location:     'markt',
-    note:         '',
+    open_note:    '',
   })
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const [sr, er] = await Promise.all([
-      fetch('/api/shifts/open').then(r => r.json()),
-      fetch('/api/employees?all=1').then(r => r.json()),
-    ])
-    setOpenShifts(sr.success ? sr.data : [])
-    setEmployees(er.success ? er.data : [])
-    setLoading(false)
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true)
+    try {
+      const [sr, er] = await Promise.all([
+        fetch('/api/shifts/open', { cache: 'no-store' }).then(r => r.json()),
+        fetch('/api/employees?all=1', { cache: 'no-store' }).then(r => r.json()),
+      ])
+      setOpenShifts(sr.success ? sr.data : [])
+      setEmployees(er.success ? er.data : [])
+    } catch (err) {
+      console.error('[open-shifts admin] vernieuwen mislukt', err)
+    } finally {
+      if (showLoading) setLoading(false)
+    }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    void load()
 
-  // Admin-created open shifts (no employee_id)
-  const adminOpen = openShifts.filter(s => !s.employee_id || s.employee_id === null)
-  // Employee-offered shifts (has employee_id, is_open=1)
-  const offered   = openShifts.filter(s => s.employee_id !== null && s.is_open === 1)
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void load(false)
+    }
+    const timer = window.setInterval(refresh, 60_000)
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [load])
 
   const pendingCount = openShifts.reduce(
     (total, s) => total + (s.claims?.filter(c => c.status === 'pending').length ?? 0),
     0,
   )
+  const longOpenCount = openShifts.filter(shift => getOpenShiftReminderStage(shift)).length
 
   async function createOpenShift(e: React.FormEvent) {
     e.preventDefault()
@@ -117,7 +132,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
       }
       showToast('✅ Open dienst geplaatst!')
       setShowCreate(false)
-      setForm({ day_of_week: 'maandag', week_number: cw, year: cy, shift_type: 'Ochtend', start_time: '', end_time: '', location: 'markt', note: '' })
+      setForm({ day_of_week: 'maandag', week_number: cw, year: cy, shift_type: 'Ochtend', start_time: '', end_time: '', location: 'markt', open_note: '' })
       load()
     } catch (err: any) {
       showToast('❌ Netwerkfout: ' + (err.message ?? 'Probeer opnieuw'), false)
@@ -142,7 +157,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
           start_time: form.start_time || null,
           end_time: form.end_time || null,
           location: form.location,
-          note: form.note || null,
+          open_note: form.open_note || null,
         }),
       }).then(r => r.json())
       if (!r.success) {
@@ -187,7 +202,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
       start_time: shift.start_time?.slice(0, 5) ?? '',
       end_time: shift.end_time?.slice(0, 5) ?? '',
       location: (shift.location === 'both' ? 'markt' : shift.location) as Exclude<Location, 'both'>,
-      note: shift.note ?? '',
+      open_note: shift.open_note ?? '',
     })
     setEditShift(shift)
   }
@@ -235,7 +250,6 @@ export default function OpenShiftsAdminPage({ user }: Props) {
     return employees.find(e => e.id === id)?.name ?? `#${id}`
   }
 
-  const displayList = tab === 'open' ? adminOpen : offered
   const formDate = formatShiftDate(form.day_of_week, form.week_number, form.year)
 
   return (
@@ -251,46 +265,43 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         <div className="os-title-row">
           <div>
             <h1 className="os-h1">Open diensten</h1>
-            <p className="os-sub">Beheer open diensten en aangeboden diensten van medewerkers.</p>
+            <p className="os-sub">Beheer alle open en door medewerkers aangeboden diensten in één overzicht.</p>
           </div>
-          <button className="btn btn-primary" onClick={() => {
-            setForm({ day_of_week: 'maandag', week_number: cw, year: cy, shift_type: 'Ochtend', start_time: '', end_time: '', location: 'markt', note: '' })
-            setShowCreate(true)
-          }}>
-            + Nieuwe open dienst
-          </button>
+          <div className="os-title-actions">
+            <PushNotificationButton />
+            <button className="btn btn-primary" onClick={() => {
+              setForm({ day_of_week: 'maandag', week_number: cw, year: cy, shift_type: 'Ochtend', start_time: '', end_time: '', location: 'markt', open_note: '' })
+              setShowCreate(true)
+            }}>
+              + Nieuwe open dienst
+            </button>
+          </div>
         </div>
 
-        {/* Tabs */}
+        {/* Eén overzicht voor zowel beheer-openingen als medewerkersaanbod */}
         <div className="os-tabs" role="tablist">
           <button
             role="tab"
-            className={`os-tab${tab === 'open' ? ' active' : ''}`}
-            onClick={() => setTab('open')}
-            {...(tab === 'open' ? { 'aria-current': 'true' } : {})}
+            className="os-tab active"
+            aria-selected="true"
           >
-            Open diensten
-            {adminOpen.length > 0 && (
-              <span className={`os-tab-badge${pendingCount > 0 && tab === 'open' ? ' urgent' : ''}`}>
-                {adminOpen.length}
+            Alle open diensten
+            {openShifts.length > 0 && (
+              <span className={`os-tab-badge${pendingCount > 0 ? ' urgent' : ''}`}>
+                {openShifts.length}
               </span>
             )}
           </button>
-          <button
-            role="tab"
-            className={`os-tab${tab === 'offered' ? ' active' : ''}`}
-            onClick={() => setTab('offered')}
-            {...(tab === 'offered' ? { 'aria-current': 'true' } : {})}
-          >
-            Aangeboden
-            {offered.length > 0 && (
-              <span className={`os-tab-badge${pendingCount > 0 && tab === 'offered' ? ' urgent' : ''}`}>
-                {offered.length}
-              </span>
-            )}
-          </button>
-         </div>
+        </div>
       </div>
+
+      {longOpenCount > 0 && (
+        <div className="os-age-summary" role="status">
+          <span aria-hidden="true">⚠️</span>
+          <strong>{longOpenCount} {longOpenCount === 1 ? 'dienst staat' : 'diensten staan'} al langer open.</strong>
+          <span>Vraag het team nogmaals wie kan bijspringen.</span>
+        </div>
+      )}
 
       {/* ── Create modal ── */}
       {showCreate && (
@@ -359,9 +370,10 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Notitie (optioneel)</label>
-                <textarea className="form-control" rows={2} placeholder="Extra info voor de medewerker…"
-                  value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
+                <label className="form-label">Privénotitie (optioneel)</label>
+                <textarea className="form-control" rows={3} maxLength={1000} placeholder="Interne toelichting bij deze open dienst…"
+                  value={form.open_note} onChange={e => setForm(f => ({ ...f, open_note: e.target.value }))} />
+                <span className="form-hint">Alleen zichtbaar voor managers en admins.</span>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setShowCreate(false)}>Annuleren</button>
@@ -441,9 +453,10 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Notitie (optioneel)</label>
-                <textarea className="form-control" rows={2} placeholder="Extra info…"
-                  value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
+                <label className="form-label">Privénotitie (optioneel)</label>
+                <textarea className="form-control" rows={3} maxLength={1000} placeholder="Interne toelichting bij deze open dienst…"
+                  value={form.open_note} onChange={e => setForm(f => ({ ...f, open_note: e.target.value }))} />
+                <span className="form-hint">Zichtbaar voor de medewerker die de notitie plaatste, managers en admins.</span>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setEditShift(null)}>Annuleren</button>
@@ -459,44 +472,53 @@ export default function OpenShiftsAdminPage({ user }: Props) {
       {/* ── List ── */}
       {loading ? (
         <div className="os-loading"><Spinner /> Laden…</div>
-      ) : displayList.length === 0 ? (
+      ) : openShifts.length === 0 ? (
         <div className="os-empty">
-          <div className="os-empty-icon">{tab === 'open' ? '📋' : '🔄'}</div>
-          <div className="os-empty-title">
-            {tab === 'open' ? 'Geen open diensten' : 'Geen aangeboden diensten'}
-          </div>
+          <div className="os-empty-icon">📋</div>
+          <div className="os-empty-title">Geen open diensten</div>
           <div className="os-empty-sub">
-            {tab === 'open'
-              ? 'Klik op "+ Nieuwe open dienst" om een beschikbare dienst te plaatsen.'
-              : 'Medewerkers kunnen hun diensten aanbieden via hun rooster.'}
+            Klik op <strong>+ Nieuwe open dienst</strong> om een dienst te plaatsen. Aangeboden diensten van medewerkers verschijnen hier automatisch.
           </div>
         </div>
       ) : (
         <div className="os-list">
-          {displayList.map(shift => {
+          {openShifts.map(shift => {
             const pendingClaims = shift.claims?.filter(c => c.status === 'pending') ?? []
             const hasClaim    = pendingClaims.length > 0 || !!shift.open_invite_emp_id
             const isPending   = pendingClaims.length > 0
+            const isOffered   = shift.employee_id != null
             const claimer     = pendingClaims.length === 1
               ? pendingClaims[0].employee_name
               : `${pendingClaims.length} inschrijvingen`
             const isActioning = actionId === shift.id
+            const reminderStage = getOpenShiftReminderStage(shift)
 
             return (
-              <div key={shift.id} className={`os-card${isPending ? ' has-claim' : ''}`}>
+              <div key={shift.id} className={`os-card${isPending ? ' has-claim' : ''}${reminderStage ? ' is-long-open' : ''}`}>
                 {/* Left: shift info */}
                 <div className="os-card-info">
                   <div className="os-card-top">
                     <span className={`os-badge loc-${shift.location}`}>
                       {LOCATION_LABELS[shift.location as keyof typeof LOCATION_LABELS] ?? shift.location}
                     </span>
-                    {tab === 'offered' && (
+                    {isOffered && (
                       <span className="os-badge offered-badge">aangeboden door {shift.employee_name}</span>
                     )}
                     {isPending && <span className="os-badge claim-badge">⏳ Claim van {claimer}</span>}
                   </div>
                   <div className="os-card-label">{shiftLabel(shift)}</div>
-                  {shift.note && <div className="os-card-note">📝 {shift.note}</div>}
+                  {shift.note && <div className="os-card-note"><strong>Dienstnotitie:</strong> {shift.note}</div>}
+                  {shift.open_note && (
+                    <div className="os-private-note">
+                      <strong>🔒 Notitie{isOffered ? ` van ${shift.employee_name}` : ''}:</strong>
+                      <span>{shift.open_note}</span>
+                    </div>
+                  )}
+                  {reminderStage && (
+                    <div className={`os-age-alert ${reminderStage === 'two_weeks' ? 'critical' : ''}`} role="note">
+                      ⚠️ {getOpenShiftReminderText(reminderStage)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Right: actions */}
@@ -528,7 +550,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                     </div>
                   ) : hasClaim ? (
                     <span className="os-badge invited-badge">Uitgenodigd: {empName(shift.open_invite_emp_id)}</span>
-                  ) : tab === 'open' ? (
+                  ) : !isOffered ? (
                     <div className="invite-select">
                       <select
                         className="form-control form-control-sm"
@@ -627,6 +649,14 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         .os-empty-title { font-size: 1.125rem; font-weight: 600; margin-bottom: var(--s2); }
         .os-empty-sub { color: var(--text-muted); font-size: .9375rem; max-width: 420px; margin: 0 auto; }
 
+        .os-age-summary {
+          display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+          margin: 0 0 var(--s5); padding: 12px 14px;
+          border: 1px solid #F59E0B; border-radius: var(--radius-lg);
+          background: #FFFBEB; color: #78350F; font-size: .875rem;
+        }
+        .os-title-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); }
+
         /* ── List ── */
         .os-list { display: flex; flex-direction: column; gap: var(--s3); }
         .os-card {
@@ -640,11 +670,24 @@ export default function OpenShiftsAdminPage({ user }: Props) {
           border-color: rgba(200,136,42,.35);
           background: linear-gradient(to right, rgba(200,136,42,.03), var(--surface));
         }
+        .os-card.is-long-open { border-left: 4px solid #F59E0B; }
 
         .os-card-info { flex: 1; min-width: 0; }
         .os-card-top { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; align-items: center; }
         .os-card-label { font-size: 1rem; font-weight: 600; margin-bottom: 3px; }
-        .os-card-note { font-size: .8125rem; color: var(--text-muted); }
+        .os-card-note { font-size: .8125rem; color: var(--text-sub); overflow-wrap: anywhere; }
+        .os-private-note {
+          display: flex; flex-direction: column; gap: 3px;
+          margin-top: 8px; padding: 10px 12px;
+          border-radius: var(--radius); background: #F5F3FF; color: #4C1D95;
+          font-size: .8125rem; line-height: 1.45; overflow-wrap: anywhere;
+        }
+        .os-age-alert {
+          margin-top: 8px; padding: 9px 11px; border-radius: var(--radius);
+          background: #FFFBEB; border: 1px solid #FDE68A;
+          color: #92400E; font-size: .8125rem; line-height: 1.45;
+        }
+        .os-age-alert.critical { background: #FFF7ED; border-color: #FDBA74; color: #9A3412; }
 
         /* Badges */
         .os-badge {
@@ -725,6 +768,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-label { font-size: .8125rem; font-weight: 600; color: var(--text-sub); }
+        .form-hint { font-size: .75rem; color: var(--text-muted); line-height: 1.4; }
         .date-preview {
           background: var(--surface-alt);
           border: 1px solid var(--border);
@@ -746,6 +790,8 @@ export default function OpenShiftsAdminPage({ user }: Props) {
 
         @media (max-width: 640px) {
           .os-title-row { flex-direction: column; }
+          .os-title-actions { width: 100%; align-items: stretch; flex-direction: column; }
+          .os-title-actions :global(button) { width: 100%; justify-content: center; }
           .os-card { flex-direction: column; align-items: stretch; }
           .os-card-actions { flex-wrap: wrap; }
           .claim-list { min-width: 0; }
