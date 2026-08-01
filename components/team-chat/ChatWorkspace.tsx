@@ -82,6 +82,7 @@ export default function ChatWorkspace({ user }: Props) {
         onSelect={selectConversation}
         onSearch={() => setSearchOpen(true)}
         emptyMessage={chat.error}
+        loading={!chat.bootstrap}
       />
 
       <section className={styles.conversation} aria-label={active?.name ?? 'Gesprek'}>
@@ -93,7 +94,7 @@ export default function ChatWorkspace({ user }: Props) {
           </div>
           <div className={styles.connection} data-state={chat.connectionState} role="status" aria-live="polite">
             {chat.connectionState === 'offline' || chat.connectionState === 'error' ? <WifiOff size={15} /> : <span className={styles.onlineDot} />}
-            <span>{chat.connectionState === 'loading' ? 'Verbinden…' : chat.connectionState === 'online' ? 'Actueel' : chat.connectionState === 'offline' ? 'Offline' : 'Opnieuw verbinden'}</span>
+            <span>{chat.connectionState === 'loading' ? 'Verbinden…' : chat.connectionState === 'online' ? 'Actueel' : chat.connectionState === 'offline' ? 'Offline' : 'Verbinding mislukt'}</span>
           </div>
           <button type="button" className={`${styles.iconButton} ${styles.mobileWatchButton}`} onClick={() => setWatchOpen(true)} aria-label="Planningwacht openen"><ShieldCheck size={19} /></button>
           <button type="button" className={styles.iconButton} onClick={() => setSearchOpen(true)} aria-label="Zoeken"><Search size={19} /></button>

@@ -91,7 +91,7 @@ export default function ChatComposer({ initialShiftId, employeeId, location, dis
       {(gif || shiftId) && (
         <div className={styles.composerAttachment}>
           {gif && <img src={gif.url} alt="Geselecteerde GIF" />}
-          {shiftId && <span><CalendarPlus size={16} /> Dienst #{shiftId} wordt als vaste momentopname gedeeld</span>}
+          {shiftId && <span><CalendarPlus size={16} /> Dienst #{shiftId} wordt gedeeld — wijzigt het rooster later, dan past dit bericht zich niet aan</span>}
           <button type="button" onClick={() => { setGif(null); setShiftId(null) }} aria-label="Bijlage verwijderen"><X size={18} /></button>
         </div>
       )}
@@ -112,7 +112,7 @@ export default function ChatComposer({ initialShiftId, employeeId, location, dis
                 <input value={gifQuery} onChange={event => setGifQuery(event.target.value)} placeholder="Zoek: dankjewel, koffie…" aria-label="GIF zoeken" />
                 <button type="submit">Zoek</button>
               </form>
-              {gifState === 'error' && <p className={styles.panelHint}>GIF-zoeken is niet geconfigureerd of tijdelijk niet beschikbaar.</p>}
+              {gifState === 'error' && <p className={styles.panelHint}>GIFs zijn nu niet beschikbaar. Probeer het later nog eens, of stuur je bericht zonder GIF.</p>}
               {gifState === 'loading' && <p className={styles.panelHint}>GIFs laden…</p>}
               <div className={styles.gifGrid}>
                 {gifs.map(item => (
@@ -132,7 +132,6 @@ export default function ChatComposer({ initialShiftId, employeeId, location, dis
                   <small>Week {shift.week_number} · {shift.start_time?.slice(0, 5) || 'hele dag'} · {shift.employee_name || 'Open'}</small>
                 </button>
               ))}
-              {employeeId && <p className={styles.panelHint}>Een dienst wordt als onveranderbare momentopname in het gesprek geplaatst.</p>}
             </div>
           )}
         </section>

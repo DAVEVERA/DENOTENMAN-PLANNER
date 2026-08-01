@@ -20,6 +20,11 @@ import {
   Mail,
   MessageCircle,
   LayoutDashboard,
+  Warehouse,
+  TicketCheck,
+  LogOut,
+  ReceiptText,
+  Plus,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -211,4 +216,64 @@ export function LeafIcon({ size = 20, className, strokeWidth = SW }: IconProps) 
       <path d="M6 18c3-4 6-6 10-7" />
     </NootSvg>
   );
+}
+
+/** Locatie / magazijn (bv. Rooster Nootmagazijn in de overflow-sheet) */
+export function WarehouseIcon({ size = 20, className }: IconProps) {
+  return (
+    <Warehouse
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
+
+/** Support / ticket */
+export function TicketIcon({ size = 20, className }: IconProps) {
+  return (
+    <TicketCheck
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
+
+/** Uitloggen */
+export function LogoutIcon({ size = 20, className }: IconProps) {
+  return (
+    <LogOut
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
+
+/** Declaraties / bon */
+export function ReceiptIcon({ size = 20, className }: IconProps) {
+  return (
+    <ReceiptText
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
+}
+
+/** Toevoegen — kleine inline actieknoppen (S-tier, 18px) */
+export function PlusIcon({ size = 18, className }: IconProps) {
+  return (
+    <Plus
+      size={size}
+      strokeWidth={SW}
+      className={className}
+      aria-hidden="true"
+    />
+  )
 }

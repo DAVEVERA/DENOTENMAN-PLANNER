@@ -15,6 +15,14 @@ function getTransport() {
   })
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ success: false })
 
@@ -93,16 +101,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             <tr>
               <td style="padding:0 8px 0 0" width="50%">
                 <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#7B4F2E;text-transform:uppercase;letter-spacing:.05em">Categorie</p>
-                <p style="margin:0;font-size:14px;color:#1a140e">${category || '—'}</p>
+                <p style="margin:0;font-size:14px;color:#1a140e">${escapeHtml(category || '—')}</p>
               </td>
               <td style="padding:0 0 0 8px" width="50%">
                 <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#7B4F2E;text-transform:uppercase;letter-spacing:.05em">Onderwerp</p>
-                <p style="margin:0;font-size:14px;color:#1a140e;font-weight:600">${subject}</p>
+                <p style="margin:0;font-size:14px;color:#1a140e;font-weight:600">${escapeHtml(subject)}</p>
               </td>
             </tr>
           </table>
           <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#7B4F2E;text-transform:uppercase;letter-spacing:.05em">Beschrijving</p>
-          <div style="background:#f9f5f1;border:1px solid #e8ddd4;border-radius:8px;padding:16px 20px;font-size:14px;color:#1a140e;line-height:1.6;white-space:pre-wrap">${description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          <div style="background:#f9f5f1;border:1px solid #e8ddd4;border-radius:8px;padding:16px 20px;font-size:14px;color:#1a140e;line-height:1.6;white-space:pre-wrap">${escapeHtml(description)}</div>
         </td></tr>
         <tr><td style="background:#f9f5f1;padding:14px 32px;text-align:center">
           <p style="margin:0;font-size:11px;color:#9e8070">Verstuurd via de Personeelsplanner van De Notenman</p>

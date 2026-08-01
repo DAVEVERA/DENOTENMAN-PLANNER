@@ -8,8 +8,23 @@ declare module 'iron-session' {
   }
 }
 
+// In production this MUST come from the environment — a hardcoded fallback
+// here would mean anyone who has ever seen this source can forge session
+// cookies for any account. Local dev gets a fixed (but non-committed-secret)
+// value only when NODE_ENV isn't production, so `next dev` still works
+// without a .env.local entry.
+const SESSION_PASSWORD = process.env.SECRET_KEY
+  ?? (process.env.NODE_ENV !== 'production' ? 'dev-only-session-secret-not-for-production-use-32chars' : undefined)
+
+if (!SESSION_PASSWORD) {
+  throw new Error(
+    '[session] SECRET_KEY environment variable is required in production. ' +
+    'Set it to a random string of at least 32 characters before starting the server.'
+  )
+}
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.SECRET_KEY ?? 'fallback-secret-change-in-production-xx',
+  password: SESSION_PASSWORD,
   cookieName: 'noten_session',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',

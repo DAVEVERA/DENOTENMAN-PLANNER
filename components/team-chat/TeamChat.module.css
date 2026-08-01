@@ -128,16 +128,16 @@
 .watchHeaderActions { display: flex; gap: 6px; }
 .mobileWatchButton { display: inline-grid; }
 .watchOverlay { position: fixed; inset: 0; z-index: 1100; display: flex; align-items: flex-end; padding-top: max(16px, env(safe-area-inset-top)); background: rgba(25,19,16,.5); backdrop-filter: blur(5px); }
-.mobileWatchSheet { width: 100%; max-height: 90dvh; overflow: auto; background: #fcfaf7; border-radius: 24px 24px 0 0; box-shadow: 0 -18px 60px rgba(0,0,0,.24); }
+.mobileWatchSheet { width: 100%; max-height: 90vh; max-height: 90dvh; overflow: auto; background: #fcfaf7; border-radius: 24px 24px 0 0; box-shadow: 0 -18px 60px rgba(0,0,0,.24); }
 .mobileWatchSheet .planningWatch { display: block; overflow: visible; border: 0; }
 .watchCalm { display: flex; align-items: center; flex-direction: column; padding: 24px 14px; color: #577161; text-align: center; }.watchCalm strong { margin-top: 7px; }.watchCalm span { margin-top: 3px; font-size: .69rem; }
 
 .sheetBackdrop, .searchOverlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; justify-content: center; padding: 20px; background: rgba(25,19,16,.5); backdrop-filter: blur(5px); }
-.sheet { width: min(100%, 540px); max-height: 92dvh; padding: 18px; overflow: auto; background: #fff; border-radius: 24px; box-shadow: 0 20px 70px rgba(0,0,0,.25); }.sheetHandle { width: 44px; height: 4px; margin: -6px auto 13px; background: #d8cfc8; border-radius: 999px; }
+.sheet { width: min(100%, 540px); max-height: 92vh; max-height: 92dvh; padding: 18px; overflow: auto; background: #fff; border-radius: 24px; box-shadow: 0 20px 70px rgba(0,0,0,.25); }.sheetHandle { width: 44px; height: 4px; margin: -6px auto 13px; background: #d8cfc8; border-radius: 999px; }
 .exchangeFacts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 18px 0; }.exchangeFacts div { display: flex; min-height: 64px; justify-content: center; flex-direction: column; padding: 10px 12px; background: #f7f3ef; border-radius: 12px; }.exchangeFacts span { color: var(--chat-muted); font-size: .66rem; }.exchangeFacts strong { margin-top: 3px; font-size: .78rem; }
 .fieldLabel { display: grid; gap: 7px; margin: 16px 0; font-size: .78rem; font-weight: 800; }.fieldLabel > span { color: var(--chat-muted); font-size: .68rem; font-weight: 400; line-height: 1.4; }.guardrail { display: flex; align-items: flex-start; gap: 8px; padding: 11px; color: #3c5c48; background: #edf4ef; border-radius: 12px; font-size: .72rem; line-height: 1.45; }.guardrail svg { flex: 0 0 auto; }
 .sheetActions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }.primaryButton, .secondaryButton { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 8px; padding: 10px 15px; border-radius: 13px; font-size: .78rem; font-weight: 800; }.primaryButton { color: #fff; background: #2c6e49; }.primaryButton:disabled { opacity: .45; }.secondaryButton { color: var(--chat-ink); background: #eee8e2; }.inlineError { padding: 9px 11px; color: #8b3a28; background: #fff0eb; border-radius: 10px; font-size: .72rem; }
-.searchOverlay { align-items: flex-start; padding-top: max(28px, env(safe-area-inset-top)); }.searchPanel { width: min(100%, 680px); max-height: 80dvh; padding: 18px; overflow: auto; background: #fff; border-radius: 22px; box-shadow: 0 20px 70px rgba(0,0,0,.25); }.searchForm { margin-top: 16px; padding: 6px 6px 6px 12px; background: #f7f3ef; border-radius: 14px; }.searchForm input { padding-left: 2px; background: transparent; border: 0; }.searchResults { display: grid; gap: 6px; margin-top: 12px; }.searchResults button { display: flex; min-height: 56px; align-items: flex-start; justify-content: center; flex-direction: column; padding: 9px 12px; text-align: left; background: #faf7f3; border-radius: 11px; }.searchResults strong { font-size: .75rem; }.searchResults span, .searchResults p { margin-top: 3px; color: var(--chat-muted); font-size: .72rem; }
+.searchOverlay { align-items: flex-start; padding-top: max(28px, env(safe-area-inset-top)); }.searchPanel { width: min(100%, 680px); max-height: 80vh; max-height: 80dvh; padding: 18px; overflow: auto; background: #fff; border-radius: 22px; box-shadow: 0 20px 70px rgba(0,0,0,.25); }.searchForm { margin-top: 16px; padding: 6px 6px 6px 12px; background: #f7f3ef; border-radius: 14px; }.searchForm input { padding-left: 2px; background: transparent; border: 0; }.searchResults { display: grid; gap: 6px; margin-top: 12px; }.searchResults button { display: flex; min-height: 56px; align-items: flex-start; justify-content: center; flex-direction: column; padding: 9px 12px; text-align: left; background: #faf7f3; border-radius: 11px; }.searchResults strong { font-size: .75rem; }.searchResults span, .searchResults p { margin-top: 3px; color: var(--chat-muted); font-size: .72rem; }
 
 @media (min-width: 1180px) {
   .workspace { grid-template-columns: 280px minmax(430px, 1fr) 260px; }
@@ -165,11 +165,11 @@
   .composer { grid-template-columns: auto minmax(0,1fr) 44px; gap: 4px; padding: 5px; }
   .composerTools button { width: 44px; }
   .composerHint { display: none; }
-  .composerPanel { right: 8px; left: 8px; max-height: 48dvh; border-radius: 17px; }
+  .composerPanel { right: 8px; left: 8px; max-height: 48vh; max-height: 48dvh; border-radius: 17px; }
   .emojiGrid { grid-template-columns: repeat(6, 1fr); }
   .gifGrid { grid-template-columns: repeat(3, 1fr); }
   .sheetBackdrop { padding: 0; }
-  .sheet { max-height: 94dvh; padding: 18px 15px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
+  .sheet { max-height: 94vh; max-height: 94dvh; padding: 18px 15px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
   .sheetActions { flex-direction: column-reverse; }.sheetActions button { width: 100%; min-height: 48px; }
   .searchOverlay { padding: max(12px, env(safe-area-inset-top)) 0 0; }.searchPanel { height: 100%; max-height: none; border-radius: 20px 20px 0 0; }
 }

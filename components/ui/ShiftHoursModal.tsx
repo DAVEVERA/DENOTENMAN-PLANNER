@@ -234,7 +234,7 @@ export default function ShiftHoursModal({ shift, latestLog, onClose, onSubmitted
         .modal-actions :global(.btn) { min-height: 44px; }
         @media (max-width: 520px) {
           .hours-overlay { align-items: flex-end; padding: 0; }
-          .hours-modal { width: 100%; max-height: 94dvh; border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
+          .hours-modal { width: 100%; max-height: 94vh; max-height: 94dvh; border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
           .time-summary { align-items: flex-start; flex-direction: column; }
           .time-summary span { text-align: left; }
           .edit-grid { grid-template-columns: 1fr; }

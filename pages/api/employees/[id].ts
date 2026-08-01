@@ -13,6 +13,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!can(session.user, 'read')) return res.status(403).json({ success: false })
     const emp = unwrap<Employee>(await supabase.from(T('employees')).select('*').eq('id', id).maybeSingle())
     if (!emp) return res.status(404).json({ success: false })
+
+    // hourly_rate is payroll data — only expose it to callers who can
+    // actually manage employees (see pages/api/employees/index.ts).
+    if (!can(session.user, 'manage_employees')) {
+      const { hourly_rate: _hourly_rate, ...rest } = emp
+      return res.json({ success: true, data: rest as Employee })
+    }
+
     return res.json({ success: true, data: emp })
   }
 

@@ -178,10 +178,53 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
             })}
           </div>
 
+          {/* ── Mobile employee cards (<1024px) — aanvulling op de dagkaarten hierboven,
+                zelfde patroon als pages/admin/index.tsx .mobile-emp-card ── */}
+          <div className="team-mobile-grid" aria-label="Weekoverzicht medewerkers mobiel">
+            <h2 className="grid-title">Weekoverzicht medewerkers</h2>
+            {employees.map(emp => (
+              <div key={emp.id} className="mobile-emp-card">
+                <div className="mobile-emp-header">
+                  <span className="mobile-emp-name">{emp.name}</span>
+                </div>
+                <div className="mobile-days-strip">
+                  {DAYS.map((day, i) => {
+                    const empShifts = shifts.filter(s => s.employee_id === emp.id && s.day_of_week === day)
+                    const date = dayDate(week, year, i)
+                    return (
+                      <div key={day} className="mobile-day-col">
+                        <div className="mobile-day-head">
+                          <span className="mobile-day-short">{DAY_SHORT[day]}</span>
+                          <span className="mobile-day-num">{date}</span>
+                        </div>
+                        <div className="mobile-day-shifts">
+                          {empShifts.map(s => (
+                            <div
+                              key={s.id}
+                              className="mobile-shift-chip"
+                              data-type={s.shift_type.toLowerCase()}
+                              aria-label={`${s.shift_type} - ${emp.name} - ${day}`}
+                            >
+                              <span className="mobile-chip-type">{s.shift_type.slice(0, 3)}</span>
+                              {s.start_time && <span className="mobile-chip-time">{fmtTime(s.start_time)}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+            {employees.length === 0 && (
+              <div className="empty-row">Geen medewerkers voor deze locatie.</div>
+            )}
+          </div>
+
           {/* ── Full employee grid (desktop) ── */}
           <div className="team-grid-section">
             <h2 className="grid-title">Weekoverzicht medewerkers</h2>
-            <div className="team-grid-wrap">
+            <div className="team-grid-wrap scroll-fade-x">
               <table className="team-grid" aria-label="Medewerker planning overzicht">
                 <thead>
                   <tr>
@@ -272,6 +315,22 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .day-shift-time { font-size: .6875rem; color: var(--text-muted); white-space: nowrap; }
         .day-shift-chat { min-height: 44px; margin-left: auto; padding: 8px 10px; color: var(--brand); background: rgba(44,110,73,.1); border-radius: 8px; font-size: .7rem; font-weight: 700; }
 
+        /* ── Mobile employee cards (<1024px) ── */
+        .team-mobile-grid { display: none; }
+        .mobile-emp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: var(--s2); }
+        .mobile-emp-header { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); background: var(--surface-alt); border-bottom: 1px solid var(--border); }
+        .mobile-emp-name { font-size: .875rem; font-weight: 600; flex: 1; }
+        .mobile-days-strip { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); }
+        .mobile-day-col { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 56px; min-width: 44px; }
+        .mobile-day-col:last-child { border-right: none; }
+        .mobile-day-head { display: flex; flex-direction: column; align-items: center; padding: 4px 2px; background: var(--surface-alt); border-bottom: 1px solid var(--border); gap: 1px; }
+        .mobile-day-short { font-size: .625rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .mobile-day-num { font-size: .75rem; font-weight: 600; }
+        .mobile-day-shifts { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 3px 2px; }
+        .mobile-shift-chip { border-radius: 3px; padding: 3px 4px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+        .mobile-chip-type { font-size: .6875rem; font-weight: 700; line-height: 1.2; }
+        .mobile-chip-time { font-size: .625rem; color: var(--text-sub); line-height: 1.2; }
+
         /* ── Grid ── */
         .team-grid-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--s5); }
         .grid-title { margin-bottom: var(--s4); font-size: 1.125rem; }
@@ -297,6 +356,16 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         @media (max-width: 1024px) {
           .occ-overview { grid-template-columns: repeat(4, 1fr); }
           .team-grid-section { display: none; }
+          .team-mobile-grid { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s6); }
+        }
+        /* 320–360px: laat de dagenstrip scrollen i.p.v. oneindig te comprimeren
+           (zelfde strategie als pages/admin/index.tsx .mobile-days-strip). */
+        @media (max-width: 360px) {
+          .mobile-days-strip {
+            grid-template-columns: repeat(7, 44px);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
         }
         @media (max-width: 768px) {
           .week-label { min-width: 0; font-size: .875rem; }

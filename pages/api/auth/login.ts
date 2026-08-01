@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { attemptLogin, ensureDefaultAdmin } from '@/lib/auth'
+import { attemptLogin } from '@/lib/auth'
 
 // ─── In-memory brute-force protection ────────────────────────────────────────
 // Tracks failed login attempts per IP. Resets after WINDOW_MS.

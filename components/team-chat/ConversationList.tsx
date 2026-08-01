@@ -9,6 +9,10 @@ interface Props {
   onSelect(id: number): void
   onSearch(): void
   emptyMessage?: string | null
+  /** True while the first bootstrap fetch is still in flight — shows a calm
+   * loading state instead of the "no conversations" empty/error copy, which
+   * otherwise reads as a failure on every normal first page load. */
+  loading?: boolean
 }
 
 function relativeTime(value: string | null): string {
@@ -20,7 +24,7 @@ function relativeTime(value: string | null): string {
   return new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short' }).format(new Date(value))
 }
 
-export default function ConversationList({ conversations, activeId, onSelect, onSearch, emptyMessage }: Props) {
+export default function ConversationList({ conversations, activeId, onSelect, onSearch, emptyMessage, loading }: Props) {
   return (
     <section className={styles.inbox} aria-label="Gesprekken">
       <div className={styles.inboxHeader}>
@@ -39,7 +43,13 @@ export default function ConversationList({ conversations, activeId, onSelect, on
       </div>
 
       <div className={styles.conversationItems}>
-        {conversations.length === 0 && (
+        {conversations.length === 0 && loading && (
+          <div className={styles.chatLoading} role="status">
+            <span /><span /><span />
+            <p>Gesprekken laden…</p>
+          </div>
+        )}
+        {conversations.length === 0 && !loading && (
           <div className={styles.emptyInbox} role="status">
             <MessageCircle size={24} />
             <strong>Geen gesprekken geladen</strong>
