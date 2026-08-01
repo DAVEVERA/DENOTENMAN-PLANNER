@@ -174,7 +174,7 @@ export default function AdminDashboard({ user, week, year }: Props) {
       <div className="db-greeting">
         <div>
           <h2 className="db-hello">
-            {greeting}, {firstName} <NutIcon size={22} />
+            {greeting}, {firstName}
           </h2>
           <p className="db-sub">
             Week {week} · {year} &nbsp;·&nbsp; {weekDateRange(week, year)}
@@ -200,36 +200,24 @@ export default function AdminDashboard({ user, week, year }: Props) {
       {stats && (
         <div className="db-kpi-row">
           <div className="db-kpi-card">
-            <span className="db-kpi-icon">
-              <NutIcon size={20} />
-            </span>
             <div className="db-kpi-body">
               <span className="db-kpi-val">{stats.employees}</span>
               <span className="db-kpi-label">Medewerkers actief</span>
             </div>
           </div>
           <div className={`db-kpi-card${stats.openShifts > 0 ? ' kpi-warn' : ''}`}>
-            <span className="db-kpi-icon">
-              <SnackBowlIcon size={20} />
-            </span>
             <div className="db-kpi-body">
               <span className="db-kpi-val">{stats.openShifts}</span>
               <span className="db-kpi-label">Open diensten</span>
             </div>
           </div>
           <div className={`db-kpi-card${stats.pendingLeave > 0 ? ' kpi-warn' : ''}`}>
-            <span className="db-kpi-icon">
-              <LeafIcon size={20} />
-            </span>
             <div className="db-kpi-body">
               <span className="db-kpi-val">{stats.pendingLeave}</span>
               <span className="db-kpi-label">Verlofaanvragen open</span>
             </div>
           </div>
           <div className={`db-kpi-card${stats.pendingExpenses > 0 ? ' kpi-warn' : ''}`}>
-            <span className="db-kpi-icon">
-              <SeedIcon size={20} />
-            </span>
             <div className="db-kpi-body">
               <span className="db-kpi-val">{stats.pendingExpenses}</span>
               <span className="db-kpi-label">Declaraties open</span>
@@ -247,9 +235,6 @@ export default function AdminDashboard({ user, week, year }: Props) {
           {/* ── Insights / Alerts ── */}
           <section className="db-section db-alerts" aria-label="Planningsanalyse">
             <h3 className="db-section-title">
-              <span>
-                <NutIcon size={18} />
-              </span>{' '}
               Planningsanalyse
               <span className="db-section-sub">
                 Week {week} · {weekDateRange(week, year)}
@@ -266,7 +251,6 @@ export default function AdminDashboard({ user, week, year }: Props) {
               <div className="db-insight-list">
                 {insights.map((card) => (
                   <div key={card.id} className={`db-insight-card sev-${card.severity}`}>
-                    <span className="db-insight-ico">{card.icon}</span>
                     <div className="db-insight-body">
                       <span className="db-insight-title">{card.title}</span>
                       <span className="db-insight-msg">{card.message}</span>
@@ -280,9 +264,6 @@ export default function AdminDashboard({ user, week, year }: Props) {
           {/* ── Employee Load Balance ── */}
           <section className="db-section db-load" aria-label="Belasting medewerkers">
             <h3 className="db-section-title">
-              <span>
-                <SeedIcon size={18} />
-              </span>{' '}
               Uren vs contract
               <span className="db-section-sub">Huidige week</span>
             </h3>
@@ -422,10 +403,6 @@ export default function AdminDashboard({ user, week, year }: Props) {
         .db-kpi-card.kpi-warn {
           border-left: 3px solid #e65100;
         }
-        .db-kpi-icon {
-          font-size: 1.75rem;
-          flex-shrink: 0;
-        }
         .db-kpi-body {
           display: flex;
           flex-direction: column;
@@ -526,11 +503,6 @@ export default function AdminDashboard({ user, week, year }: Props) {
         }
         .sev-info {
           border-left: 3px solid var(--brand);
-        }
-        .db-insight-ico {
-          font-size: 1.125rem;
-          flex-shrink: 0;
-          padding-top: 1px;
         }
         .db-insight-body {
           display: flex;
