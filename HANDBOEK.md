@@ -1,6 +1,6 @@
 # Handboek De Notenkar Planner
 
-**Versie:** April 2026  
+**Versie:** April 2026
 **Voor:** Eigenaar / beheerder en medewerkers van De Notenkar
 
 ---
@@ -18,16 +18,22 @@
    - [A5. Exporteren](#a5-exporteren)
    - [A6. Verlofaanvragen](#a6-verlofaanvragen)
    - [A7. Instellingen](#a7-instellingen)
+   - [A8. Team Chat Beheer](#a8-team-chat-beheer)
 5. [Deel B — Medewerker](#deel-b--medewerker)
    - [B1. Mijn rooster](#b1-mijn-rooster)
    - [B2. Teamrooster](#b2-teamrooster)
-   - [B3. Mijn uren](#b3-mijn-uren)
-   - [B4. Verlof aanvragen](#b4-verlof-aanvragen)
-6. [De app installeren op je telefoon](#6-de-app-installeren-op-je-telefoon)
-7. [Meldingen (push notificaties)](#7-meldingen-push-notificaties)
-8. [Icons aanpassen](#8-icons-aanpassen)
-9. [Technische instellingen (SMTP / e-mail)](#9-technische-instellingen-smtp--e-mail)
-10. [Veelgestelde vragen](#10-veelgestelde-vragen)
+   - [B3. Diensten ruilen of overnemen (Team Chat)](#b3-diensten-ruilen-of-overnemen-team-chat)
+   - [B4. Mijn uren](#b4-mijn-uren)
+   - [B5. Verlof aanvragen](#b5-verlof-aanvragen)
+6. [Team Chat & Roosterregie](#6-team-chat--roosterregie)
+   - [6.1 Wat is de Team Chat?](#61-wat-is-de-team-chat)
+   - [6.2 De chat gebruiken (voor medewerkers)](#62-de-chat-gebruiken-voor-medewerkers)
+   - [6.3 Chatbeheer (voor admins)](#63-chatbeheer-voor-admins)
+7. [De app installeren op je telefoon](#7-de-app-installeren-op-je-telefoon)
+8. [Meldingen (push notificaties)](#8-meldingen-push-notificaties)
+9. [Icons aanpassen](#9-icons-aanpassen)
+10. [Technische instellingen (SMTP / e-mail)](#10-technische-instellingen-smtp--e-mail)
+11. [Veelgestelde vragen](#11-veelgestelde-vragen)
 
 ---
 
@@ -43,6 +49,7 @@ De planner werkt op elk apparaat — computer, tablet én telefoon — en kan al
 - Open diensten uitzetten en medewerkers uitnodigen
 - Medewerkers en hun gegevens bijhouden
 - Uren registreren, bewerken en exporteren naar de boekhouder
+- Diensten ruilen of overnemen via een geïntegreerde team chat
 - Verlofaanvragen ontvangen en goedkeuren of afwijzen
 - Medewerkers inzage geven in hun eigen rooster en uren
 
@@ -52,11 +59,11 @@ De planner werkt op elk apparaat — computer, tablet én telefoon — en kan al
 
 De planner kent drie rollen. Iedere gebruiker heeft één rol.
 
-| Rol | Wie | Wat mag deze rol? |
-|-----|-----|-------------------|
-| **Admin** | Eigenaar / hoofdbeheerder | Alles — rooster, medewerkers, uren, export, instellingen |
-| **Manager** | Leidinggevende | Rooster, uren, verlof — maar geen medewerkersbeheer of instellingen |
-| **Medewerker** | Gewone medewerker | Eigen rooster zien, teamrooster zien, eigen uren inzien, verlof aanvragen |
+| Rol            | Wie                       | Wat mag deze rol?                                                         |
+| -------------- | ------------------------- | ------------------------------------------------------------------------- |
+| **Admin**      | Eigenaar / hoofdbeheerder | Alles — rooster, medewerkers, uren, export, instellingen                  |
+| **Manager**    | Leidinggevende            | Rooster, uren, verlof — maar geen medewerkersbeheer of instellingen       |
+| **Medewerker** | Gewone medewerker         | Eigen rooster zien, teamrooster zien, eigen uren inzien, verlof aanvragen |
 
 > **Samengevat:** Medewerkers zien alleen wat van hen is. Beheerders (admin/manager) zien alles.
 
@@ -71,6 +78,7 @@ De planner kent drie rollen. Iedere gebruiker heeft één rol.
 3. Klik op **Inloggen**.
 
 Na het inloggen ga je automatisch naar de juiste startpagina:
+
 - **Admin/Manager** → Roosterbeheer (`/admin`)
 - **Medewerker** → Persoonlijk rooster (`/me`)
 
@@ -87,9 +95,11 @@ Klik rechtsboven op je naam of het uitlogicoon. Op de telefoon staat de uitlogkn
 Dit deel beschrijft alles wat de eigenaar en manager kunnen zien en doen.
 
 De linker navigatie (desktop) of onderbalk (telefoon) geeft toegang tot alle onderdelen:
+
 - **Rooster** — wekelijks rooster per locatie
 - **Medewerkers** — alle medewerkers en hun gegevens
 - **Uren** — urenregistratie en verwerking
+- **Chat** — teamcommunicatie en diensten ruilen
 - **Verlof** — verlofaanvragen van medewerkers
 - **Export** — bestanden voor de boekhouder
 - **Instellingen** — app-configuratie (alleen admin)
@@ -111,11 +121,13 @@ Dit is het hart van de planner. Hier bouw je het wekelijkse rooster op.
 **Het rooster lezen**
 
 Het rooster toont een tabel met:
+
 - **Rijen** = medewerkers
 - **Kolommen** = dagen van de week (maandag t/m zondag)
 - **Cellen** = diensten per medewerker per dag
 
 Elke dienst verschijnt als een gekleurde chip. De kleur geeft het diensttype aan:
+
 - Ochtend, Middag, Avond, Hele dag (werktijden)
 - Verlof, Vakantie, Verzuim (afwezigheid)
 - Overwerk, Extra (bijzondere diensten)
@@ -173,6 +185,7 @@ Hier beheer je alle medewerkers van beide locaties.
 **Overzicht**
 
 De lijst toont alle actieve medewerkers met:
+
 - Naam
 - Locatie (Markt / Nootmagazijn / Beide)
 - Contracturen per week
@@ -193,11 +206,14 @@ Gebruik het **locatiefilter** bovenaan om alleen medewerkers van één locatie t
    - **Rol** — Medewerker, Manager of Admin
 3. Klik **Opslaan**.
 
+> **Let op:** Als een medewerker op beide locaties werkt, kies dan bij **Locatie** voor **"Beide"**. Maak geen twee aparte profielen aan voor dezelfde persoon. Dit voorkomt dubbele gegevens en verwarring in het rooster en de urenregistratie.
+
 > Het wachtwoord wordt apart ingesteld — de medewerker ontvangt een tijdelijk wachtwoord of de beheerder stelt dit in via het detailscherm.
 
 **Medewerker bewerken**
 
 Klik op de naam van een medewerker om naar het detailscherm te gaan (`/admin/employees/[id]`). Hier kun je:
+
 - Alle gegevens aanpassen
 - Het wachtwoord opnieuw instellen
 - De medewerker **deactiveren** (knop "Deactiveren") — ze verdwijnen uit het actieve rooster maar hun historische data blijft bewaard
@@ -218,6 +234,7 @@ Hier registreer en beheer je alle gewerkte uren van alle medewerkers.
 **Filters**
 
 Bovenaan staan filters:
+
 - **Van / Tot** — datumbereik (standaard: huidige maand)
 - **Medewerker** — filter op één persoon
 - **Locatie** — filter op Markt of Nootmagazijn
@@ -233,6 +250,7 @@ Klik op **Ophalen** om de resultaten te vernieuwen.
 - **Telefoon:** kaartjes per registratie met dezelfde informatie
 
 Per registratie zie je:
+
 - Medewerker
 - Datum
 - Intijdstip en eindtijdstip
@@ -278,6 +296,7 @@ Hier exporteer je urenregistraties als bestand of stuur je ze direct naar de boe
 **Stap 1 — Kies een periode**
 
 Vul de **Van** en **Tot** datum in, of gebruik een snelkeuze rechts:
+
 - **Deze maand**
 - **Vorige maand**
 - **Dit kwartaal**
@@ -290,12 +309,12 @@ Vul de **Van** en **Tot** datum in, of gebruik een snelkeuze rechts:
 
 **Stap 3 — Kies het formaat**
 
-| Formaat | Gebruik |
-|---------|---------|
-| **CSV** | Opent in Excel of Google Sheets; universeel formaat |
-| **Excel (.xlsx)** | Kant-en-klaar Excel-bestand met opmaak |
-| **PDF** | Afdrukbaar rapport, inclusief totalen |
-| **JSON** | Machineleesbaar; voor koppeling met externe systemen |
+| Formaat           | Gebruik                                              |
+| ----------------- | ---------------------------------------------------- |
+| **CSV**           | Opent in Excel of Google Sheets; universeel formaat  |
+| **Excel (.xlsx)** | Kant-en-klaar Excel-bestand met opmaak               |
+| **PDF**           | Afdrukbaar rapport, inclusief totalen                |
+| **JSON**          | Machineleesbaar; voor koppeling met externe systemen |
 
 **Stap 4 — Verzenden of downloaden**
 
@@ -315,12 +334,14 @@ Hier verwerk je verlofaanvragen van medewerkers.
 **Overzicht**
 
 De pagina toont een lijst van aanvragen. Gebruik de filterknoppen bovenaan:
+
 - **In behandeling** — nieuwe, nog niet beoordeelde aanvragen (het rode cijfer geeft het aantal aan)
 - **Goedgekeurd** — eerder goedgekeurde aanvragen
 - **Afgewezen** — eerder afgewezen aanvragen
 - **Alles** — alle aanvragen
 
 Per aanvraag zie je:
+
 - Naam van de medewerker
 - Type verlof (Verlof / Vakantie / Verzuim)
 - Datumperiode en aantal dagen
@@ -334,6 +355,30 @@ Per aanvraag zie je:
 3. De medewerker ziet de nieuwe status in zijn/haar eigen verlofpagina.
 
 > Na beoordeling is de beslissing zichtbaar bij de aanvraag, inclusief de naam van de beoordelaar en de datum.
+
+---
+
+### A8. Team Chat Beheer
+
+**Pagina:** `/admin/team-chat`
+
+Als beheerder (admin-rol) heb je extra mogelijkheden in de team chat om de communicatie in goede banen te leiden.
+
+**Gesprekken beheren**
+
+Naast de vier vaste kanalen (`Nootities`, `Nootzakelijk`, etc.) kun je als admin:
+
+- **Privé- en groepsgesprekken aanmaken**: Start een gesprek met één of meerdere medewerkers voor specifieke onderwerpen.
+- **Leden beheren**: Voeg medewerkers toe aan of verwijder ze uit gesprekken die jij hebt aangemaakt.
+- **Gesprekken archiveren**: Verberg een gesprek uit de actieve lijst als het niet meer relevant is. De inhoud wordt bewaard maar is niet meer zichtbaar voor de leden.
+
+**Dienstovernames goedkeuren**
+
+Wanneer een medewerker een "Open dienst" claimt via de chat, moet jij als admin of manager deze claim goedkeuren voordat de dienst wordt toegewezen.
+
+**De 'Planningwacht'**
+
+De chat bevat een slimme assistent, de 'Planningwacht'. Deze kan helpen door automatisch te signaleren wanneer diensten al lang openstaan of door te waarschuwen bij mogelijke roosterconflicten. De Planningwacht doet alleen voorstellen; jij als beheerder neemt altijd de uiteindelijke beslissing.
 
 ---
 
@@ -366,8 +411,10 @@ SMTP-instellingen (de mailserver voor het versturen van e-mails) worden ook via 
 Dit deel beschrijft alles wat een medewerker ziet en kan doen na het inloggen.
 
 Na inloggen komen medewerkers op hun **persoonlijk roosterpagina** (`/me`). Onderaan het scherm (op telefoon en tablet) of in de navigatie staan vier opties:
+
 - **Rooster** — persoonlijk rooster
 - **Team** — teamrooster van de locatie
+- **Chat** — diensten ruilen en overleggen
 - **Verlof** — verlofaanvragen indienen en bekijken
 - **Uren** — eigen uren bekijken
 
@@ -382,6 +429,7 @@ Hier ziet de medewerker zijn of haar persoonlijke rooster.
 **Weergave kiezen**
 
 Bovenaan staan drie knoppen:
+
 - **Week** — één week tegelijk, met alle diensten per dag
 - **Maand** — vier weken overzicht
 - **3 mnd** — dertien weken (kwartaaloverzicht)
@@ -393,6 +441,7 @@ Gebruik de **pijl links / rechts** om voor- of achteruit te bladeren. De knop **
 **Wat zie je?**
 
 Voor elke dag met een dienst zie je:
+
 - Het **diensttype** (Ochtend, Middag, Avond, enz.)
 - De **tijden** (begin en eind)
 - Eventuele **buddy** (collega die tegelijk werkt)
@@ -427,46 +476,88 @@ Gebruik de pijltjes om een week voor- of achteruit te gaan.
 
 ---
 
-### B3. Mijn uren
+### B3. Diensten ruilen of overnemen (Team Chat)
+
+**Pagina:** `/me/chat` (via de nieuwe 'Chat' knop in de navigatie)
+
+De planner heeft een ingebouwde team chat. Deze is niet alleen om te praten, maar is direct gekoppeld aan het rooster. Via de chat kun je veilig en officieel een dienst overdragen aan een collega of een dienst ruilen.
+
+**De vier vaste kanalen**
+
+De chat heeft vier kanalen voor het hele bedrijf waar iedereen kan meelezen en -praten:
+
+- `Nootities`: Voor algemene mededelingen en leuke weetjes.
+- `Nootzakelijk`: Voor belangrijke, werkgerelateerde zaken.
+- `The Nootorious`: Voor informele gesprekken en teamspirit.
+- `NOOTSCHAP!!`: Voor urgente berichten die iedereen direct moet zien.
+
+Daarnaast kan een beheerder specifieke groepsgesprekken aanmaken. Je kunt zelf geen gesprekken starten.
+
+**Een dienst aanbieden of ruilen**
+
+De belangrijkste functie van de chat is het regelen van je diensten.
+
+1.  **Dienst delen in de chat**:
+    Ga naar **Mijn rooster** (`/me`) en zoek de dienst die je wilt ruilen of afstaan. Via een nieuwe knop bij de dienst kun je deze 'delen' in een chatkanaal of een direct gesprek. De dienst verschijnt dan als een interactieve kaart.
+
+2.  **Een dienst laten overnemen**:
+    Als je een dienst hebt gedeeld, kunnen collega's via de kaart reageren met **"Ik kan deze overnemen"**. Jij ontvangt dan een verzoek. Pas als jij dit verzoek **accepteert**, wordt de dienst officieel overgedragen in het rooster. De planner controleert automatisch of de overname geen roosterconflicten veroorzaakt.
+
+3.  **Een open dienst claimen**:
+    Wanneer een beheerder een "Open dienst" in de chat deelt, kun jij deze claimen. Een beheerder moet jouw claim goedkeuren. Na goedkeuring staat de dienst op jouw naam.
+
+4.  **Een dienst ruilen met een collega**:
+    Deel jouw dienst in een gesprek met de collega met wie je wilt ruilen. Via de kaart kun je een ruil voorstellen. Je collega krijgt een verzoek en kan een van zijn/haar diensten selecteren om tegen te ruilen. Pas als jullie **beiden akkoord** gaan, wordt de ruil definitief en past de planner het rooster automatisch aan.
+
+Alle wijzigingen worden bevestigd met een systeembericht in de chat. De tijden, locatie en het type dienst veranderen nooit; alleen de persoon die de dienst werkt. Dit zorgt ervoor dat alles eerlijk en duidelijk verloopt.
+
+---
+
+### B4. Mijn uren
 
 **Pagina:** `/me/hours`
 
-Hier ziet de medewerker zijn of haar eigen geregistreerde uren. Het accorderen van een geplande dienst gebeurt rechtstreeks op de betreffende dag in **Mijn rooster** (`/me`).
+Op deze pagina zie je een overzicht van al je ingediende en verwerkte uren. Het indienen van uren voor een **geplande dienst** doe je echter direct vanuit je rooster. Losse uren (zonder dienst) kun je wel hier toevoegen.
 
-**Geplande dienst accorderen**
+**Uren van een geplande dienst indienen (via 'Mijn rooster')**
 
-1. Open **Mijn rooster** en ga naar de dag waarop je hebt gewerkt.
-2. Na de geplande eindtijd verschijnt **Uren controleren** bij de dienst.
-3. Kies **Ja, deze uren kloppen** als de roosteruren overeenkomen met de werkelijk gewerkte uren, of kies **Nee, uren aanpassen**.
-4. Controleer de samenvatting en klik **Indienen bij De Noteman**.
-5. De registratie krijgt de status **In behandeling** totdat een manager of admin deze goed- of afkeurt.
-6. Bij afwijzing blijft de reden zichtbaar. Kies bij dezelfde dienst **Corrigeren** en dien een nieuwe revisie in. De eerdere inzending blijft als historie bewaard.
+De makkelijkste manier om je uren door te geven is direct na je werkdag:
 
-**Filters**
+1. Ga naar **Mijn rooster** (`/me`) en klik op de dienst die je hebt gewerkt.
+2. Na de geplande eindtijd van de dienst verschijnt de optie **Uren controleren**.
+3. Als de geplande tijden kloppen, kies je **Ja, deze uren kloppen**.
+4. Als je langer of korter hebt gewerkt, kies je **Nee, uren aanpassen** en vul je de juiste tijden in.
+5. Controleer de samenvatting en klik op **Indienen**.
+6. Je urenregistratie krijgt de status **In behandeling** en wordt door een beheerder beoordeeld.
+7. Bij afwijzing zie je de reden en kun je de uren **Corrigeren** en opnieuw indienen. De historie blijft bewaard.
 
-Stel de gewenste periode in (Van / Tot) en klik op **Ophalen**.
+**Overzicht van al je uren**
+
+De pagina `/me/hours` toont een complete lijst van je registraties. Hier kun je met de filters een periode selecteren.
 
 **Wat zie je?**
 
 Een lijst van alle geregistreerde werkdagen met:
+
 - Datum
-- Intijdstip en eindtijdstip
+- In- en uitkloktijd
 - Pauze in minuten
 - Totaal gewerkte uren (inclusief overuren)
-- Of de registratie al is verwerkt
+- Status (In behandeling, Goedgekeurd, Afgewezen, Verwerkt)
 
 **Totalen bovenaan**
 
-Boven de lijst staan drie samenvattingen:
+Boven de lijst zie je een samenvatting voor de gekozen periode:
+
 - **Totaal uren** in de gekozen periode
 - **Overuren**
-- **Verwerkt** — hoeveel registraties zijn al doorgegeven aan de boekhouder
+- **Verwerkt**: Het aantal registraties dat al is doorgegeven aan de boekhouder.
 
-> Losse, niet-geplande uren kunnen nog via `/me/hours` worden geregistreerd. Geplande diensten worden altijd vanuit het rooster geaccordeerd of gecorrigeerd.
+> **Belangrijk:** Gebruik de `/me/hours` pagina vooral voor het overzicht en het toevoegen van losse, niet-geroosterde uren. Het bevestigen of corrigeren van je geplande diensten doe je altijd via **Mijn rooster** (`/me`).
 
 ---
 
-### B4. Verlof aanvragen
+### B5. Verlof aanvragen
 
 **Pagina:** `/me/leave`
 
@@ -488,6 +579,7 @@ De beheerder ontvangt de aanvraag en beoordeelt deze. Zodra er een beslissing is
 **Aanvragen bekijken**
 
 Alle ingediende aanvragen staan in de lijst met hun status:
+
 - **In behandeling** — oranje, nog niet beoordeeld
 - **Goedgekeurd** — groen
 - **Afgewezen** — rood
@@ -496,7 +588,34 @@ Per aanvraag zie je ook wanneer de beslissing is genomen.
 
 ---
 
-## 6. De app installeren op je telefoon
+## 6. Team Chat & Roosterregie
+
+De planner bevat een geïntegreerde team chat die is ontworpen voor operationele communicatie en het veilig regelen van diensten.
+
+### 6.1 Wat is de Team Chat?
+
+De Team Chat is een samenwerkingsplatform voor alle medewerkers. Het hoofddoel is niet alleen informeel overleg, maar vooral het **veilig en gecontroleerd overnemen en ruilen van diensten**. Een wijziging in het rooster wordt pas definitief nadat alle betrokken partijen expliciet akkoord zijn gegaan.
+
+### 6.2 De chat gebruiken (voor medewerkers)
+
+Als medewerker gebruik je de chat om te overleggen met collega's en om je rooster flexibel te beheren. De volledige uitleg vind je in hoofdstuk B3.
+
+**Kernfuncties:**
+
+- **Vaste kanalen**: Communiceer in de vier vaste teamkanalen.
+- **Diensten delen**: Deel een dienst vanuit je rooster als een interactieve kaart in de chat.
+- **Diensten overnemen**: Reageer op een gedeelde dienst van een collega om deze over te nemen.
+- **Diensten ruilen**: Stel een ruil voor met een collega.
+
+Alle roosterwijzigingen via de chat worden automatisch verwerkt na tweezijdig akkoord.
+
+### 6.3 Chatbeheer (voor admins)
+
+Beheerders (admins en managers) hebben extra rechten om de chat te beheren, zoals het aanmaken van privégesprekken en het goedkeuren van claims op open diensten. Zie hoofdstuk A8 voor details.
+
+---
+
+## 7. De app installeren op je telefoon
 
 De Notenkar Planner is een **Progressive Web App (PWA)**. Dat betekent dat je hem als een echte app op je startscherm kunt zetten, zonder de App Store of Play Store.
 
@@ -518,10 +637,12 @@ De app opent voortaan zonder adresbalk, net als een gewone app.
 
 ---
 
-## 7. Meldingen (push notificaties)
+## 8. Meldingen (push notificaties)
 
 Als pushnotificaties zijn ingeschakeld, ontvang je een melding wanneer:
+
 - Je bent uitgenodigd voor een open dienst
+- Je een verzoek ontvangt om een dienst over te nemen of te ruilen
 - De beheerder een bericht stuurt
 
 **Meldingen inschakelen**
@@ -532,11 +653,11 @@ Wanneer je de planner voor het eerst opent in de browser, vraagt de browser of j
 
 **Vereisten**
 
-Pushnotificaties werken alleen als de beheerder VAPID-sleutels heeft ingesteld (zie [hoofdstuk 9](#9-technische-instellingen-smtp--e-mail)).
+Pushnotificaties werken alleen als de beheerder VAPID-sleutels heeft ingesteld (zie hoofdstuk 10).
 
 ---
 
-## 8. Icons aanpassen
+## 9. Icons aanpassen
 
 Wil je de icons in de navigatie en op de knoppen vervangen door je eigen ontworpen icons? Dat kan eenvoudig.
 
@@ -550,20 +671,21 @@ public/icons/
 
 **Overzicht van alle icons en waar ze voorkomen**
 
-| Bestandsnaam | Icoon | Verschijnt op |
-|---|---|---|
-| `logo.svg` | Logo | Linksboven in de navigatiebalk |
-| `schedule.svg` | Rooster | Navigatie → Rooster (beheerder) |
-| `employees.svg` | Medewerkers | Navigatie → Medewerkers |
-| `leave.svg` | Verlof | Navigatie → Verlof (beheerder + medewerker) |
-| `hours.svg` | Uren | Navigatie → Uren |
-| `export.svg` | Export | Navigatie → Exporteren |
-| `settings.svg` | Instellingen | Navigatie → Instellingen |
-| `my-schedule.svg` | Mijn rooster | Navigatie medewerker → Rooster |
-| `team-view.svg` | Teamrooster | Navigatie medewerker → Team |
-| `close.svg` | Sluiten / × | Modals, annuleerknop |
-| `prev.svg` | Pijl links | Week terug navigatie |
-| `next.svg` | Pijl rechts | Week vooruit navigatie |
+| Bestandsnaam      | Icoon        | Verschijnt op                               |
+| ----------------- | ------------ | ------------------------------------------- |
+| `logo.svg`        | Logo         | Linksboven in de navigatiebalk              |
+| `schedule.svg`    | Rooster      | Navigatie → Rooster (beheerder)             |
+| `employees.svg`   | Medewerkers  | Navigatie → Medewerkers                     |
+| `leave.svg`       | Verlof       | Navigatie → Verlof (beheerder + medewerker) |
+| `hours.svg`       | Uren         | Navigatie → Uren                            |
+| `export.svg`      | Export       | Navigatie → Exporteren                      |
+| `settings.svg`    | Instellingen | Navigatie → Instellingen                    |
+| `my-schedule.svg` | Mijn rooster | Navigatie medewerker → Rooster              |
+| `team-view.svg`   | Teamrooster  | Navigatie medewerker → Team                 |
+| `chat.svg`        | Team Chat    | Navigatie → Chat                            |
+| `close.svg`       | Sluiten / ×  | Modals, annuleerknop                        |
+| `prev.svg`        | Pijl links   | Week terug navigatie                        |
+| `next.svg`        | Pijl rechts  | Week vooruit navigatie                      |
 
 **Een icon vervangen**
 
@@ -575,7 +697,7 @@ public/icons/
 
 ---
 
-## 9. Technische instellingen (SMTP / e-mail)
+## 10. Technische instellingen (SMTP / e-mail)
 
 De volgende instellingen worden geconfigureerd via het bestand `.env.local` in de hoofdmap van de applicatie. Dit doet de technische beheerder (of de webhosting-provider).
 
@@ -592,11 +714,13 @@ SMTP_FROM=info@denotenkar.nl
 **Push notificaties (VAPID-sleutels)**
 
 Genereer eenmalig sleutels met het commando:
+
 ```
 npx web-push generate-vapid-keys
 ```
 
 Voeg vervolgens toe aan `.env.local`:
+
 ```
 VAPID_PUBLIC_KEY=<gegenereerde publieke sleutel>
 VAPID_PRIVATE_KEY=<gegenereerde private sleutel>
@@ -636,7 +760,7 @@ SESSION_SECRET=<willekeurige lange string, minimaal 32 tekens>
 
 ---
 
-## 10. Veelgestelde vragen
+## 11. Veelgestelde vragen
 
 **Ik zie geen rooster als ik inlog als medewerker.**
 
@@ -658,7 +782,7 @@ Op dit moment ondersteunt de planner twee vaste locaties: Markt en Nootmagazijn.
 
 **Kan een medewerker zijn eigen diensten aanpassen?**
 
-Nee. Medewerkers kunnen alleen hun rooster inzien. Alleen beheerders en managers kunnen diensten toevoegen, bewerken of verwijderen.
+Nee, niet direct. Medewerkers kunnen hun rooster inzien en via de Team Chat een verzoek indienen om een dienst te ruilen of over te laten nemen. Alleen beheerders en managers kunnen diensten handmatig toevoegen, bewerken of verwijderen.
 
 **Hoe verwijder ik een medewerker volledig?**
 
@@ -666,8 +790,8 @@ Dat kan niet via de app — medewerkers worden alleen gedeactiveerd zodat histor
 
 **De planner laadt traag op de telefoon.**
 
-Zorg dat de app als PWA geïnstalleerd is (zie [hoofdstuk 6](#6-de-app-installeren-op-je-telefoon)). Dit zorgt voor sneller laden en een betere ervaring.
+Zorg dat de app als PWA geïnstalleerd is (zie hoofdstuk 7). Dit zorgt voor sneller laden en een betere ervaring.
 
 ---
 
-*Handboek gegenereerd voor De Notenkar Planner — versie april 2026.*
+_Handboek gegenereerd voor De Notenkar Planner — versie april 2026._
