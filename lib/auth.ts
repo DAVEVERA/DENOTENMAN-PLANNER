@@ -93,13 +93,27 @@ async function dbDeleteUser(username: string): Promise<boolean> {
 /**
  * Zorgt dat er altijd een admin-account bestaat.
  * Veilig om meerdere keren aan te roepen (idempotent).
+ *
+ * Vereist ADMIN_BOOTSTRAP_PASSWORD in de omgeving — er is bewust GEEN
+ * hardcoded fallback-wachtwoord. Een vast "admin/admin123"-account zou een
+ * voorspelbare, publiek bekende inlog zijn zodra deze functie ooit wordt
+ * aangeroepen (bijv. na een lege users-tabel of migratie-fout).
  */
 export async function ensureDefaultAdmin(): Promise<void> {
   const existing = await dbFindUser('admin')
   if (existing) return
+
+  const bootstrapPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD
+  if (!bootstrapPassword || bootstrapPassword.length < 12) {
+    throw new Error(
+      '[auth] ensureDefaultAdmin: ADMIN_BOOTSTRAP_PASSWORD ontbreekt of is te kort ' +
+      '(min. 12 tekens). Geen default admin-account aangemaakt.'
+    )
+  }
+
   await dbUpsertUser({
     username:      'admin',
-    password_hash: bcrypt.hashSync('admin123', 10),
+    password_hash: bcrypt.hashSync(bootstrapPassword, 10),
     role:          'admin',
     employee_id:   null,
     display_name:  'Administrator',

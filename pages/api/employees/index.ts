@@ -28,6 +28,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw err
       }
     }
+
+    // hourly_rate is payroll data — only expose it to callers who can
+    // actually manage employees. Every other role still gets the full
+    // roster (needed for schedules/team chat) minus the wage field.
+    if (!can(session.user, 'manage_employees')) {
+      data = data.map(({ hourly_rate: _hourly_rate, ...rest }) => rest as Employee)
+    }
+
     return res.json({ success: true, data })
   }
 
