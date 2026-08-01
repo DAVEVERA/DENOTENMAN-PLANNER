@@ -62,9 +62,10 @@ html{font-size:16px}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
 img,svg{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
-button,input,select,textarea{font:inherit;color:inherit;background:none;border:none;outline:none}
+button,input,select,textarea{font:inherit;color:inherit;background:none;border:none}
 button{cursor:pointer}
 ul,ol{list-style:none}
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid rgba(44,110,73,.34);outline-offset:2px}
 
 /* ─── Typography ───────────────────────────────────────────────────────────── */
 h1{font-size:1.75rem;font-weight:700;line-height:1.2}

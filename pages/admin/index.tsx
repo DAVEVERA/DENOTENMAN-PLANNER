@@ -112,10 +112,19 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     return shifts.filter(s => s.is_open === 1 && s.day_of_week === day && s.week_number === w && s.year === y)
   }
 
-  async function deleteShift(id: number) {
-    if (!confirm('Dienst verwijderen?')) return
-    await fetch(`/api/shifts/${id}`, { method: 'DELETE' })
-    load()
+  async function withdrawOpenShift(id: number) {
+    if (!confirm('Open dienst intrekken? De dienst en inschrijfhistorie blijven veilig bewaard.')) return
+    const response = await fetch('/api/shifts/open', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shift_id: id }),
+    })
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null)
+      alert(payload?.message ?? 'Open dienst kon niet worden ingetrokken')
+      return
+    }
+    await load()
   }
 
   const MONTHS_NL = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec']
@@ -369,12 +378,6 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                                       <span className="chip-time">{formatTime(s.start_time)}–{formatTime(s.end_time)}</span>
                                     )}
                                   </button>
-                                  <button
-                                    className="chip-delete"
-                                    onClick={e => { e.stopPropagation(); deleteShift(s.id) }}
-                                    title="Dienst verwijderen"
-                                    aria-label="Verwijderen"
-                                  >×</button>
                                 </div>
                               ))}
                             </div>
@@ -417,7 +420,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                                       <span className={`chip-invite ${s.open_invite_status}`}>{s.open_invite_status}</span>
                                     )}
                                   </button>
-                                  <button className="chip-delete" onClick={e => { e.stopPropagation(); deleteShift(s.id) }} title="Open dienst verwijderen" aria-label="Verwijderen">×</button>
+                                  <button className="chip-delete" onClick={e => { e.stopPropagation(); void withdrawOpenShift(s.id) }} title="Open dienst veilig intrekken" aria-label="Open dienst intrekken">×</button>
                                 </div>
                               ))}
                             </div>

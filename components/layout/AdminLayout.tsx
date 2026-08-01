@@ -1,6 +1,8 @@
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import Image from 'next/image'
+import { MessageCircle, MoreHorizontal } from 'lucide-react'
+import { useRef, useState } from 'react'
 import type { SessionUser } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
@@ -8,6 +10,7 @@ import {
   HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon, MyScheduleIcon, LeaveIcon as OpenIcon,
   DashboardIcon,
 } from '@/components/ui/Icons'
+import AdminMobileMoreNav from '@/components/layout/AdminMobileMoreNav'
 
 interface Props { user: SessionUser; children: React.ReactNode; title?: string }
 
@@ -16,6 +19,7 @@ const NAV = [
   { href: '/admin',             icon: <ScheduleIcon size={20} />,   label: 'Rooster',        cap: 'read' as const },
   { href: '/admin/employees',   icon: <EmployeesIcon size={20} />,  label: 'Medewerkers',    cap: 'manage_employees' as const },
   { href: '/admin/open-shifts', icon: <HoursIcon size={20} />,      label: 'Open diensten',  cap: 'manage_shifts' as const },
+  { href: '/admin/team-chat',   icon: <MessageCircle size={20} />,  label: 'Chatbeheer',      cap: 'read' as const },
   { href: '/admin/leave',       icon: <LeaveIcon size={20} />,      label: 'Verlof',         cap: 'approve_leave' as const },
   { href: '/admin/expenses',    icon: <ExportIcon size={20} />,     label: 'Declaraties',    cap: 'manage_hours' as const },
   { href: '/admin/hours',       icon: <HoursIcon size={20} />,      label: 'Uren',           cap: 'manage_hours' as const },
@@ -32,6 +36,11 @@ function getInitials(name: string) {
 export default function AdminLayout({ user, children, title }: Props) {
   const router = useRouter()
   const links  = NAV.filter(n => can(user, n.cap))
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreTriggerRef = useRef<HTMLButtonElement>(null)
+  const primaryHrefs = new Set(['/admin/dashboard', '/admin', '/admin/employees', '/admin/team-chat'])
+  const mobilePrimary = links.filter(link => primaryHrefs.has(link.href))
+  const mobileSecondary = links.filter(link => !primaryHrefs.has(link.href))
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -137,7 +146,7 @@ export default function AdminLayout({ user, children, title }: Props) {
 
       {/* ══════════════════ MOBILE BOTTOM NAV ══════════════════ */}
       <nav className="admin-bnav" aria-label="Mobiele navigatie">
-        {links.map(l => {
+        {mobilePrimary.map(l => {
           const isActive = router.pathname === l.href ||
             (l.href !== '/admin' && router.pathname.startsWith(l.href))
           return (
@@ -153,7 +162,19 @@ export default function AdminLayout({ user, children, title }: Props) {
             </Link>
           )
         })}
+        <button ref={moreTriggerRef} type="button" className={`bn-item${moreOpen ? ' active' : ''}`} onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen}>
+          {moreOpen && <span className="bn-bar" aria-hidden="true" />}
+          <span className="bn-icon"><MoreHorizontal size={21} /></span>
+          <span className="bn-label">Meer</span>
+        </button>
       </nav>
+
+      <AdminMobileMoreNav
+        open={moreOpen}
+        items={mobileSecondary}
+        onClose={() => { setMoreOpen(false); requestAnimationFrame(() => moreTriggerRef.current?.focus()) }}
+        onLogout={logout}
+      />
 
       <style jsx>{`
 
@@ -406,7 +427,7 @@ export default function AdminLayout({ user, children, title }: Props) {
             min-height: 58px;
             gap: 4px;
             min-width: 0;
-            color: rgba(255, 255, 255, 0.75);
+            color: var(--text-sub);
             text-decoration: none;
             transition: color .14s;
             position: relative;

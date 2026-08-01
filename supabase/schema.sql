@@ -3727,4 +3727,168 @@ revoke all on function public.planner20_respond_to_shift_exchange(uuid, text, in
 revoke execute on function public.planner20_respond_to_shift_exchange(uuid, text, integer, text) from anon, authenticated;
 grant execute on function public.planner20_respond_to_shift_exchange(uuid, text, integer, text) to service_role;
 
+create or replace function public.planner20_manage_team_conversation(
+  p_actor_user_id text,
+  p_conversation_id bigint,
+  p_kind text,
+  p_name text,
+  p_member_user_ids text[],
+  p_owner_user_ids text[],
+  p_archived boolean default false
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $function$
+declare
+  v_actor_role text;
+  v_conversation planner20_team_conversations%rowtype;
+  v_conversation_id bigint;
+  v_members text[];
+  v_owners text[];
+  v_member_count integer;
+begin
+  select role into v_actor_role
+  from planner20_users
+  where username = p_actor_user_id;
+
+  if v_actor_role is null then
+    return jsonb_build_object('status', 'forbidden', 'error_code', 'ACTIVE_ACCOUNT_REQUIRED', 'conversation_id', null);
+  end if;
+
+  if p_conversation_id is not null then
+    select * into v_conversation
+    from planner20_team_conversations
+    where id = p_conversation_id
+    for update;
+
+    if not found then
+      return jsonb_build_object('status', 'not_found', 'error_code', 'CONVERSATION_NOT_FOUND', 'conversation_id', null);
+    end if;
+  end if;
+
+  if v_actor_role <> 'admin'
+     and not exists (
+       select 1 from planner20_team_chat_managers
+       where user_id = p_actor_user_id and inactive_at is null
+     )
+     and not (
+       p_conversation_id is not null
+       and exists (
+         select 1 from planner20_team_conversation_members
+         where conversation_id = p_conversation_id
+           and user_id = p_actor_user_id
+           and member_role = 'owner'
+           and inactive_at is null
+       )
+     ) then
+    return jsonb_build_object('status', 'forbidden', 'error_code', 'TEAM_CHAT_MANAGEMENT_REQUIRED', 'conversation_id', null);
+  end if;
+
+  if p_conversation_id is null
+     and v_actor_role <> 'admin'
+     and not exists (
+       select 1 from planner20_team_chat_managers
+       where user_id = p_actor_user_id and inactive_at is null
+     ) then
+    return jsonb_build_object('status', 'forbidden', 'error_code', 'TEAM_CHAT_MANAGEMENT_REQUIRED', 'conversation_id', null);
+  end if;
+
+  if p_conversation_id is not null and v_conversation.is_fixed then
+    return jsonb_build_object('status', 'invalid', 'error_code', 'FIXED_CHANNEL_IMMUTABLE', 'conversation_id', null);
+  end if;
+
+  if p_kind not in ('direct', 'group') or length(trim(coalesce(p_name, ''))) not between 2 and 80 then
+    return jsonb_build_object('status', 'invalid', 'error_code', 'INVALID_CONVERSATION_INPUT', 'conversation_id', null);
+  end if;
+
+  select coalesce(array_agg(value order by value), '{}'::text[])
+  into v_members
+  from (
+    select distinct trim(member_id) as value
+    from unnest(coalesce(p_member_user_ids, '{}'::text[])) as member_id
+    where trim(member_id) <> ''
+  ) normalized_members;
+
+  select coalesce(array_agg(value order by value), '{}'::text[])
+  into v_owners
+  from (
+    select distinct trim(owner_id) as value
+    from unnest(coalesce(p_owner_user_ids, '{}'::text[])) as owner_id
+    where trim(owner_id) <> ''
+  ) normalized_owners;
+
+  v_member_count := cardinality(v_members);
+  if (p_kind = 'direct' and v_member_count <> 2)
+     or (p_kind = 'group' and v_member_count < 2)
+     or cardinality(v_owners) < 1
+     or exists (select 1 from unnest(v_owners) owner_id where not owner_id = any(v_members)) then
+    return jsonb_build_object('status', 'invalid', 'error_code', 'INVALID_CONVERSATION_MEMBERS', 'conversation_id', null);
+  end if;
+
+  if (select count(*) from planner20_users where username = any(v_members)) <> v_member_count then
+    return jsonb_build_object('status', 'invalid', 'error_code', 'UNKNOWN_CONVERSATION_MEMBER', 'conversation_id', null);
+  end if;
+
+  if p_conversation_id is null then
+    insert into planner20_team_conversations (
+      kind, slug, name, description, is_fixed, status, owner_user_id,
+      created_by_user_id, archived_at
+    )
+    values (
+      p_kind, null, trim(p_name), '', false,
+      case when p_archived then 'archived' else 'active' end,
+      v_owners[1], p_actor_user_id,
+      case when p_archived then now() else null end
+    )
+    returning id into v_conversation_id;
+  else
+    v_conversation_id := p_conversation_id;
+    update planner20_team_conversations
+    set kind = p_kind,
+        name = trim(p_name),
+        owner_user_id = v_owners[1],
+        status = case when p_archived then 'archived' else 'active' end,
+        archived_at = case when p_archived then coalesce(archived_at, now()) else null end,
+        updated_at = now()
+    where id = v_conversation_id;
+  end if;
+
+  insert into planner20_team_conversation_members (
+    conversation_id, user_id, employee_id, member_role, inactive_at
+  )
+  select
+    v_conversation_id,
+    account.username,
+    account.employee_id,
+    case when account.username = any(v_owners) then 'owner' else 'member' end,
+    null
+  from planner20_users account
+  where account.username = any(v_members)
+  on conflict (conversation_id, user_id) do update
+  set employee_id = excluded.employee_id,
+      member_role = excluded.member_role,
+      inactive_at = null,
+      updated_at = now();
+
+  update planner20_team_conversation_members
+  set inactive_at = coalesce(inactive_at, now()),
+      updated_at = now()
+  where conversation_id = v_conversation_id
+    and not (user_id = any(v_members));
+
+  return jsonb_build_object(
+    'status', case when p_conversation_id is null then 'created' else 'updated' end,
+    'error_code', null,
+    'conversation_id', v_conversation_id
+  );
+end
+$function$;
+
+revoke all on function public.planner20_manage_team_conversation(text, bigint, text, text, text[], text[], boolean) from public;
+revoke execute on function public.planner20_manage_team_conversation(text, bigint, text, text, text[], text[], boolean) from anon, authenticated;
+grant execute on function public.planner20_manage_team_conversation(text, bigint, text, text, text[], text[], boolean) to service_role;
+
+
 -- End operational team chat

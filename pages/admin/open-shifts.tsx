@@ -174,7 +174,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   }
 
   async function withdrawShift(shiftId: number) {
-    if (!confirm('Open dienst intrekken?')) return
+    if (!confirm('Open dienst verwijderen uit het aanbod? De registratie blijft veilig bewaard.')) return
     setActionId(shiftId)
     try {
       const r = await fetch('/api/shifts/open', {
@@ -183,9 +183,9 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         body: JSON.stringify({ shift_id: shiftId }),
       }).then(r => r.json())
       if (r.success) {
-        showToast('✅ Dienst ingetrokken')
+        showToast('✅ Open dienst verwijderd uit het aanbod')
       } else {
-        showToast('❌ ' + (r.message ?? 'Fout bij intrekken'), false)
+        showToast('❌ ' + (r.message ?? 'Fout bij verwijderen'), false)
       }
     } catch { showToast('❌ Netwerkfout', false) }
     setActionId(null)
@@ -220,17 +220,6 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         showToast('❌ ' + (r.message ?? 'Fout bij verwerken'), false)
       }
     } catch { showToast('❌ Netwerkfout', false) }
-    setActionId(null)
-    load()
-  }
-
-  async function deleteShift(shiftId: number) {
-    if (!confirm('Open dienst verwijderen?')) return
-    setActionId(shiftId)
-    try {
-      await fetch(`/api/shifts/${shiftId}`, { method: 'DELETE' })
-      showToast('✅ Dienst verwijderd')
-    } catch { showToast('❌ Fout bij verwijderen', false) }
     setActionId(null)
     load()
   }
@@ -579,17 +568,9 @@ export default function OpenShiftsAdminPage({ user }: Props) {
                   <button
                     className="btn btn-ghost btn-sm btn-withdraw"
                     onClick={() => withdrawShift(shift.id)}
-                    title="Intrekken"
-                    aria-label="Dienst intrekken"
+                    title="Verwijderen uit open diensten"
+                    aria-label="Open dienst verwijderen uit het aanbod"
                     disabled={isActioning}
-                  >
-                    ⏹
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm btn-del"
-                    onClick={() => deleteShift(shift.id)}
-                    title="Verwijderen"
-                    aria-label="Dienst verwijderen"
                   >
                     🗑
                   </button>
@@ -728,9 +709,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
         .btn-edit { opacity: .5; }
         .btn-edit:hover { opacity: 1; color: var(--brand); }
         .btn-withdraw { opacity: .5; }
-        .btn-withdraw:hover { opacity: 1; color: #B45309; }
-        .btn-del { opacity: .5; }
-        .btn-del:hover { opacity: 1; color: #DC2626; }
+        .btn-withdraw:hover { opacity: 1; color: #DC2626; }
 
         /* ── Modal ── */
         .modal-overlay {

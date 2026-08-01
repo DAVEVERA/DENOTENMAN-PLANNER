@@ -152,15 +152,14 @@ export async function saveShift(
 }
 
 export async function deleteShift(id: number): Promise<boolean> {
-  const { error } = await supabase.from(T('shifts')).delete().eq('id', id)
-  return !error
+  void id
+  throw new Error('Fysiek verwijderen van diensten is uitgeschakeld om planningshistorie te bewaren')
 }
 
 export async function clearWeekShifts(week: number, year: number): Promise<number> {
-  const { count, error } = await supabase
-    .from(T('shifts')).delete({ count: 'exact' }).eq('week_number', week).eq('year', year)
-  if (error) throw error
-  return count ?? 0
+  void week
+  void year
+  throw new Error('Weekdiensten wissen is uitgeschakeld om planningshistorie te bewaren')
 }
 
 export async function bulkUpdateShift(id: number, data: Partial<Shift>): Promise<boolean> {
@@ -208,29 +207,33 @@ export async function updateOpenShift(
 }
 
 /**
- * Withdraw (intrekken) an open shift — sets is_open = 0 and clears invite state.
- * If the shift had no employee_id (admin-created), delete it instead.
+ * Withdraw an open shift without deleting its planning history.
+ * Admin-created rows remain available for audit/restore purposes, but disappear
+ * from every open-shift query because is_open becomes 0.
  */
 export async function withdrawOpenShift(shiftId: number): Promise<boolean> {
-  const shift = await getShift(shiftId)
-  if (!shift) return false
+  const { data, error } = await supabase
+    .from(T('shifts'))
+    .update({ is_open: 0 })
+    .eq('id', shiftId)
+    .eq('is_open', 1)
+    .select('id')
+    .maybeSingle()
+  if (error || !data) return false
 
-  // Admin-created open shifts (no employee) → delete entirely
-  if (!shift.employee_id) {
-    return deleteShift(shiftId)
-  }
+  // Keep every claim row for the audit trail, but close pending actions so an
+  // administratively withdrawn shift can never surface as actionable work.
+  const { error: claimError } = await supabase
+    .from(T('open_shift_claims'))
+    .update({
+      status: 'declined',
+      reviewed_by: 'planning-admin',
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq('shift_id', shiftId)
+    .eq('status', 'pending')
 
-  // Employee-offered shifts → revert to regular
-  const { error } = await supabase.from(T('shifts')).update({
-    is_open: 0,
-    open_invite_emp_id: null,
-    open_invite_status: null,
-    shift_category: 'regular',
-    open_note: null,
-    open_note_author_employee_id: null,
-    opened_at: null,
-  }).eq('id', shiftId)
-  return !error
+  return !claimError
 }
 
 /**

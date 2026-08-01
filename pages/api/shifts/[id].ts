@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
-import { getShift, saveShift, deleteShift, bulkUpdateShift } from '@/lib/scheduler'
+import { getShift, saveShift, bulkUpdateShift } from '@/lib/scheduler'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
@@ -28,8 +28,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'DELETE') {
-    const ok = await deleteShift(id)
-    return res.json({ success: true, data: { deleted: ok } })
+    return res.status(405).json({
+      success: false,
+      message: 'Diensten worden niet fysiek verwijderd. Trek een open dienst veilig in via Open diensten.',
+    })
   }
 
   res.status(405).json({ success: false })

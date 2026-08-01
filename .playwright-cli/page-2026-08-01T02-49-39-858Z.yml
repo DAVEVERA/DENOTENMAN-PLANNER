@@ -1,0 +1,17 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e4]:
+    - generic [ref=f1e5]:
+      - img "DeNotenman logo" [ref=f1e6]
+      - paragraph [ref=f1e7]: Planner — inloggen
+    - generic [ref=f1e8]:
+      - generic [ref=f1e9]:
+        - generic [ref=f1e10]: Gebruikersnaam
+        - textbox "Gebruikersnaam" [active] [ref=f1e11]
+      - generic [ref=f1e12]:
+        - generic [ref=f1e13]: Wachtwoord
+        - textbox "Wachtwoord" [ref=f1e14]
+      - link "Wachtwoord vergeten?" [ref=f1e16] [cursor=pointer]:
+        - /url: /forgot-password
+      - button "Inloggen" [ref=f1e17] [cursor=pointer]
+    - paragraph [ref=f1e18]: Geen toegang? Neem contact op met de beheerder.
+  - alert [ref=f1e19]

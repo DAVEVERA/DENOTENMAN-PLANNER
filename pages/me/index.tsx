@@ -4,6 +4,7 @@ import { PrevIcon, NextIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
 import { currentWeekYear } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
+import { useRouter } from 'next/router'
 import type { SessionUser, Shift, Location } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner'
@@ -61,6 +62,7 @@ function weeksInRange(startWeek: number, startYear: number, numWeeks: number): {
 
 
 export default function MySchedulePage({ user, initialWeek, initialYear }: Props) {
+  const router = useRouter()
   const [view, setView]   = useState<ViewMode>('week')
   const [week, setWeek]   = useState(initialWeek)
   const [year, setYear]   = useState(initialYear)
@@ -327,16 +329,15 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                                 className={`slot-shift${isOffered ? ' is-offered' : ''}${readyForHours ? ' hours-ready' : ''}${canOpenHours ? ' is-clickable' : ''}`}
                                 data-type={s.shift_type.toLowerCase()}
                                 aria-label={`${s.shift_type} dienst${canOpenHours ? ', uren controleren' : ''}`}
-                                role={canOpenHours ? 'button' : undefined}
-                                tabIndex={canOpenHours ? 0 : undefined}
-                                onClick={canOpenHours ? () => setHourShift(s) : undefined}
-                                onKeyDown={canOpenHours ? event => {
-                                  if (event.key === 'Enter' || event.key === ' ') {
-                                    event.preventDefault()
-                                    setHourShift(s)
-                                  }
-                                } : undefined}
                               >
+                                {canOpenHours && (
+                                  <button
+                                    type="button"
+                                    className="hours-card-trigger"
+                                    onClick={() => setHourShift(s)}
+                                    aria-label={`${s.shift_type} dienst: daadwerkelijke uren controleren`}
+                                  />
+                                )}
                                 <span className="slot-type">{s.shift_type}</span>
                                 {s.start_time && (
                                   <span className="slot-time">{s.start_time.slice(0,5)}–{s.end_time?.slice(0,5)}</span>
@@ -358,10 +359,24 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                                 {readyForHours && status && latestLog?.submission_status !== 'rejected' && (
                                   <span className={`hours-status ${status.className}`}>{status.label}</span>
                                 )}
-                                {canOffer && (
-                                  <button type="button" className="offer-action" onClick={() => { setOfferNote(''); setSelectedShift(s) }}>
-                                    Dienst aanbieden
-                                  </button>
+                                {WORK_TYPES.includes(s.shift_type) && (
+                                  <div className="shift-inline-actions">
+                                    <button type="button" className="discuss-action" onClick={event => {
+                                      event.stopPropagation()
+                                      void router.push(`/me/chat?shift=${s.id}`)
+                                    }}>
+                                      Bespreek
+                                    </button>
+                                    {canOffer && (
+                                      <button type="button" className="offer-action" onClick={event => {
+                                        event.stopPropagation()
+                                        setOfferNote('')
+                                        setSelectedShift(s)
+                                      }}>
+                                        Aanbieden
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             )
@@ -444,6 +459,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-month { font-size: .6875rem; color: var(--text-muted); opacity: .7; font-style: italic; }
 
         .slot-shift {
+          position: relative;
           padding: 4px 6px; border-radius: 5px; margin-bottom: 3px;
           display: flex; flex-direction: column; gap: 2px;
           transition: background .13s, box-shadow .13s;
@@ -452,7 +468,10 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-shift.hours-ready { padding: 7px; box-shadow: inset 0 0 0 1px rgba(44,110,73,.2); }
         .slot-shift.is-clickable { cursor: pointer; }
         .slot-shift.is-clickable:hover { box-shadow: inset 0 0 0 2px var(--brand), 0 4px 12px rgba(44,110,73,.12); }
-        .slot-shift.is-clickable:focus-visible { outline: 3px solid rgba(44,110,73,.3); outline-offset: 2px; }
+        .hours-card-trigger { position: absolute; inset: 0; z-index: 1; width: 100%; border-radius: inherit; }
+        .hours-card-trigger:focus-visible { outline: 3px solid rgba(44,110,73,.34); outline-offset: 2px; }
+        .slot-shift > :not(.hours-card-trigger) { position: relative; z-index: 2; pointer-events: none; }
+        .slot-shift .shift-inline-actions { pointer-events: auto; }
         .slot-shift:not([data-type]) { background: var(--surface-alt); }
         .slot-offered-badge {
           font-size: .6rem; font-weight: 700; letter-spacing: .04em;
@@ -470,13 +489,16 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-loc.loc-markt        { background: rgba(44,110,73,.15); color: var(--markt); }
         .slot-loc.loc-nootmagazijn { background: rgba(123,79,46,.15); color: var(--noot); }
         .slot-empty { font-size: .875rem; color: var(--text-muted); padding: 2px 0; }
-        .hours-action, .offer-action {
-          width: 100%; min-height: 36px; margin-top: 5px; padding: 7px 8px;
+        .hours-action, .offer-action, .discuss-action {
+          width: 100%; min-height: 44px; margin-top: 5px; padding: 9px 8px;
           border-radius: 6px; font-size: .7rem; font-weight: 800; line-height: 1.15;
         }
         .hours-action { display: flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; text-align: center; }
         .hours-action.rejected { background: var(--danger); }
-        .offer-action { min-height: 30px; background: transparent; border: 1px solid currentColor; color: var(--text-sub); font-weight: 600; }
+        .offer-action { background: transparent; border: 1px solid currentColor; color: var(--text-sub); font-weight: 600; }
+        .shift-inline-actions { display: grid; width: 100%; gap: 5px; }
+        .shift-inline-actions .offer-action, .shift-inline-actions .discuss-action { margin-top: 0; min-height: 44px; }
+        .discuss-action { color: #245b3d; background: rgba(44,110,73,.11); }
         .hours-status { margin-top: 5px; padding: 5px 7px; border-radius: 6px; font-size: .65rem; font-weight: 800; text-align: center; }
         .hours-status.pending { color: #8a5a12; background: rgba(200,136,42,.16); }
         .hours-status.approved { color: #1d643f; background: rgba(44,110,73,.14); }

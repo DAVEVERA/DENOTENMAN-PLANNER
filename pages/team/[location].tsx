@@ -43,6 +43,7 @@ function getFullDayDate(w: number, y: number, dayIndex: number): Date {
 }
 
 export default function TeamView({ user, location, initialWeek, initialYear }: Props) {
+  const router = useRouter()
   const [week, setWeek]   = useState(initialWeek)
   const [year, setYear]   = useState(initialYear)
   const [shifts, setShifts] = useState<Shift[]>([])
@@ -165,6 +166,9 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                               {fmtTime(s.start_time)}–{fmtTime(s.end_time)}
                             </span>
                           )}
+                          <button type="button" className="day-shift-chat" onClick={() => void router.push(`/me/chat?shift=${s.id}`)}>
+                            Bespreek
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -266,6 +270,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
 
         .day-shift-name { font-size: .8125rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .day-shift-time { font-size: .6875rem; color: var(--text-muted); white-space: nowrap; }
+        .day-shift-chat { min-height: 44px; margin-left: auto; padding: 8px 10px; color: var(--brand); background: rgba(44,110,73,.1); border-radius: 8px; font-size: .7rem; font-weight: 700; }
 
         /* ── Grid ── */
         .team-grid-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--s5); }

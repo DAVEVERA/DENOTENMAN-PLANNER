@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import TeamLayout from '@/components/layout/TeamLayout'
 import { getSession } from '@/lib/auth'
 import type { GetServerSideProps } from 'next'
+import { useRouter } from 'next/router'
 import type { SessionUser, Shift, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 import { formatShiftDate } from '@/lib/shiftDate'
@@ -22,6 +23,7 @@ function shiftDesc(s: Shift) {
 }
 
 export default function OpenShiftsPage({ user }: Props) {
+  const router = useRouter()
   const [allOpen, setAllOpen]         = useState<Shift[]>([])
   const [myOffered, setMyOffered]     = useState<Shift[]>([])
   const [loading, setLoading]         = useState(true)
@@ -189,15 +191,20 @@ export default function OpenShiftsPage({ user }: Props) {
                           </div>
                         )}
 
-                        {!isMine && (
-                          <button
-                            className="btn btn-primary os-claim-btn"
-                            disabled={actionId === s.id}
-                            onClick={() => claim(s.id)}
-                          >
-                            {actionId === s.id ? <Spinner /> : '✋ Ik doe het!'}
+                        <div className="os-card-actions">
+                          <button className="btn btn-outline os-discuss-btn" type="button" onClick={() => void router.push(`/me/chat?shift=${s.id}`)}>
+                            Bespreek
                           </button>
-                        )}
+                          {!isMine && (
+                            <button
+                              className="btn btn-primary os-claim-btn"
+                              disabled={actionId === s.id}
+                              onClick={() => claim(s.id)}
+                            >
+                              {actionId === s.id ? <Spinner /> : '✋ Ik doe het!'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
@@ -358,6 +365,9 @@ export default function OpenShiftsPage({ user }: Props) {
           transition: box-shadow .15s, transform .15s;
         }
         .os-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.08); transform: translateY(-1px); }
+        .os-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 6px; }
+        .os-card-actions .btn { min-height: 44px; }
+        .os-card-actions .os-claim-btn:only-child, .os-card-actions .os-discuss-btn:only-child { grid-column: 1 / -1; }
         .os-card.loc-markt { border-top: 3px solid #2C6E49; }
         .os-card.loc-nootmagazijn { border-top: 3px solid #7B4F2E; }
         .os-card.is-long-open { border-left: 4px solid #F59E0B; }
