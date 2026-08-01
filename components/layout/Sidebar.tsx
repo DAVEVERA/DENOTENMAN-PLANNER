@@ -101,7 +101,7 @@ export default function Sidebar({ logoSrc, sections, footerSections = [], user, 
         </div>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         .app-sidebar {
           width: var(--sidebar-w);
           flex-shrink: 0;

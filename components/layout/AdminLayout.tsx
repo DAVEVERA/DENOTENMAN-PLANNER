@@ -1,5 +1,4 @@
 import { useRouter } from 'next/router'
-import Link from 'next/link'
 import { MessageCircle, Menu } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { SessionUser, Capability } from '@/types'
@@ -42,7 +41,6 @@ export default function AdminLayout({ user, children, title, location }: Props) 
   const links  = NAV.filter(n => can(user, n.cap))
   const [moreOpen, setMoreOpen] = useState(false)
   const moreTriggerRef = useRef<HTMLButtonElement>(null)
-  const primaryHrefs = new Set(['/admin/dashboard', '/admin', '/admin/employees', '/admin/team-chat'])
 
   function isNavActive(href: string) {
     // /admin must be exact-match so it doesn't activate on /admin/dashboard etc.
@@ -58,13 +56,16 @@ export default function AdminLayout({ user, children, title, location }: Props) 
     isActive: isNavActive(l.href),
   }))
 
-  const mobilePrimary = links.filter(link => primaryHrefs.has(link.href))
-  const mobileSecondary = links.filter(link => !primaryHrefs.has(link.href))
-  const mobileSecondaryItems = mobileSecondary.map(l => ({
-    href: l.href,
-    icon: <l.Icon size={24} />,
-    label: l.label,
-  }))
+  // Alle navigatie zit nu in het hamburgermenu — de mobiele bottom-nav is
+  // alleen nog de trigger. Zelfde volgorde als de desktop sidebar, plus de
+  // "Weergave"-crosslinks (Team Markt/Nootmagazijn/Individueel) die op
+  // desktop in de sidebar-footer staan.
+  const mobileMenuItems = [
+    ...links.map(l => ({ href: l.href, icon: <l.Icon size={24} />, label: l.label })),
+    { href: '/team/markt', icon: <TeamViewIcon size={24} />, label: 'Team Markt' },
+    { href: '/team/nootmagazijn', icon: <TeamViewIcon size={24} />, label: 'Team Nootmagazijn' },
+    { href: '/admin/view', icon: <MyScheduleIcon size={24} />, label: 'Individueel' },
+  ]
 
   const sections: SidebarSection[] = [
     { label: 'Menu', items: sidebarItems },
@@ -115,33 +116,17 @@ export default function AdminLayout({ user, children, title, location }: Props) 
         <div className="admin-content" data-loc={location}>{children}</div>
       </main>
 
-      {/* ══════════════════ MOBILE BOTTOM NAV ══════════════════ */}
+      {/* ══════════════════ MOBILE BOTTOM NAV: alleen de menu-knop ══════════════════ */}
       <nav className="admin-bnav" aria-label="Mobiele navigatie">
-        {mobilePrimary.map(l => {
-          const isActive = isNavActive(l.href)
-          return (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`bn-item${isActive ? ' active' : ''}`}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              {isActive && <span className="bn-bar" aria-hidden="true" />}
-              <span className="bn-icon"><l.Icon size={24} /></span>
-              <span className="bn-label">{l.label}</span>
-            </Link>
-          )
-        })}
-        <button ref={moreTriggerRef} type="button" className={`bn-item${moreOpen ? ' active' : ''}`} onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen}>
-          {moreOpen && <span className="bn-bar" aria-hidden="true" />}
-          <span className="bn-icon"><Menu size={24} /></span>
-          <span className="bn-label">Menu</span>
+        <button ref={moreTriggerRef} type="button" className="bnav-trigger" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen}>
+          <Menu size={24} />
+          <span>Menu</span>
         </button>
       </nav>
 
       <AdminMobileMoreNav
         open={moreOpen}
-        items={mobileSecondaryItems}
+        items={mobileMenuItems}
         onClose={() => { setMoreOpen(false); requestAnimationFrame(() => moreTriggerRef.current?.focus()) }}
         onLogout={logout}
       />
@@ -221,7 +206,6 @@ export default function AdminLayout({ user, children, title, location }: Props) 
 
           .admin-bnav {
             display: flex;
-            justify-content: space-evenly;
             position: fixed;
             bottom: 0; left: 0; right: 0;
             min-height: var(--bnav-h);
@@ -231,61 +215,24 @@ export default function AdminLayout({ user, children, title, location }: Props) 
             padding-bottom: env(safe-area-inset-bottom, 0px);
             box-shadow: 0 -4px 24px rgba(223, 215, 212, 0.1);
           }
-          .bn-item {
-            flex: 1 1 0;
+          .bnav-trigger {
+            flex: 1;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 2px;
-            min-height: 58px;
-            gap: 4px;
-            min-width: 0;
-            color: var(--text-sub);
-            text-decoration: none;
-            transition: color .14s;
-            position: relative;
-          }
-          .bn-item.active { color: var(--brand); }
-          .bn-bar {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 28px;
-            height: 3px;
-            border-radius: 0 0 3px 3px;
-            background: var(--brand);
-          }
-          .bn-icon {
-            width: 32px;
-            height: 32px;
-            display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            margin-top: 2px;
-            border-radius: var(--r2);
-            transition: background .16s ease;
-          }
-          .bn-item.active .bn-icon {
-            background: rgba(200,136,42,.18);
-          }
-          .bn-icon :global(svg) { transition: transform .16s ease; }
-          .bn-item.active .bn-icon :global(svg) { transform: scale(1.08); }
-          .bn-label {
-            font-size: .625rem;
+            gap: 10px;
+            min-height: var(--bnav-h);
+            color: var(--text);
+            font-size: .9375rem;
             font-weight: 600;
-            letter-spacing: .02em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-            padding: 0 2px;
+            letter-spacing: .01em;
           }
+          .bnav-trigger:active { color: var(--brand); }
         }
 
         @media (max-width: 390px) {
           .admin-content { padding: var(--s3) var(--s2); }
-          .bn-label { font-size: .5625rem; }
         }
       `}</style>
     </div>

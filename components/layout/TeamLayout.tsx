@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { MessageCircle, Menu } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -112,65 +111,18 @@ export default function TeamLayout({ user, children, location }: Props) {
         <div className={`team-main-inner${onChat ? ' chat-main' : ''}`}>{children}</div>
       </main>
 
-      {/* ── Mobile bottom nav ───────────────────────────────────────── */}
+      {/* ── Mobile bottom nav: alle navigatie zit achter deze ene knop ── */}
       <nav className="team-bnav" aria-label="Mobiele navigatie">
-        <Link
-          href={user.location === 'nootmagazijn' ? '/team/nootmagazijn' : '/team/markt'}
-          className={`tbn-item${onTeam ? ' active' : ''}`}
-          aria-current={onTeam ? 'page' : undefined}
-        >
-          {onTeam && <span className="tbn-bar" aria-hidden="true" />}
-          <span className="tbn-icon">
-            <ScheduleIcon size={24} />
-          </span>
-          <span className="tbn-label">Rooster</span>
-        </Link>
-        <Link
-          href="/me"
-          className={`tbn-item${onMe ? ' active' : ''}`}
-          aria-current={onMe ? 'page' : undefined}
-        >
-          {onMe && <span className="tbn-bar" aria-hidden="true" />}
-          <span className="tbn-icon">
-            <MyScheduleIcon size={24} />
-          </span>
-          <span className="tbn-label">Mijn rooster</span>
-        </Link>
-        <Link
-          href="/me/chat"
-          className={`tbn-item${onChat ? ' active' : ''}`}
-          aria-current={onChat ? 'page' : undefined}
-        >
-          {onChat && <span className="tbn-bar" aria-hidden="true" />}
-          <span className="tbn-icon">
-            <MessageCircle size={24} />
-          </span>
-          <span className="tbn-label">Chat</span>
-        </Link>
-        <Link
-          href="/me/open-shifts"
-          className={`tbn-item${onOpenShifts ? ' active' : ''}`}
-          aria-current={onOpenShifts ? 'page' : undefined}
-        >
-          {onOpenShifts && <span className="tbn-bar" aria-hidden="true" />}
-          <span className="tbn-icon">
-            <ScheduleIcon size={24} />
-          </span>
-          <span className="tbn-label">Open</span>
-        </Link>
         <button
           ref={moreTriggerRef}
           type="button"
-          className={`tbn-item${moreOpen ? ' active' : ''}`}
+          className="bnav-trigger"
           onClick={() => setMoreOpen(true)}
           aria-haspopup="dialog"
           aria-expanded={moreOpen}
         >
-          {moreOpen && <span className="tbn-bar" aria-hidden="true" />}
-          <span className="tbn-icon">
-            <Menu size={24} />
-          </span>
-          <span className="tbn-label">Menu</span>
+          <Menu size={24} />
+          <span>Menu</span>
         </button>
       </nav>
 
@@ -243,57 +195,21 @@ export default function TeamLayout({ user, children, location }: Props) {
             padding-bottom: env(safe-area-inset-bottom, 0px);
             box-shadow: 0 -4px 24px rgba(26, 20, 18, 0.1);
           }
-          .tbn-item {
+          .bnav-trigger {
             flex: 1;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 2px;
-            min-height: 58px;
-            gap: 4px;
-            min-width: 0;
-            color: var(--text-muted);
-            text-decoration: none;
-            transition: color 0.14s;
-            position: relative;
-          }
-          .tbn-item.active {
-            color: var(--brand);
-          }
-          .tbn-bar {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 28px;
-            height: 3px;
-            border-radius: 0 0 3px 3px;
-            background: var(--brand);
-          }
-          .tbn-icon {
-            width: 32px;
-            height: 32px;
-            display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            margin-top: 2px;
-            border-radius: var(--r2);
-            transition: background .16s ease;
-          }
-          .tbn-item.active .tbn-icon {
-            background: rgba(200,136,42,.18);
-          }
-          .tbn-icon :global(svg) { transition: transform .16s ease; }
-          .tbn-item.active .tbn-icon :global(svg) { transform: scale(1.08); }
-          .tbn-label {
-            font-size: 0.625rem;
+            gap: 10px;
+            min-height: var(--bnav-h);
+            color: var(--text);
+            font-size: 0.9375rem;
             font-weight: 600;
-            letter-spacing: 0.02em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-            padding: 0 2px;
+            letter-spacing: 0.01em;
+          }
+          .bnav-trigger:active {
+            color: var(--brand);
           }
         }
 
