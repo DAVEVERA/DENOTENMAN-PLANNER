@@ -42,7 +42,7 @@ export default function MoreSheet({
   items,
   footer,
   onClose,
-  navLabel = 'Meer functies',
+  navLabel = 'Menu',
   closeLabel = 'Menu sluiten',
 }: MoreSheetProps) {
   const closeRef = useRef<HTMLButtonElement>(null)

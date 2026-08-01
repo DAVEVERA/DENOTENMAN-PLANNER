@@ -153,7 +153,7 @@ export default function Sidebar({ logoSrc, sections, footerSections = [], user, 
           font-weight: 700;
           letter-spacing: .14em;
           text-transform: uppercase;
-          color: rgba(255,255,255,.22);
+          color: rgba(255,255,255,.65);
           padding: 0 20px 6px;
         }
 

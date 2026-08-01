@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { MessageCircle, MoreHorizontal } from 'lucide-react'
+import { MessageCircle, Menu } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { SessionUser, Capability } from '@/types'
 import { can } from '@/lib/capabilities'
@@ -134,8 +134,8 @@ export default function AdminLayout({ user, children, title, location }: Props) 
         })}
         <button ref={moreTriggerRef} type="button" className={`bn-item${moreOpen ? ' active' : ''}`} onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen}>
           {moreOpen && <span className="bn-bar" aria-hidden="true" />}
-          <span className="bn-icon"><MoreHorizontal size={24} /></span>
-          <span className="bn-label">Meer</span>
+          <span className="bn-icon"><Menu size={24} /></span>
+          <span className="bn-label">Menu</span>
         </button>
       </nav>
 

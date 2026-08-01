@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { MessageCircle, MoreHorizontal } from 'lucide-react';
+import { MessageCircle, Menu } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { SessionUser } from '@/types';
 import { can } from '@/lib/capabilities';
@@ -168,9 +168,9 @@ export default function TeamLayout({ user, children, location }: Props) {
         >
           {moreOpen && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon">
-            <MoreHorizontal size={24} />
+            <Menu size={24} />
           </span>
-          <span className="tbn-label">Meer</span>
+          <span className="tbn-label">Menu</span>
         </button>
       </nav>
 

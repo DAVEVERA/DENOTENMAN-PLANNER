@@ -51,7 +51,7 @@ export default function MobileMoreNav({ open, user, isAdmin, onClose, onLogout }
       open={open}
       eyebrow="Ingelogd als"
       title={user.display_name}
-      navLabel="Meer functies"
+      navLabel="Menu"
       items={items}
       onClose={onClose}
       footer={

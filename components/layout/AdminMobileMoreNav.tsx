@@ -9,7 +9,7 @@ export default function AdminMobileMoreNav({ open, items, onClose, onLogout }: P
     <MoreSheet
       open={open}
       eyebrow="Beheerportaal"
-      title="Meer functies"
+      title="Menu"
       navLabel="Overige beheerfuncties"
       items={items}
       onClose={onClose}
