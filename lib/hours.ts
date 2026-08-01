@@ -1,10 +1,26 @@
 import { supabase, T, unwrap } from './db'
-import type { TimeLog, Location, HoursSummary, Shift, Day, SubmissionStatus } from '@/types'
-import { DAYS, WORK_TYPES } from '@/types'
+import type { TimeLog, Location, HoursSummary, SubmissionStatus, HourConfirmationMode } from '@/types'
 import { calcHoursWorked } from './dateUtils'
 
 export async function logHours(
-  data: Omit<TimeLog, 'id' | 'created_at'>, createdBy = '',
+  data: Omit<TimeLog,
+    | 'id'
+    | 'created_at'
+    | 'planned_clock_in'
+    | 'planned_clock_out'
+    | 'planned_break_minutes'
+    | 'confirmation_mode'
+    | 'submission_revision'
+    | 'submitted_at'
+  > & Partial<Pick<TimeLog,
+    | 'planned_clock_in'
+    | 'planned_clock_out'
+    | 'planned_break_minutes'
+    | 'confirmation_mode'
+    | 'submission_revision'
+    | 'submitted_at'
+  >>,
+  createdBy = '',
 ): Promise<TimeLog> {
   return unwrap<TimeLog>(await supabase
     .from(T('time_logs'))
@@ -39,6 +55,81 @@ export async function submitEmployeeHours(data: {
     })
     .select()
     .single())
+}
+
+export class HourSubmissionConflictError extends Error {}
+
+export async function submitEmployeeShiftHours(data: {
+  employee_id: number
+  employee_name: string
+  shift_id: number
+  log_date: string
+  location: Location
+  clock_in: string
+  clock_out: string
+  break_minutes: number
+  overtime_hours: number
+  note: string | null
+  confirmation_mode: HourConfirmationMode
+  planned_clock_in: string | null
+  planned_clock_out: string | null
+  planned_break_minutes: number
+  created_by: string
+}): Promise<TimeLog> {
+  const history = unwrap<TimeLog[]>(await supabase
+    .from(T('time_logs'))
+    .select('*')
+    .eq('shift_id', data.shift_id)
+    .eq('employee_id', data.employee_id)
+    .order('created_at', { ascending: false }))
+
+  const active = history.find(log => ['pending', 'approved', 'direct'].includes(log.submission_status))
+  if (active) {
+    const label = active.submission_status === 'pending' ? 'al ingediend' : 'al definitief verwerkt'
+    throw new HourSubmissionConflictError(`De uren voor deze dienst zijn ${label}.`)
+  }
+
+  const revision = history.reduce(
+    (highest, log) => Math.max(highest, log.submission_revision ?? 0),
+    0,
+  ) + 1
+  const submittedAt = new Date().toISOString()
+  const automaticallyApproved = data.confirmation_mode === 'confirmed'
+
+  const result = await supabase
+    .from(T('time_logs'))
+    .insert({
+      employee_id: data.employee_id,
+      employee_name: data.employee_name,
+      log_date: data.log_date,
+      location: data.location,
+      clock_in: data.clock_in,
+      clock_out: data.clock_out,
+      break_minutes: data.break_minutes,
+      overtime_hours: data.overtime_hours,
+      shift_id: data.shift_id,
+      note: data.note,
+      is_processed: 0,
+      processed_at: null,
+      submission_status: automaticallyApproved ? 'approved' : 'pending',
+      reviewed_by: automaticallyApproved ? 'Automatisch na medewerkerakkoord' : null,
+      reviewed_at: automaticallyApproved ? submittedAt : null,
+      review_note: automaticallyApproved ? 'Geplande uren ongewijzigd bevestigd door medewerker' : null,
+      planned_clock_in: data.planned_clock_in,
+      planned_clock_out: data.planned_clock_out,
+      planned_break_minutes: data.planned_break_minutes,
+      confirmation_mode: data.confirmation_mode,
+      submission_revision: revision,
+      submitted_at: submittedAt,
+      created_by: data.created_by,
+    })
+    .select()
+    .single()
+
+  if (result.error && (result.error as { code?: string }).code === '23505') {
+    throw new HourSubmissionConflictError('De uren voor deze dienst zijn zojuist al ingediend.')
+  }
+  return unwrap<TimeLog>(result)
 }
 
 export async function getPendingSubmissions(): Promise<TimeLog[]> {
@@ -78,10 +169,14 @@ export async function getEmployeeTimeLog(id: number): Promise<TimeLog | null> {
   return data ?? null
 }
 
-export async function deleteEmployeeSubmission(id: number, employeeId: number): Promise<void> {
+export async function withdrawEmployeeSubmission(id: number, employeeId: number): Promise<void> {
   unwrap(await supabase
     .from(T('time_logs'))
-    .delete()
+    .update({
+      submission_status: 'withdrawn',
+      reviewed_at: new Date().toISOString(),
+      review_note: 'Ingetrokken door medewerker',
+    })
     .eq('id', id)
     .eq('employee_id', employeeId)
     .eq('submission_status', 'pending'))
@@ -95,7 +190,7 @@ export async function getTimeLogs(opts: {
   is_processed?: number
   submission_status?: SubmissionStatus
   exclude_rejected?: boolean
-  /** Only 'direct' (admin-entered) and 'approved' (reviewed by Fedor) logs — excludes pending AND rejected. Use for export/reporting/payroll totals. */
+  /** Alleen definitieve regels: directe beheerinvoer en goedgekeurde medewerkeruren. */
   only_finalized?: boolean
 }): Promise<TimeLog[]> {
   let q = supabase.from(T('time_logs')).select('*').order('log_date', { ascending: false })
@@ -118,140 +213,11 @@ export async function getExportTimeLogs(opts: {
   is_processed?: number
 }): Promise<TimeLog[]> {
   const logs = await getTimeLogs({ ...opts, only_finalized: true })
-  const plannedLogs = await getPlannedShiftLogs(opts, logs)
-
-  return [...logs, ...plannedLogs].sort((a, b) =>
+  return logs.sort((a, b) =>
     a.log_date === b.log_date
       ? a.employee_name.localeCompare(b.employee_name)
       : a.log_date.localeCompare(b.log_date),
   )
-}
-
-async function getPlannedShiftLogs(
-  opts: {
-    employee_id?: number
-    from?: string
-    to?: string
-    location?: Location
-    is_processed?: number
-  },
-  existingLogs: TimeLog[],
-): Promise<TimeLog[]> {
-  if (!opts.from || !opts.to || opts.is_processed === 1) return []
-
-  const weeks = weeksInRange(opts.from, opts.to)
-  if (!weeks.length) return []
-
-  const shifts: Shift[] = []
-  const weeksByYear = new Map<number, number[]>()
-  for (const { week, year } of weeks) {
-    weeksByYear.set(year, [...(weeksByYear.get(year) ?? []), week])
-  }
-
-  for (const [year, yearWeeks] of weeksByYear) {
-    let q = supabase
-      .from(T('shifts'))
-      .select('*')
-      .eq('year', year)
-      .in('week_number', yearWeeks)
-      .eq('is_open', 0)
-      .not('employee_id', 'is', null)
-
-    if (opts.employee_id) q = q.eq('employee_id', opts.employee_id)
-    if (opts.location && opts.location !== 'both') q = q.eq('location', opts.location)
-
-    shifts.push(...unwrap<Shift[]>(await q))
-  }
-
-  const loggedShiftIds = new Set(existingLogs.map(l => l.shift_id).filter((id): id is number => id !== null))
-  const loggedEmployeeDates = new Set(existingLogs.map(l => `${l.employee_id}:${l.log_date}`))
-
-  return shifts
-    .map(shiftToTimeLog)
-    .filter((log): log is TimeLog => Boolean(log))
-    .filter(log => log.log_date >= opts.from! && log.log_date <= opts.to!)
-    .filter(log => !loggedShiftIds.has(log.shift_id!))
-    .filter(log => !loggedEmployeeDates.has(`${log.employee_id}:${log.log_date}`))
-}
-
-function shiftToTimeLog(shift: Shift): TimeLog | null {
-  if (!shift.employee_id || !WORK_TYPES.includes(shift.shift_type)) return null
-
-  const logDate = dateForDayInWeek(shift.day_of_week, shift.week_number, shift.year)
-  const fullDay = Boolean(shift.full_day)
-  const clockIn = fullDay ? '09:00:00' : normalizeTime(shift.start_time)
-  const clockOut = fullDay ? '17:00:00' : normalizeTime(shift.end_time)
-
-  return {
-    id: -shift.id,
-    employee_id: shift.employee_id,
-    employee_name: shift.employee_name,
-    log_date: logDate,
-    location: shift.location,
-    clock_in: clockIn,
-    clock_out: clockOut,
-    break_minutes: shift.break_minutes ?? 0,
-    overtime_hours: shift.shift_type === 'Overwerk' || shift.shift_category === 'overtime'
-      ? calcHoursWorked(clockIn, clockOut, shift.break_minutes ?? 0)
-      : 0,
-    shift_id: shift.id,
-    note: shift.note ?? null,
-    is_processed: 0,
-    processed_at: null,
-    submission_status: 'direct',
-    reviewed_by: null,
-    reviewed_at: null,
-    review_note: null,
-    created_by: shift.created_by,
-    created_at: shift.created_at,
-  }
-}
-
-function normalizeTime(value: string | null): string | null {
-  if (!value) return null
-  const time = value.slice(0, 8)
-  return time.length === 5 ? `${time}:00` : time
-}
-
-function weeksInRange(from: string, to: string): Array<{ week: number; year: number }> {
-  const start = parseDate(from)
-  const end = parseDate(to)
-  if (!start || !end || start > end) return []
-
-  const weeks = new Map<string, { week: number; year: number }>()
-  const cursor = new Date(start)
-
-  while (cursor <= end) {
-    const { week, year } = getISOWeekYear(cursor)
-    weeks.set(`${year}-${week}`, { week, year })
-    cursor.setUTCDate(cursor.getUTCDate() + 1)
-  }
-
-  return [...weeks.values()]
-}
-
-function parseDate(value: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
-  const [year, month, day] = value.split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, day))
-}
-
-function getISOWeekYear(date: Date): { week: number; year: number } {
-  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return {
-    week: Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7),
-    year: d.getUTCFullYear(),
-  }
-}
-
-function dateForDayInWeek(day: Day, week: number, year: number): string {
-  const jan4 = new Date(Date.UTC(year, 0, 4))
-  const weekStart = new Date(jan4)
-  weekStart.setUTCDate(jan4.getUTCDate() - (jan4.getUTCDay() || 7) + 1 + (week - 1) * 7)
-  weekStart.setUTCDate(weekStart.getUTCDate() + DAYS.indexOf(day))
-  return weekStart.toISOString().slice(0, 10)
 }
 
 export async function updateTimeLog(id: number, data: Partial<TimeLog>): Promise<TimeLog> {
@@ -259,8 +225,16 @@ export async function updateTimeLog(id: number, data: Partial<TimeLog>): Promise
     .from(T('time_logs')).update(data).eq('id', id).select().single())
 }
 
-export async function deleteTimeLog(id: number): Promise<boolean> {
-  const { error } = await supabase.from(T('time_logs')).delete().eq('id', id)
+export async function archiveTimeLog(id: number, archivedBy: string): Promise<boolean> {
+  const { error } = await supabase
+    .from(T('time_logs'))
+    .update({
+      submission_status: 'withdrawn',
+      reviewed_by: archivedBy,
+      reviewed_at: new Date().toISOString(),
+      review_note: 'Gearchiveerd door beheerder',
+    })
+    .eq('id', id)
   return !error
 }
 

@@ -17,12 +17,14 @@ const STATUS_LABEL: Record<string, string> = {
   pending:  'In behandeling',
   approved: 'Goedgekeurd',
   rejected: 'Afgewezen',
+  withdrawn: 'Ingetrokken',
 }
 const STATUS_CLASS: Record<string, string> = {
   direct:   'badge-draft',
   pending:  'badge-pending',
   approved: 'badge-approved',
   rejected: 'badge-danger',
+  withdrawn: 'badge-draft',
 }
 
 function getToday() {
@@ -105,10 +107,12 @@ export default function MyHoursPage({ user }: Props) {
     else showToast(r.message ?? 'Fout', false)
   }
 
-  const totalHours   = logs.reduce((acc, l) => acc + calcHoursWorked(l.clock_in, l.clock_out, l.break_minutes), 0)
-  const totalOvertime = logs.reduce((acc, l) => acc + l.overtime_hours, 0)
+  const finalized    = logs.filter(l => l.submission_status === 'approved' || l.submission_status === 'direct')
+  const totalHours   = finalized.reduce((acc, l) => acc + calcHoursWorked(l.clock_in, l.clock_out, l.break_minutes), 0)
+  const totalOvertime = finalized.reduce((acc, l) => acc + l.overtime_hours, 0)
   const pending      = logs.filter(l => l.submission_status === 'pending')
-  const rest         = logs.filter(l => l.submission_status !== 'pending')
+  const rejected     = logs.filter(l => l.submission_status === 'rejected')
+  const rest         = logs.filter(l => l.submission_status !== 'pending' && l.submission_status !== 'rejected')
 
   const locProp = (user.location && user.location !== 'both' ? user.location : 'markt') as Exclude<Location, 'both'>
 
@@ -122,20 +126,20 @@ export default function MyHoursPage({ user }: Props) {
         <div className="hrs-head">
           <div>
             <h1 className="hrs-h1">Mijn uren</h1>
-            <p className="hrs-sub">Bekijk je gewerkte uren en dien nieuwe registraties in.</p>
+            <p className="hrs-sub">Accordeer geplande diensten via je rooster. Registreer hier alleen losse, niet-geplande uren.</p>
           </div>
           <button
             className="btn btn-primary btn-sm"
             onClick={() => { setShowForm(s => !s); setFormErr('') }}
           >
-            {showForm ? 'Annuleren' : '+ Uren registreren'}
+            {showForm ? 'Annuleren' : '+ Losse uren registreren'}
           </button>
         </div>
 
         {/* ── Formulier ── */}
         {showForm && (
           <div className="hrs-form-card">
-            <h2 className="hrs-form-title">Uren registreren</h2>
+            <h2 className="hrs-form-title">Losse uren registreren</h2>
             <form onSubmit={handleSubmit}>
               {formErr && <div className="alert alert-danger" role="alert">{formErr}</div>}
               <div className="form-grid">
@@ -214,8 +218,8 @@ export default function MyHoursPage({ user }: Props) {
             <span className="stat-label">gewerkt</span>
           </div>
           <div className="stat-item">
-            <span className="stat-val">{logs.length}</span>
-            <span className="stat-label">registraties</span>
+            <span className="stat-val">{finalized.length}</span>
+            <span className="stat-label">goedgekeurd/vastgelegd</span>
           </div>
           {totalOvertime > 0 && (
             <div className="stat-item">
@@ -240,12 +244,25 @@ export default function MyHoursPage({ user }: Props) {
             <div>Geen uren gevonden voor deze periode.</div>
             {!showForm && (
               <button className="btn btn-primary btn-sm empty-cta" onClick={() => setShowForm(true)}>
-                Eerste uren registreren
+                Losse uren registreren
               </button>
             )}
           </div>
         ) : (
           <>
+            {rejected.length > 0 && (
+              <section className="hrs-section correction-section">
+                <div className="hrs-sec-head">
+                  <h2 className="hrs-sec-title">Aanpassing nodig</h2>
+                  <span className="badge badge-danger">{rejected.length}</span>
+                </div>
+                <p className="correction-help">Open je rooster, kies de betreffende dienst en dien je gecorrigeerde uren opnieuw in.</p>
+                <div className="log-list">
+                  {rejected.map(log => <LogRow key={log.id} log={log} />)}
+                </div>
+              </section>
+            )}
+
             {/* Pending submissions */}
             {pending.length > 0 && (
               <section className="hrs-section">
@@ -332,6 +349,8 @@ export default function MyHoursPage({ user }: Props) {
         .empty-cta { margin-top: 12px; }
 
         .hrs-section { margin-bottom: var(--s6); }
+        .correction-section { padding: var(--s4); border: 1px solid rgba(198,40,40,.3); border-radius: var(--radius-lg); background: rgba(198,40,40,.035); }
+        .correction-help { margin: 0 0 var(--s3); color: var(--text-sub); font-size: .85rem; line-height: 1.45; }
         .hrs-sec-head {
           display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3);
           padding-bottom: var(--s3); border-bottom: 1.5px solid var(--border);

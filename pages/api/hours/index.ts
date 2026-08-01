@@ -29,7 +29,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         location:          (req.query.location as Location) || undefined,
         is_processed:      req.query.is_processed !== undefined ? parseInt(String(req.query.is_processed)) : undefined,
         submission_status: (req.query.submission_status as SubmissionStatus) || undefined,
-        exclude_rejected:  !can(session.user, 'manage_hours'),
+        // De medewerker moet een afwijzing en reden kunnen terugzien om via
+        // het rooster een nieuwe, bewaarde correctierevisie in te dienen.
+        exclude_rejected:  false,
       })
       return res.json({ success: true, data: logs })
     }

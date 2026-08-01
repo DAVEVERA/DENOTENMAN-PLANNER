@@ -6,7 +6,6 @@ import type { SessionUser, Shift, Location } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 import { formatShiftDate } from '@/lib/shiftDate'
 import { getOpenShiftReminderStage, getOpenShiftReminderText } from '@/lib/open-shift-age'
-import PushNotificationButton from '@/components/ui/PushNotificationButton'
 
 interface Props { user: SessionUser }
 
@@ -129,7 +128,6 @@ export default function OpenShiftsPage({ user }: Props) {
             <h1 className="os-h1">Open diensten</h1>
             <p className="os-sub">Claim een beschikbare dienst of bekijk jouw aangeboden diensten.</p>
           </div>
-          <PushNotificationButton />
         </div>
 
         {longOpenCount > 0 && (

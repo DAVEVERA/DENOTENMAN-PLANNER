@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import '@/styles/globals.css'
+import AutomaticPushNotifications from '@/components/ui/AutomaticPushNotifications'
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -8,6 +9,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
+      <AutomaticPushNotifications />
       <Component {...pageProps} />
     </>
   )

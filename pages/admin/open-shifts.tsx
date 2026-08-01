@@ -7,7 +7,6 @@ import { DAYS, DAY_SHORT, SHIFT_TYPES, WORK_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner' 
 import { formatShiftDate } from '@/lib/shiftDate'
 import { getOpenShiftReminderStage, getOpenShiftReminderText } from '@/lib/open-shift-age'
-import PushNotificationButton from '@/components/ui/PushNotificationButton'
 
 interface Props { user: SessionUser }
 
@@ -268,7 +267,6 @@ export default function OpenShiftsAdminPage({ user }: Props) {
             <p className="os-sub">Beheer alle open en door medewerkers aangeboden diensten in één overzicht.</p>
           </div>
           <div className="os-title-actions">
-            <PushNotificationButton />
             <button className="btn btn-primary" onClick={() => {
               setForm({ day_of_week: 'maandag', week_number: cw, year: cy, shift_type: 'Ochtend', start_time: '', end_time: '', location: 'markt', open_note: '' })
               setShowCreate(true)

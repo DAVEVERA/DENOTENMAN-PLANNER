@@ -165,7 +165,7 @@ export default function HoursPage({ user }: Props) {
   }
 
   async function deleteLog(id: number) {
-    if (!confirm('Verwijderen?')) return
+    if (!confirm('Registratie archiveren? De gegevens blijven bewaard.')) return
     await fetch(`/api/hours/${id}`, { method: 'DELETE' })
     loadAll()
   }
@@ -199,6 +199,9 @@ export default function HoursPage({ user }: Props) {
                     {log.clock_in?.slice(0,5)} – {log.clock_out?.slice(0,5)}
                   </span>
                   <span className="pending-hours">{hrs.toFixed(1)}u</span>
+                  <span className={`submission-mode ${log.confirmation_mode === 'adjusted' ? 'adjusted' : 'confirmed'}`}>
+                    {log.confirmation_mode === 'adjusted' ? 'Aangepast' : 'Akkoord'}
+                  </span>
                   <LocationBadge location={log.location} size="xs" />
                   <button
                     className="btn btn-outline btn-xs"
@@ -228,6 +231,10 @@ export default function HoursPage({ user }: Props) {
                 <div><span className="rev-lbl">Werktijden</span><span>{reviewing.clock_in?.slice(0,5)} – {reviewing.clock_out?.slice(0,5)}</span></div>
                 <div><span className="rev-lbl">Pauze</span><span>{reviewing.break_minutes} minuten</span></div>
                 <div><span className="rev-lbl">Berekend</span><strong>{calcHoursWorked(reviewing.clock_in, reviewing.clock_out, reviewing.break_minutes).toFixed(1)} uur</strong></div>
+                <div><span className="rev-lbl">Accordering</span><span>{reviewing.confirmation_mode === 'confirmed' ? 'Geplande uren akkoord' : 'Uren aangepast'}</span></div>
+                {reviewing.planned_clock_in && reviewing.planned_clock_out && (
+                  <div><span className="rev-lbl">Volgens rooster</span><span>{reviewing.planned_clock_in.slice(0,5)} – {reviewing.planned_clock_out.slice(0,5)} · {reviewing.planned_break_minutes ?? 0}m pauze</span></div>
+                )}
                 <div><span className="rev-lbl">Locatie</span><span><LocationBadge location={reviewing.location} size="xs" /></span></div>
                 {reviewing.note && (
                   <div className="rev-full"><span className="rev-lbl">Notitie medewerker</span><span>{reviewing.note}</span></div>
@@ -464,13 +471,18 @@ export default function HoursPage({ user }: Props) {
                             {log.submission_status === 'approved' ? 'Goedgekeurd' :
                              log.submission_status === 'rejected' ? 'Afgewezen' :
                              log.submission_status === 'pending' ? 'In behandeling' :
+                             log.submission_status === 'withdrawn' ? 'Gearchiveerd' :
                              'Direct'}
                           </span>
                         </td>
                         <td>
                           <div className="row-actions">
-                            <button className="btn btn-ghost btn-xs" onClick={() => { setEditId(log.id); setEditForm(log) }} title="Bewerken">✏</button>
-                            <button className="btn btn-ghost btn-xs text-danger" onClick={() => deleteLog(log.id)} title="Verwijderen">🗑</button>
+                            {log.submission_status === 'direct' && (
+                              <>
+                                <button className="btn btn-ghost btn-xs" onClick={() => { setEditId(log.id); setEditForm(log) }}>Bewerken</button>
+                                <button className="btn btn-ghost btn-xs" onClick={() => deleteLog(log.id)}>Archiveren</button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </>
@@ -536,8 +548,12 @@ export default function HoursPage({ user }: Props) {
                           <div className="log-card-header">
                             <div className="log-card-name">{log.employee_name}</div>
                             <div className="log-card-actions">
-                              <button className="btn btn-ghost btn-xs" onClick={() => { setEditId(log.id); setEditForm(log) }} title="Bewerken">✏</button>
-                              <button className="btn btn-ghost btn-xs text-danger" onClick={() => deleteLog(log.id)} title="Verwijderen">🗑</button>
+                              {log.submission_status === 'direct' && (
+                                <>
+                                  <button className="btn btn-ghost btn-xs" onClick={() => { setEditId(log.id); setEditForm(log) }}>Bewerken</button>
+                                  <button className="btn btn-ghost btn-xs" onClick={() => deleteLog(log.id)}>Archiveren</button>
+                                </>
+                              )}
                             </div>
                           </div>
                           <div className="log-card-body">
@@ -599,6 +615,9 @@ export default function HoursPage({ user }: Props) {
         .pending-date { color: var(--text-sub); min-width: 70px; }
         .pending-times { font-weight: 500; }
         .pending-hours { font-weight: 700; color: var(--brand); }
+        .submission-mode { padding: 3px 7px; border-radius: 999px; font-size: .7rem; font-weight: 800; }
+        .submission-mode.confirmed { color: #1d643f; background: rgba(44,110,73,.14); }
+        .submission-mode.adjusted { color: #8a5a12; background: rgba(200,136,42,.16); }
         .rev-detail {
           display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3);
           background: var(--surface-alt); border-radius: var(--radius); padding: var(--s4);

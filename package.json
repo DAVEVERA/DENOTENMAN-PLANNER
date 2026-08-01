@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:chat": "tsx --test tests/team-chat/*.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
@@ -34,6 +35,7 @@
     "@types/web-push": "^3.6.4",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.2.0",
+    "tsx": "4.23.1",
     "typescript": "^5.4.0"
   }
 }

@@ -7,6 +7,10 @@ import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Location } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner'
+import ShiftHoursModal from '@/components/ui/ShiftHoursModal'
+import { isShiftReadyForHourConfirmation, latestTimeLogForShift } from '@/lib/shift-hours'
+import type { TimeLog } from '@/types'
+import { WORK_TYPES } from '@/types'
 
 
 interface Props {
@@ -25,6 +29,13 @@ function weekStartDate(w: number, y: number) {
   const start = new Date(jan4)
   start.setDate(jan4.getDate() - dow + 1 + (w - 1) * 7)
   return start
+}
+
+function isoDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 /** Returns the ISO week date range e.g. "28 apr – 4 mei 2026" */
@@ -54,10 +65,12 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
   const [week, setWeek]   = useState(initialWeek)
   const [year, setYear]   = useState(initialYear)
   const [shifts, setShifts] = useState<Shift[]>([])
+  const [hourLogs, setHourLogs] = useState<TimeLog[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null)
   const [offering, setOffering] = useState(false)
   const [offerNote, setOfferNote] = useState('')
+  const [hourShift, setHourShift] = useState<Shift | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
   const numWeeks = view === 'week' ? 1 : view === 'month' ? 4 : 13
@@ -66,11 +79,16 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
     if (!user.employee_id) return
     setLoading(true)
     const weeks = weeksInRange(week, year, numWeeks)
-    const results = await Promise.all(
-      weeks.map(w => fetch(`/api/shifts?employee_id=${user.employee_id}&week=${w.week}&year=${w.year}`).then(r => r.json())),
-    )
+    const rangeStart = weekStartDate(weeks[0].week, weeks[0].year)
+    const rangeEnd = weekStartDate(weeks[weeks.length - 1].week, weeks[weeks.length - 1].year)
+    rangeEnd.setDate(rangeEnd.getDate() + 6)
+    const [results, hoursResult] = await Promise.all([
+      Promise.all(weeks.map(w => fetch(`/api/shifts?employee_id=${user.employee_id}&week=${w.week}&year=${w.year}`).then(r => r.json()))),
+      fetch(`/api/hours?from=${isoDate(rangeStart)}&to=${isoDate(rangeEnd)}`).then(r => r.json()),
+    ])
     const all: Shift[] = results.flatMap(d => d.success ? d.data : [])
     setShifts(all)
+    setHourLogs(hoursResult.success ? hoursResult.data : [])
     setLoading(false)
   }, [week, year, numWeeks, user.employee_id])
 
@@ -117,6 +135,24 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
     } else {
       showToast('❌ ' + (r.message ?? 'Er ging iets mis'))
     }
+  }
+
+  function hourStatus(log: TimeLog | null): { label: string; className: string } | null {
+    if (!log) return null
+    if (log.submission_status === 'pending') return { label: 'Wacht op Fedor', className: 'pending' }
+    if (log.submission_status === 'approved' && log.confirmation_mode === 'confirmed') return { label: 'Akkoord & exportklaar', className: 'approved' }
+    if (log.submission_status === 'approved') return { label: 'Goedgekeurd', className: 'approved' }
+    if (log.submission_status === 'rejected') return { label: 'Aanpassen', className: 'rejected' }
+    if (log.submission_status === 'direct') return { label: 'Vastgelegd', className: 'approved' }
+    return null
+  }
+
+  function handleHoursSubmitted(log: TimeLog) {
+    setHourLogs(current => [...current, log])
+    setHourShift(null)
+    showToast(log.submission_status === 'approved'
+      ? 'Uren zijn akkoord en staan klaar voor de export.'
+      : 'Aangepaste uren staan klaar voor Fedor.')
   }
 
   const weeks = weeksInRange(week, year, numWeeks)
@@ -178,6 +214,14 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
             </div>
           </div>
         </div>
+      )}
+      {hourShift && (
+        <ShiftHoursModal
+          shift={hourShift}
+          latestLog={latestTimeLogForShift(hourLogs, hourShift.id)}
+          onClose={() => setHourShift(null)}
+          onSubmitted={handleHoursSubmitted}
+        />
       )}
       {!user.employee_id ? (
         <div className="no-emp-msg">
@@ -272,18 +316,26 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                           </div>
                           {ds.length > 0 ? ds.map(s => {
                             const isOffered = s.is_open === 1 && s.employee_id === user.employee_id
+                            const readyForHours = isShiftReadyForHourConfirmation(s)
+                            const latestLog = latestTimeLogForShift(hourLogs, s.id)
+                            const status = hourStatus(latestLog)
+                            const canOffer = !readyForHours && !isOffered && WORK_TYPES.includes(s.shift_type)
+                            const canOpenHours = readyForHours && (!latestLog || latestLog.submission_status === 'rejected')
                             return (
                               <div
                                 key={s.id}
-                                className={`slot-shift${isOffered ? ' is-offered' : ''}`}
+                                className={`slot-shift${isOffered ? ' is-offered' : ''}${readyForHours ? ' hours-ready' : ''}${canOpenHours ? ' is-clickable' : ''}`}
                                 data-type={s.shift_type.toLowerCase()}
-                                aria-label={`${s.shift_type} dienst`}
-                                role="button"
-                                {...(isOffered ? { 'aria-disabled': 'true' } : {})}
-                                tabIndex={!isOffered ? 0 : -1}
-                                title={!isOffered ? 'Klik om aan te bieden' : 'Aangeboden aan collega\'s'}
-                                onClick={() => { if (!isOffered) { setOfferNote(''); setSelectedShift(s) } }}
-                                onKeyDown={e => { if (!isOffered && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOfferNote(''); setSelectedShift(s) } }}
+                                aria-label={`${s.shift_type} dienst${canOpenHours ? ', uren controleren' : ''}`}
+                                role={canOpenHours ? 'button' : undefined}
+                                tabIndex={canOpenHours ? 0 : undefined}
+                                onClick={canOpenHours ? () => setHourShift(s) : undefined}
+                                onKeyDown={canOpenHours ? event => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault()
+                                    setHourShift(s)
+                                  }
+                                } : undefined}
                               >
                                 <span className="slot-type">{s.shift_type}</span>
                                 {s.start_time && (
@@ -296,6 +348,20 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                                 )}
                                 {isOffered && (
                                   <span className="slot-offered-badge">aangeboden</span>
+                                )}
+                                {readyForHours && !latestLog && (
+                                  <span className="hours-action">Tik om uren te controleren</span>
+                                )}
+                                {readyForHours && latestLog?.submission_status === 'rejected' && (
+                                  <span className="hours-action rejected">Tik om uren te corrigeren</span>
+                                )}
+                                {readyForHours && status && latestLog?.submission_status !== 'rejected' && (
+                                  <span className={`hours-status ${status.className}`}>{status.label}</span>
+                                )}
+                                {canOffer && (
+                                  <button type="button" className="offer-action" onClick={() => { setOfferNote(''); setSelectedShift(s) }}>
+                                    Dienst aanbieden
+                                  </button>
                                 )}
                               </div>
                             )
@@ -380,10 +446,13 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-shift {
           padding: 4px 6px; border-radius: 5px; margin-bottom: 3px;
           display: flex; flex-direction: column; gap: 2px;
-          cursor: pointer; transition: background .13s, box-shadow .13s;
+          transition: background .13s, box-shadow .13s;
         }
-        .slot-shift:hover:not(.is-offered) { box-shadow: 0 0 0 2px var(--brand); }
         .slot-shift.is-offered { opacity: .65; cursor: default; }
+        .slot-shift.hours-ready { padding: 7px; box-shadow: inset 0 0 0 1px rgba(44,110,73,.2); }
+        .slot-shift.is-clickable { cursor: pointer; }
+        .slot-shift.is-clickable:hover { box-shadow: inset 0 0 0 2px var(--brand), 0 4px 12px rgba(44,110,73,.12); }
+        .slot-shift.is-clickable:focus-visible { outline: 3px solid rgba(44,110,73,.3); outline-offset: 2px; }
         .slot-shift:not([data-type]) { background: var(--surface-alt); }
         .slot-offered-badge {
           font-size: .6rem; font-weight: 700; letter-spacing: .04em;
@@ -401,6 +470,16 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
         .slot-loc.loc-markt        { background: rgba(44,110,73,.15); color: var(--markt); }
         .slot-loc.loc-nootmagazijn { background: rgba(123,79,46,.15); color: var(--noot); }
         .slot-empty { font-size: .875rem; color: var(--text-muted); padding: 2px 0; }
+        .hours-action, .offer-action {
+          width: 100%; min-height: 36px; margin-top: 5px; padding: 7px 8px;
+          border-radius: 6px; font-size: .7rem; font-weight: 800; line-height: 1.15;
+        }
+        .hours-action { display: flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; text-align: center; }
+        .hours-action.rejected { background: var(--danger); }
+        .offer-action { min-height: 30px; background: transparent; border: 1px solid currentColor; color: var(--text-sub); font-weight: 600; }
+        .hours-status { margin-top: 5px; padding: 5px 7px; border-radius: 6px; font-size: .65rem; font-weight: 800; text-align: center; }
+        .hours-status.pending { color: #8a5a12; background: rgba(200,136,42,.16); }
+        .hours-status.approved { color: #1d643f; background: rgba(44,110,73,.14); }
 
         /* ── Offer modal ── */
         .offer-overlay {
@@ -444,14 +523,18 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
           .me-controls { gap: var(--s2); }
           .period-label { min-width: 0; font-size: .875rem; }
           .view-tab { padding: 8px 10px; }
-          .days-grid { grid-template-columns: repeat(4, 1fr); }
+          .days-grid { grid-template-columns: repeat(2, 1fr); }
+          .hours-action { min-height: 44px; font-size: .78rem; }
         }
         @media (max-width: 480px) {
           .me-controls { flex-direction: column; align-items: stretch; }
           .period-nav { justify-content: space-between; }
           .view-tabs { justify-content: center; }
-          .days-grid { grid-template-columns: repeat(2, 1fr); }
+          .days-grid { grid-template-columns: 1fr; }
           .day-slot { min-height: 70px; padding: var(--s2); }
+          .slot-shift { padding: 9px; }
+          .slot-type { font-size: .85rem; }
+          .slot-time { font-size: .78rem; }
         }
         @media (max-width: 340px) {
           .days-grid { grid-template-columns: 1fr; }

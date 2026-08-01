@@ -16,6 +16,16 @@ create table if not exists planner20_time_logs (
   note            text,
   is_processed    smallint     not null default 0,
   processed_at    timestamptz,
+  submission_status text      not null default 'direct',
+  reviewed_by     text,
+  reviewed_at     timestamptz,
+  review_note     text,
+  planned_clock_in time,
+  planned_clock_out time,
+  planned_break_minutes integer,
+  confirmation_mode text        check (confirmation_mode is null or confirmation_mode in ('confirmed', 'adjusted')),
+  submission_revision integer   check (submission_revision is null or submission_revision > 0),
+  submitted_at    timestamptz,
   created_by      text         not null default '',
   created_at      timestamptz  not null default now()
 );
@@ -29,3 +39,15 @@ create index if not exists planner20_time_logs_employee
 
 create index if not exists planner20_time_logs_processed
   on planner20_time_logs (is_processed, log_date desc);
+
+create index if not exists idx_time_logs_submission_status
+  on planner20_time_logs (submission_status)
+  where submission_status = 'pending';
+
+create unique index if not exists planner20_time_logs_shift_revision_unique
+  on planner20_time_logs (shift_id, submission_revision)
+  where shift_id is not null and submission_revision is not null;
+
+create index if not exists planner20_time_logs_shift_history
+  on planner20_time_logs (shift_id, created_at desc)
+  where shift_id is not null;

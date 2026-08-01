@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
-import { updateTimeLog, deleteTimeLog, markLogsProcessed, reviewHourSubmission, deleteEmployeeSubmission } from '@/lib/hours'
+import { updateTimeLog, archiveTimeLog, markLogsProcessed, reviewHourSubmission, withdrawEmployeeSubmission, getEmployeeTimeLog } from '@/lib/hours'
 import { getEmployee } from '@/lib/scheduler'
 import { sendHourReviewEmail } from '@/lib/email'
 
@@ -15,12 +15,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Admin operations
     if (can(session.user, 'manage_hours')) {
       if (req.method === 'PUT') {
-        const log = await updateTimeLog(id, req.body)
+        const existing = await getEmployeeTimeLog(id)
+        if (!existing) return res.status(404).json({ success: false, message: 'Registratie niet gevonden' })
+        if (existing.submission_status !== 'direct') {
+          return res.status(409).json({
+            success: false,
+            message: 'Ingediende uren kunnen alleen worden goed- of afgekeurd; aanpassen doet de medewerker zelf.',
+          })
+        }
+        const { log_date, location, clock_in, clock_out, break_minutes, overtime_hours, note } = req.body ?? {}
+        const log = await updateTimeLog(id, { log_date, location, clock_in, clock_out, break_minutes, overtime_hours, note })
         return res.json({ success: true, data: log })
       }
 
       if (req.method === 'DELETE') {
-        await deleteTimeLog(id)
+        await archiveTimeLog(id, session.user.display_name ?? session.user.user_id)
         return res.json({ success: true })
       }
 
@@ -72,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!session.user.employee_id)
         return res.status(400).json({ success: false, message: 'Geen medewerker gekoppeld' })
 
-      await deleteEmployeeSubmission(id, session.user.employee_id)
+      await withdrawEmployeeSubmission(id, session.user.employee_id)
       return res.json({ success: true })
     }
 

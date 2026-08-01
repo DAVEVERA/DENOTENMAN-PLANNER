@@ -117,7 +117,8 @@ export interface LeaveRequest {
   created_at: string
 }
 
-export type SubmissionStatus = 'direct' | 'pending' | 'approved' | 'rejected'
+export type SubmissionStatus = 'direct' | 'pending' | 'approved' | 'rejected' | 'withdrawn'
+export type HourConfirmationMode = 'confirmed' | 'adjusted'
 
 export interface TimeLog {
   id: number
@@ -137,6 +138,12 @@ export interface TimeLog {
   reviewed_by: string | null
   reviewed_at: string | null
   review_note: string | null
+  planned_clock_in: string | null
+  planned_clock_out: string | null
+  planned_break_minutes: number | null
+  confirmation_mode: HourConfirmationMode | null
+  submission_revision: number | null
+  submitted_at: string | null
   created_by: string
   created_at: string
 }
@@ -280,3 +287,5 @@ export interface ExpenseClaim {
   submitted_by:   string
   created_at:     string
 }
+
+export * from './team-chat'

@@ -249,13 +249,15 @@ Per registratie zie je:
 2. Vul in: medewerker, datum, in/uit-tijden, pauze, locatie.
 3. Klik **Opslaan**.
 
-**Registratie bewerken**
+**Registratie beoordelen of bewerken**
 
-Klik op het **potloodicoon** naast een registratie. Het bewerkingsformulier opent inline (in de tabel of kaartje). Pas aan en klik **Opslaan**. Klik op **×** om te annuleren.
+- Door een medewerker ingediende uren staan bovenaan bij **Openstaande urenregistraties**. Open **Beoordelen** en kies **Goedkeuren** of **Afwijzen**. Een reden is verplicht bij afwijzen.
+- Een manager of admin wijzigt ingediende medewerkersuren niet zelf. Na afwijzing past de medewerker de uren via het eigen rooster aan en dient een nieuwe revisie in.
+- Alleen rechtstreeks door beheer ingevoerde registraties kunnen inline worden bewerkt.
 
-**Registratie verwijderen**
+**Registratie archiveren**
 
-Klik op het **prullenbakicoon**. Er verschijnt een bevestigingsvraag.
+Rechtstreeks door beheer ingevoerde registraties kunnen worden gearchiveerd. De rij en auditinformatie blijven daarbij volledig in de database bewaard.
 
 **Uren als "verwerkt" markeren**
 
@@ -429,7 +431,16 @@ Gebruik de pijltjes om een week voor- of achteruit te gaan.
 
 **Pagina:** `/me/hours`
 
-Hier ziet de medewerker zijn of haar eigen geregistreerde uren.
+Hier ziet de medewerker zijn of haar eigen geregistreerde uren. Het accorderen van een geplande dienst gebeurt rechtstreeks op de betreffende dag in **Mijn rooster** (`/me`).
+
+**Geplande dienst accorderen**
+
+1. Open **Mijn rooster** en ga naar de dag waarop je hebt gewerkt.
+2. Na de geplande eindtijd verschijnt **Uren controleren** bij de dienst.
+3. Kies **Ja, deze uren kloppen** als de roosteruren overeenkomen met de werkelijk gewerkte uren, of kies **Nee, uren aanpassen**.
+4. Controleer de samenvatting en klik **Indienen bij De Noteman**.
+5. De registratie krijgt de status **In behandeling** totdat een manager of admin deze goed- of afkeurt.
+6. Bij afwijzing blijft de reden zichtbaar. Kies bij dezelfde dienst **Corrigeren** en dien een nieuwe revisie in. De eerdere inzending blijft als historie bewaard.
 
 **Filters**
 
@@ -451,7 +462,7 @@ Boven de lijst staan drie samenvattingen:
 - **Overuren**
 - **Verwerkt** — hoeveel registraties zijn al doorgegeven aan de boekhouder
 
-> Medewerkers kunnen hun uren alleen inzien, niet bewerken. Bewerken kan alleen de beheerder.
+> Losse, niet-geplande uren kunnen nog via `/me/hours` worden geregistreerd. Geplande diensten worden altijd vanuit het rooster geaccordeerd of gecorrigeerd.
 
 ---
 
@@ -606,6 +617,7 @@ Voer ook de bijbehorende Supabase-migratie uit:
 
 ```
 supabase/migrations/20260724_open_shift_notes_and_reminders.sql
+supabase/migrations/20260725093000_employee_shift_hour_approval.sql
 ```
 
 **Database (Supabase)**
