@@ -36,6 +36,7 @@ export default function AdminChatManager() {
   const [memberQuery, setMemberQuery] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pendingManagerId, setPendingManagerId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -46,7 +47,7 @@ export default function AdminChatManager() {
       setData(payload.data)
       setError(null)
     } catch {
-      setError('Chatbeheer kan niet worden geladen. Controleer of de chatmigratie actief is.')
+      setError('Chatbeheer is nu niet beschikbaar. Probeer het opnieuw of meld dit bij IT.')
     } finally {
       setLoading(false)
     }
@@ -105,19 +106,29 @@ export default function AdminChatManager() {
       setEditor(null)
       await load()
     } catch {
-      setError('Opslaan mislukt. Controleer naam, leden en minimaal één owner.')
+      setError('Opslaan mislukt. Er ging iets mis op de server — probeer het nogmaals.')
     } finally {
       setSaving(false)
     }
   }
 
   async function setManager(account: TeamChatAccountOption, active: boolean) {
-    const response = await fetch('/api/admin/team-chat/owners', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: account.user_id, active }),
-    })
-    if (response.ok) await load()
+    if (pendingManagerId) return
+    setPendingManagerId(account.user_id)
+    setError(null)
+    try {
+      const response = await fetch('/api/admin/team-chat/owners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: account.user_id, active }),
+      })
+      if (!response.ok) throw new Error('owner_toggle_failed')
+      await load()
+    } catch {
+      setError(`${active ? 'Owner maken' : 'Owner verwijderen'} van ${account.display_name} is mislukt. Probeer het opnieuw.`)
+    } finally {
+      setPendingManagerId(null)
+    }
   }
 
   if (loading) return <ManagerStatus error={null} />
@@ -174,8 +185,16 @@ export default function AdminChatManager() {
               <div key={account.user_id} className="owner-row">
                 <span className="mini-avatar">{account.display_name.slice(0,1).toUpperCase()}</span>
                 <div><strong>{account.display_name}</strong><small>{account.location || 'Geen locatie'} · {account.user_id}</small></div>
-                <button type="button" className={account.is_chat_manager ? 'owner-toggle active' : 'owner-toggle'} onClick={() => void setManager(account, !account.is_chat_manager)} aria-pressed={account.is_chat_manager}>
-                  {account.is_chat_manager ? <><Check size={16} /> Owner</> : 'Maak owner'}
+                <button
+                  type="button"
+                  className={account.is_chat_manager ? 'owner-toggle active' : 'owner-toggle'}
+                  onClick={() => void setManager(account, !account.is_chat_manager)}
+                  aria-pressed={account.is_chat_manager}
+                  disabled={pendingManagerId === account.user_id}
+                >
+                  {pendingManagerId === account.user_id
+                    ? 'Bezig…'
+                    : account.is_chat_manager ? <><Check size={16} /> Owner</> : 'Maak owner'}
                 </button>
               </div>
             ))}
@@ -227,12 +246,12 @@ export default function AdminChatManager() {
         .empty-admin { padding: 25px; color: var(--text-muted); text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: 16px; }
         .owner-list { overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }.owner-row { display: flex; min-height: 66px; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }.owner-row:last-child { border: 0; }.mini-avatar { display: grid; width: 38px; height: 38px; place-items: center; color: #fff; background: #7b4f2e; border-radius: 12px; font-weight: 800; }.owner-row > div { display: flex; min-width: 0; flex: 1; flex-direction: column; }.owner-row strong { font-size: .8rem; }.owner-row small { margin-top: 3px; color: var(--text-muted); font-size: .66rem; }.owner-toggle { display: inline-flex; min-height: 40px; align-items: center; gap: 5px; padding: 7px 10px; color: var(--text-sub); background: var(--surface-alt); border-radius: 10px; font-size: .7rem; font-weight: 800; }.owner-toggle.active { color: #815912; background: #fff2cf; }
         .manager-loading, .manager-error { display: flex; min-height: 120px; align-items: center; justify-content: center; gap: 10px; padding: 20px; color: var(--text-muted); background: var(--surface); border-radius: 15px; }.manager-error { min-height: auto; margin-bottom: 15px; color: var(--danger); background: #fff1ed; }.manager-error button { min-height: 40px; padding: 7px 10px; background: #fff; border-radius: 9px; }
-        .editor-backdrop { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; justify-content: center; padding: 20px; background: rgba(22,16,13,.5); backdrop-filter: blur(5px); }.editor-sheet { width: min(100%, 620px); max-height: 92dvh; padding: 18px; overflow: auto; background: #fff; border-radius: 24px; box-shadow: 0 20px 70px rgba(0,0,0,.24); }.editor-handle { width: 42px; height: 4px; margin: -6px auto 13px; background: #d4cbc4; border-radius: 99px; }.editor-sheet > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }.editor-sheet header span { color: var(--text-muted); font-size: .68rem; }.editor-sheet h2 { margin: 2px 0 0; font-size: 1.2rem; }.editor-sheet header button { display: grid; width: 44px; height: 44px; place-items: center; background: var(--surface-alt); border-radius: 13px; }
+        .editor-backdrop { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; justify-content: center; padding: 20px; background: rgba(22,16,13,.5); backdrop-filter: blur(5px); }.editor-sheet { width: min(100%, 620px); max-height: 92vh; max-height: 92dvh; padding: 18px; overflow: auto; background: #fff; border-radius: 24px; box-shadow: 0 20px 70px rgba(0,0,0,.24); }.editor-handle { width: 42px; height: 4px; margin: -6px auto 13px; background: #d4cbc4; border-radius: 99px; }.editor-sheet > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }.editor-sheet header span { color: var(--text-muted); font-size: .68rem; }.editor-sheet h2 { margin: 2px 0 0; font-size: 1.2rem; }.editor-sheet header button { display: grid; width: 44px; height: 44px; place-items: center; background: var(--surface-alt); border-radius: 13px; }
         .type-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 16px 0; padding: 4px; background: var(--surface-alt); border-radius: 13px; }.type-switch button { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 7px; border-radius: 10px; font-weight: 700; }.type-switch button.active { color: var(--brand); background: #fff; box-shadow: 0 2px 7px rgba(0,0,0,.07); }
         .editor-label { display: grid; gap: 6px; font-size: .75rem; font-weight: 800; }.editor-label input, .member-search input { min-height: 46px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 12px; font: inherit; }.member-head { display: flex; justify-content: space-between; margin: 17px 0 7px; font-size: .75rem; }.member-head span { color: var(--text-muted); }.member-search { display: flex; align-items: center; gap: 7px; padding-left: 11px; background: var(--surface-alt); border-radius: 12px; }.member-search input { min-width: 0; flex: 1; padding-left: 2px; background: transparent; border: 0; outline: 0; }
         .member-list { display: grid; max-height: 290px; gap: 5px; margin-top: 8px; overflow: auto; }.member-row { display: flex; min-height: 56px; align-items: center; padding: 4px 5px; background: #faf8f5; border: 1px solid transparent; border-radius: 12px; }.member-row.selected { border-color: #a8c1b0; background: #f2f7f4; }.member-select { display: flex; min-width: 0; flex: 1; align-items: center; gap: 9px; text-align: left; }.check-box { display: grid; width: 24px; min-width: 24px; height: 24px; place-items: center; color: #fff; background: #e0d8d1; border-radius: 7px; }.selected .check-box { background: var(--brand); }.member-select > span:last-child { display: flex; min-width: 0; flex-direction: column; }.member-select strong { font-size: .75rem; }.member-select small { margin-top: 2px; overflow: hidden; color: var(--text-muted); font-size: .63rem; text-overflow: ellipsis; white-space: nowrap; }.crown-button { display: grid; width: 42px; height: 42px; place-items: center; color: #a0958d; border-radius: 11px; }.crown-button.active { color: #946411; background: #fff0c8; }.archive-button { display: flex; min-height: 44px; align-items: center; gap: 7px; margin-top: 13px; padding: 8px 10px; color: #805142; background: #f8efeb; border-radius: 11px; font-size: .7rem; font-weight: 800; }
         .editor-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 17px; }.editor-actions button { min-height: 46px; padding: 9px 14px; background: var(--surface-alt); border-radius: 12px; font-weight: 800; }.editor-actions .save-button { color: #fff; background: var(--brand); }.editor-actions button:disabled { opacity: .45; }
-        @media (max-width: 700px) { .manager-head { align-items: stretch; flex-direction: column; }.create-button { width: 100%; justify-content: center; }.conversation-grid { grid-template-columns: 1fr; }.editor-backdrop { padding: 0; }.editor-sheet { max-height: 95dvh; padding: 18px 14px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }.editor-actions { flex-direction: column-reverse; }.editor-actions button { width: 100%; min-height: 48px; }.owner-row { flex-wrap: wrap; }.owner-toggle { margin-left: 48px; } }
+        @media (max-width: 700px) { .manager-head { align-items: stretch; flex-direction: column; }.create-button { width: 100%; justify-content: center; }.conversation-grid { grid-template-columns: 1fr; }.editor-backdrop { padding: 0; }.editor-sheet { max-height: 95vh; max-height: 95dvh; padding: 18px 14px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }.editor-actions { flex-direction: column-reverse; }.editor-actions button { width: 100%; min-height: 48px; }.owner-row { flex-wrap: wrap; }.owner-toggle { margin-left: 48px; } }
       `}</style>
     </div>
   )

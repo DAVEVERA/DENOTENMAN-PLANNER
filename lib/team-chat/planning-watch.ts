@@ -47,6 +47,15 @@ export interface PlanningWatchShift {
   assignment_version: number
 }
 
+export interface PlanningWatchShiftSnapshot {
+  day_of_week: string
+  shift_type: string
+  start_time: string | null
+  end_time: string | null
+  full_day: number
+  location: string
+}
+
 export interface PlanningWatchExchange {
   id: string
   conversation_id: number
@@ -58,6 +67,7 @@ export interface PlanningWatchExchange {
   counterparty_user_id: string
   expires_at: string
   conflict_code: string | null
+  source_shift_snapshot: PlanningWatchShiftSnapshot | null
 }
 
 export interface PublishPlanningTriggerInput {
@@ -112,6 +122,18 @@ function formatShift(shift: PlanningWatchShift): string {
   return `${shift.day_of_week} · ${time} · ${shift.location}`
 }
 
+/** Same shape of summary as `formatShift`, but reads from the immutable
+ * exchange-request snapshot instead of the live shift row — used so the
+ * Planningwacht card shows what's actually being agreed to. */
+function formatSnapshot(snapshot: PlanningWatchShiftSnapshot): string {
+  const time = snapshot.full_day === 1
+    ? 'hele dag'
+    : snapshot.start_time && snapshot.end_time
+      ? `${snapshot.start_time.slice(0, 5)}–${snapshot.end_time.slice(0, 5)}`
+      : 'tijd volgt'
+  return `${snapshot.shift_type} · ${snapshot.day_of_week} · ${time} · ${snapshot.location}`
+}
+
 function exchangeItem(exchange: PlanningWatchExchange, userId: string, nowMs: number): PlanningWatchItem {
   const expiresAt = Date.parse(exchange.expires_at)
   const expired = exchange.status === 'expired' || expiresAt <= nowMs
@@ -142,7 +164,9 @@ function exchangeItem(exchange: PlanningWatchExchange, userId: string, nowMs: nu
       ? exchange.kind === 'takeover' ? 'Overname wacht op jou' : 'Ruil wacht op jou'
       : 'Wachten op collega',
     message: isCounterparty
-      ? 'Controleer de onveranderlijke dienstgegevens en kies akkoord of afwijzen.'
+      ? exchange.source_shift_snapshot
+        ? `${formatSnapshot(exchange.source_shift_snapshot)} — kies akkoord of afwijzen. Dit is direct definitief.`
+        : 'Controleer de onveranderlijke dienstgegevens en kies akkoord of afwijzen.'
       : 'Jouw akkoord staat vast. De planning wijzigt pas na het tweede akkoord.',
     conversation_id: exchange.conversation_id,
     shift_id: exchange.source_shift_id,
@@ -269,7 +293,7 @@ function createPlanningWatchAdapter(): PlanningWatchAdapter {
       if (conversationIds.length === 0) return []
       const { data, error } = await client
         .from(T('shift_exchange_requests'))
-        .select('id, conversation_id, kind, status, source_shift_id, target_shift_id, initiator_user_id, counterparty_user_id, expires_at, conflict_code')
+        .select('id, conversation_id, kind, status, source_shift_id, target_shift_id, initiator_user_id, counterparty_user_id, expires_at, conflict_code, source_shift_snapshot')
         .in('conversation_id', conversationIds)
         .in('status', ['pending', 'conflict', 'expired'])
         .order('updated_at', { ascending: false })
