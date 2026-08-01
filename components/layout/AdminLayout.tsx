@@ -1,46 +1,89 @@
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import Image from 'next/image'
 import { MessageCircle, MoreHorizontal } from 'lucide-react'
 import { useRef, useState } from 'react'
-import type { SessionUser } from '@/types'
+import type { SessionUser, Capability } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
   ScheduleIcon, EmployeesIcon, LeaveIcon,
-  HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon, MyScheduleIcon, LeaveIcon as OpenIcon,
-  DashboardIcon,
+  HoursIcon, ExportIcon, SettingsIcon, TeamViewIcon, MyScheduleIcon,
+  DashboardIcon, TicketIcon,
 } from '@/components/ui/Icons'
+import Sidebar, { type SidebarItem, type SidebarSection } from '@/components/layout/Sidebar'
 import AdminMobileMoreNav from '@/components/layout/AdminMobileMoreNav'
 
-interface Props { user: SessionUser; children: React.ReactNode; title?: string }
+interface Props { user: SessionUser; children: React.ReactNode; title?: string; location?: 'markt' | 'nootmagazijn' }
 
-const NAV = [
-  { href: '/admin/dashboard',   icon: <DashboardIcon size={20} />,  label: 'Dashboard',      cap: 'read' as const },
-  { href: '/admin',             icon: <ScheduleIcon size={20} />,   label: 'Rooster',        cap: 'read' as const },
-  { href: '/admin/employees',   icon: <EmployeesIcon size={20} />,  label: 'Medewerkers',    cap: 'manage_employees' as const },
-  { href: '/admin/open-shifts', icon: <HoursIcon size={20} />,      label: 'Open diensten',  cap: 'manage_shifts' as const },
-  { href: '/admin/team-chat',   icon: <MessageCircle size={20} />,  label: 'Chatbeheer',      cap: 'read' as const },
-  { href: '/admin/leave',       icon: <LeaveIcon size={20} />,      label: 'Verlof',         cap: 'approve_leave' as const },
-  { href: '/admin/expenses',    icon: <ExportIcon size={20} />,     label: 'Declaraties',    cap: 'manage_hours' as const },
-  { href: '/admin/hours',       icon: <HoursIcon size={20} />,      label: 'Uren',           cap: 'manage_hours' as const },
-  { href: '/admin/hours/export',icon: <ExportIcon size={20} />,     label: 'Export',         cap: 'export_data' as const },
-  { href: '/admin/settings',    icon: <SettingsIcon size={20} />,   label: 'Instellingen',   cap: 'manage_settings' as const },
-  { href: '/admin/backup',      icon: <ExportIcon size={20} />,     label: 'Backup',         cap: 'manage_settings' as const },
-  { href: '/me/support',        icon: <span className="sb-dave-icon">🎫</span>, label: 'Support',        cap: 'read' as const },
-]
+/** Icon stored as a component (not pre-sized JSX) so sidebar (M/20) and
+ *  bottom-nav/sheet (L/24) can render the same config row at different sizes. */
+type NavIconComponent = (props: { size?: number; className?: string }) => React.JSX.Element
 
-function getInitials(name: string) {
-  return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+function ChatIcon({ size, className }: { size?: number; className?: string }) {
+  return <MessageCircle size={size} strokeWidth={2} className={className} aria-hidden="true" />
 }
 
-export default function AdminLayout({ user, children, title }: Props) {
+const NAV: { href: string; Icon: NavIconComponent; label: string; cap: Capability }[] = [
+  { href: '/admin/dashboard',   Icon: DashboardIcon,  label: 'Dashboard',      cap: 'read' },
+  { href: '/admin',             Icon: ScheduleIcon,   label: 'Rooster',        cap: 'read' },
+  { href: '/admin/employees',   Icon: EmployeesIcon,  label: 'Medewerkers',    cap: 'manage_employees' },
+  { href: '/admin/open-shifts', Icon: HoursIcon,      label: 'Open diensten',  cap: 'manage_shifts' },
+  { href: '/admin/team-chat',   Icon: ChatIcon,        label: 'Chatbeheer',     cap: 'read' },
+  { href: '/admin/leave',       Icon: LeaveIcon,      label: 'Verlof',         cap: 'approve_leave' },
+  { href: '/admin/expenses',    Icon: ExportIcon,     label: 'Declaraties',    cap: 'manage_hours' },
+  { href: '/admin/hours',       Icon: HoursIcon,      label: 'Uren',           cap: 'manage_hours' },
+  { href: '/admin/hours/export',Icon: ExportIcon,     label: 'Export',         cap: 'export_data' },
+  { href: '/admin/settings',    Icon: SettingsIcon,   label: 'Instellingen',   cap: 'manage_settings' },
+  { href: '/admin/backup',      Icon: ExportIcon,     label: 'Backup',         cap: 'manage_settings' },
+  { href: '/me/support',        Icon: TicketIcon,     label: 'Support',        cap: 'read' },
+]
+
+export default function AdminLayout({ user, children, title, location }: Props) {
   const router = useRouter()
   const links  = NAV.filter(n => can(user, n.cap))
   const [moreOpen, setMoreOpen] = useState(false)
   const moreTriggerRef = useRef<HTMLButtonElement>(null)
   const primaryHrefs = new Set(['/admin/dashboard', '/admin', '/admin/employees', '/admin/team-chat'])
+
+  function isNavActive(href: string) {
+    // /admin must be exact-match so it doesn't activate on /admin/dashboard etc.
+    return href === '/admin'
+      ? router.pathname === '/admin'
+      : router.pathname === href || router.pathname.startsWith(href + '/')
+  }
+
+  const sidebarItems: SidebarItem[] = links.map(l => ({
+    href: l.href,
+    icon: <l.Icon size={20} />,
+    label: l.label,
+    isActive: isNavActive(l.href),
+  }))
+
   const mobilePrimary = links.filter(link => primaryHrefs.has(link.href))
   const mobileSecondary = links.filter(link => !primaryHrefs.has(link.href))
+  const mobileSecondaryItems = mobileSecondary.map(l => ({
+    href: l.href,
+    icon: <l.Icon size={24} />,
+    label: l.label,
+  }))
+
+  const sections: SidebarSection[] = [
+    { label: 'Menu', items: sidebarItems },
+  ]
+
+  const onTeamMarkt = router.pathname === '/team/[location]' && router.query.location === 'markt'
+  const onTeamNoot  = router.pathname === '/team/[location]' && router.query.location === 'nootmagazijn'
+  const onIndividueel = router.pathname.startsWith('/admin/view')
+
+  const footerSections: SidebarSection[] = [
+    {
+      label: 'Weergave',
+      items: [
+        { href: '/team/markt',        icon: <TeamViewIcon size={20} />,  label: 'Team Markt',        isActive: onTeamMarkt },
+        { href: '/team/nootmagazijn', icon: <TeamViewIcon size={20} />,  label: 'Team Nootmagazijn', isActive: onTeamNoot },
+        { href: '/admin/view',        icon: <MyScheduleIcon size={20} />, label: 'Individueel',       isActive: onIndividueel },
+      ],
+    },
+  ]
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -50,85 +93,13 @@ export default function AdminLayout({ user, children, title }: Props) {
   return (
     <div className="admin-shell">
 
-      {/* ══════════════════ SIDEBAR ══════════════════ */}
-      <aside className="admin-sidebar" aria-label="Hoofdnavigatie">
-
-        {/* Logo */}
-        <div className="sb-logo">
-          <div className="sb-logo-img-wrap">
-            <Image
-              src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
-              alt="DeNotenman"
-              width={180}
-              height={43}
-              style={{ width: 'auto', height: '36px', display: 'block' }}
-              priority
-            />
-          </div>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="sb-body">
-
-          {/* Main nav */}
-          <div className="sb-section">
-            <span className="sb-section-label">Menu</span>
-            <nav className="sb-nav" aria-label="Beheer">
-              {links.map(l => {
-                // /admin must be exact-match so it doesn't activate on /admin/dashboard etc.
-                const isActive = l.href === '/admin'
-                  ? router.pathname === '/admin'
-                  : router.pathname === l.href || router.pathname.startsWith(l.href + '/')
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className={`sb-link${isActive ? ' active' : ''}`}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <span className="sb-icon">{l.icon}</span>
-                    <span className="sb-label">{l.label}</span>
-                    {isActive && <span className="sb-dot" aria-hidden="true" />}
-                  </Link>
-                )
-              })}
-            </nav>
-          </div>
-
-          {/* Footer nav */}
-          <div className="sb-section sb-section--bottom">
-            <span className="sb-section-label">Weergave</span>
-            <nav className="sb-nav" aria-label="Weergave">
-              <Link href="/team/markt" className={`sb-link${router.pathname === '/team/[location]' && router.query.location === 'markt' ? ' active' : ''}`}>
-                <span className="sb-icon"><TeamViewIcon size={20} /></span>
-                <span className="sb-label">Team Markt</span>
-              </Link>
-              <Link href="/team/nootmagazijn" className={`sb-link${router.pathname === '/team/[location]' && router.query.location === 'nootmagazijn' ? ' active' : ''}`}>
-                <span className="sb-icon"><TeamViewIcon size={20} /></span>
-                <span className="sb-label">Team Nootmagazijn</span>
-              </Link>
-              <Link href="/admin/view" className={`sb-link${router.pathname.startsWith('/admin/view') ? ' active' : ''}`}>
-                <span className="sb-icon"><MyScheduleIcon size={20} /></span>
-                <span className="sb-label">Individueel</span>
-                {router.pathname.startsWith('/admin/view') && <span className="sb-dot" aria-hidden="true" />}
-              </Link>
-            </nav>
-          </div>
-
-        </div>
-
-        {/* User area */}
-        <div className="sb-user">
-          <div className="sb-avatar" aria-hidden="true">{getInitials(user.display_name)}</div>
-          <div className="sb-user-info">
-            <span className="sb-user-name">{user.display_name}</span>
-            <button className="sb-logout" onClick={logout} aria-label="Uitloggen">
-              Uitloggen
-            </button>
-          </div>
-        </div>
-
-      </aside>
+      <Sidebar
+        logoSrc="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
+        sections={sections}
+        footerSections={footerSections}
+        user={user}
+        onLogout={logout}
+      />
 
       {/* ══════════════════ MAIN ══════════════════ */}
       <main className="admin-main">
@@ -141,14 +112,13 @@ export default function AdminLayout({ user, children, title }: Props) {
             </div>
           </header>
         )}
-        <div className="admin-content">{children}</div>
+        <div className="admin-content" data-loc={location}>{children}</div>
       </main>
 
       {/* ══════════════════ MOBILE BOTTOM NAV ══════════════════ */}
       <nav className="admin-bnav" aria-label="Mobiele navigatie">
         {mobilePrimary.map(l => {
-          const isActive = router.pathname === l.href ||
-            (l.href !== '/admin' && router.pathname.startsWith(l.href))
+          const isActive = isNavActive(l.href)
           return (
             <Link
               key={l.href}
@@ -157,21 +127,21 @@ export default function AdminLayout({ user, children, title }: Props) {
               aria-current={isActive ? 'page' : undefined}
             >
               {isActive && <span className="bn-bar" aria-hidden="true" />}
-              <span className="bn-icon">{l.icon}</span>
+              <span className="bn-icon"><l.Icon size={24} /></span>
               <span className="bn-label">{l.label}</span>
             </Link>
           )
         })}
         <button ref={moreTriggerRef} type="button" className={`bn-item${moreOpen ? ' active' : ''}`} onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen}>
           {moreOpen && <span className="bn-bar" aria-hidden="true" />}
-          <span className="bn-icon"><MoreHorizontal size={21} /></span>
+          <span className="bn-icon"><MoreHorizontal size={24} /></span>
           <span className="bn-label">Meer</span>
         </button>
       </nav>
 
       <AdminMobileMoreNav
         open={moreOpen}
-        items={mobileSecondary}
+        items={mobileSecondaryItems}
         onClose={() => { setMoreOpen(false); requestAnimationFrame(() => moreTriggerRef.current?.focus()) }}
         onLogout={logout}
       />
@@ -184,169 +154,10 @@ export default function AdminLayout({ user, children, title }: Props) {
           min-height: 100vh;
         }
 
-        /* ─── Sidebar ───────────────────────────────────── */
-        .admin-sidebar {
-          width: 248px;
-          flex-shrink: 0;
-          background: #100C0A;
-          display: flex;
-          flex-direction: column;
-          position: fixed;
-          top: 0; left: 0; bottom: 0;
-          z-index: 100;
-          border-right: 1px solid rgba(255,255,255,.06);
-        }
-
-        /* Logo */
-        .sb-logo {
-          display: flex;
-          align-items: center;
-          padding: 20px 20px 18px;
-          border-bottom: 1px solid rgba(255,255,255,.07);
-          flex-shrink: 0;
-        }
-        .sb-logo-img-wrap {
-          display: flex;
-          align-items: center;
-          /* Logo is zwart op transparant — invert maakt het wit */
-          filter: invert(1) brightness(2);
-        }
-
-        /* Scrollable body */
-        .sb-body {
-          flex: 1;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          padding: 8px 0;
-          scrollbar-width: none;
-        }
-        .sb-body::-webkit-scrollbar { display: none; }
-
-        /* Sections */
-        .sb-section {
-          padding: 12px 0 4px;
-        }
-        .sb-section--bottom {
-          margin-top: auto;
-          border-top: 1px solid rgba(255,255,255,.07);
-          padding-top: 16px;
-        }
-        .sb-section-label {
-          display: block;
-          font-size: .5625rem;
-          font-weight: 700;
-          letter-spacing: .14em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,.22);
-          padding: 0 20px 6px;
-        }
-
-        /* Nav */
-        .sb-nav {
-          display: flex;
-          flex-direction: column;
-          gap: 1px;
-          padding: 0 10px;
-        }
-        .sb-link {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 9px 12px;
-          border-radius: 9px;
-          font-size: .9375rem;
-          font-weight: 500;
-          color: #fff;
-          transition: background .14s, color .14s;
-          text-decoration: none;
-          position: relative;
-        }
-        .sb-link:hover {
-          background: rgba(255, 255, 255, 0.09);
-          color: #fff;
-        }
-        .sb-link:hover .sb-icon { color: #fff; }
-        .sb-link.active {
-          background: rgba(200,136,42,.18);
-          color: #FFCF6B;
-        }
-        .sb-link.active .sb-icon { color: #FFCF6B; }
-
-        .sb-icon {
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          color: rgba(255,255,255,.85);
-          transition: color .14s;
-        }
-        .sb-label { flex: 1; white-space: nowrap; }
-        .sb-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: var(--brand);
-          flex-shrink: 0;
-          opacity: .9;
-        }
-        .sb-dave-icon {
-          font-size: 1.1rem;
-          line-height: 1;
-        }
-
-        /* User area */
-        .sb-user {
-          display: flex;
-          align-items: center;
-          gap: 11px;
-          padding: 14px 18px 20px;
-          border-top: 1px solid rgba(255,255,255,.07);
-          flex-shrink: 0;
-        }
-        .sb-avatar {
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          flex-shrink: 0;
-          background: var(--brand);
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: .6875rem;
-          font-weight: 700;
-          letter-spacing: .02em;
-        }
-        .sb-user-info {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          min-width: 0;
-        }
-        .sb-user-name {
-          font-size: .875rem;
-          font-weight: 500;
-          color: rgba(255,255,255,.65);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .sb-logout {
-          font-size: .75rem;
-          color: rgba(255,255,255,.28);
-          text-align: left;
-          padding: 0;
-          transition: color .14s;
-        }
-        .sb-logout:hover { color: rgba(255,255,255,.65); }
-
         /* ─── Main content ──────────────────────────────── */
         .admin-main {
           flex: 1;
-          margin-left: 248px;
+          margin-left: var(--sidebar-w);
           min-height: 100vh;
           display: flex;
           flex-direction: column;
@@ -391,16 +202,17 @@ export default function AdminLayout({ user, children, title }: Props) {
           flex: 1;
           padding: var(--s8);
         }
+        .admin-content[data-loc="markt"] { box-shadow: inset 0 3px 0 0 var(--markt); }
+        .admin-content[data-loc="nootmagazijn"] { box-shadow: inset 0 3px 0 0 var(--noot); }
 
         /* ─── Mobile bottom nav ─────────────────────────── */
         .admin-bnav { display: none; }
 
         /* ─── Responsive ────────────────────────────────── */
         @media (max-width: 768px) {
-          .admin-sidebar { display: none; }
           .admin-main {
             margin-left: 0;
-            padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+            padding-bottom: calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px));
           }
           .admin-content { padding: var(--s4) var(--s3); }
           .admin-topbar { padding: var(--s3) var(--s4); }
@@ -412,6 +224,7 @@ export default function AdminLayout({ user, children, title }: Props) {
             justify-content: space-evenly;
             position: fixed;
             bottom: 0; left: 0; right: 0;
+            min-height: var(--bnav-h);
             background: var(--surface);
             border-top: 1px solid var(--border);
             z-index: 200;
@@ -444,11 +257,20 @@ export default function AdminLayout({ user, children, title }: Props) {
             background: var(--brand);
           }
           .bn-icon {
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-top: 2px;
+            border-radius: var(--r2);
+            transition: background .16s ease;
           }
+          .bn-item.active .bn-icon {
+            background: rgba(200,136,42,.18);
+          }
+          .bn-icon :global(svg) { transition: transform .16s ease; }
+          .bn-item.active .bn-icon :global(svg) { transform: scale(1.08); }
           .bn-label {
             font-size: .625rem;
             font-weight: 600;
@@ -458,7 +280,6 @@ export default function AdminLayout({ user, children, title }: Props) {
             text-overflow: ellipsis;
             max-width: 100%;
             padding: 0 2px;
-            color: rgba(255, 255, 255, 0.75);
           }
         }
 

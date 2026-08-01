@@ -1,10 +1,8 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { MessageCircle, MoreHorizontal } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { SessionUser } from '@/types';
-import { LOCATION_LABELS } from '@/types';
 import { can } from '@/lib/capabilities';
 import {
   ScheduleIcon,
@@ -14,7 +12,10 @@ import {
   SettingsIcon,
   ProfileIcon,
   DocumentIcon,
+  ReceiptIcon,
+  TicketIcon,
 } from '@/components/ui/Icons';
+import Sidebar, { type SidebarItem, type SidebarSection } from '@/components/layout/Sidebar';
 import MobileMoreNav from '@/components/layout/MobileMoreNav';
 
 interface Props {
@@ -28,7 +29,6 @@ export default function TeamLayout({ user, children, location }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
   const isAdmin = can(user, 'manage_shifts');
-  const locLabel = location ? LOCATION_LABELS[location] : 'Planner';
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -46,144 +46,71 @@ export default function TeamLayout({ user, children, location }: Props) {
   const onExpenses = router.pathname === '/me/expenses';
   const onSupport = router.pathname === '/me/support';
 
+  // ── Sidebar navigation (desktop ≥768px) — 3 sections + footer crosslink ──
+  const showMarkt = user.location === 'markt' || user.location === 'both' || isAdmin;
+  const showNoot = user.location === 'nootmagazijn' || user.location === 'both' || isAdmin;
+  const bothLocations = user.location === 'both' || isAdmin;
+
+  const roosterItems: SidebarItem[] = [];
+  if (showMarkt) {
+    roosterItems.push({
+      href: '/team/markt',
+      icon: <ScheduleIcon size={20} />,
+      label: bothLocations ? 'Rooster Markt' : 'Rooster',
+      isActive: onTeam && location === 'markt',
+    });
+  }
+  if (showNoot) {
+    roosterItems.push({
+      href: '/team/nootmagazijn',
+      icon: <ScheduleIcon size={20} />,
+      label: bothLocations ? 'Rooster Noot' : 'Rooster',
+      isActive: onTeam && location === 'nootmagazijn',
+    });
+  }
+  roosterItems.push(
+    { href: '/me', icon: <MyScheduleIcon size={20} />, label: 'Mijn rooster', isActive: onMe },
+    { href: '/me/open-shifts', icon: <ScheduleIcon size={20} />, label: 'Open diensten', isActive: onOpenShifts },
+  );
+
+  const mijnZakenItems: SidebarItem[] = [
+    { href: '/me/leave', icon: <LeaveIcon size={20} />, label: 'Verlof', isActive: onLeave },
+    { href: '/me/hours', icon: <HoursIcon size={20} />, label: 'Mijn uren', isActive: onHours },
+    { href: '/me/expenses', icon: <ReceiptIcon size={20} />, label: 'Declaraties', isActive: onExpenses },
+    { href: '/me/documents', icon: <DocumentIcon size={20} />, label: 'Documenten', isActive: onDocuments },
+    { href: '/me/profile', icon: <ProfileIcon size={20} />, label: 'Mijn profiel', isActive: onProfile },
+  ];
+
+  const contactItems: SidebarItem[] = [
+    { href: '/me/chat', icon: <MessageCircle size={20} />, label: 'Teamchat', isActive: onChat },
+    { href: '/me/support', icon: <TicketIcon size={20} />, label: 'Support', isActive: onSupport },
+  ];
+
+  const sections: SidebarSection[] = [
+    { label: 'ROOSTER', items: roosterItems },
+    { label: 'MIJN ZAKEN', items: mijnZakenItems },
+    { label: 'CONTACT', items: contactItems },
+  ];
+
+  const footerSections: SidebarSection[] = isAdmin
+    ? [{ items: [{ href: '/admin', icon: <SettingsIcon size={20} />, label: 'Beheer', isActive: router.pathname.startsWith('/admin') }] }]
+    : [];
+
   return (
     <div className="team-shell">
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <header className={`team-header${location === 'nootmagazijn' ? ' is-noot' : ''}`}>
-        <div className="team-inner">
-          {/* Brand – logo afbeelding */}
-          <div className="team-brand">
-            <Image
-              src="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
-              alt="DeNotenman"
-              width={160}
-              height={38}
-              style={{
-                width: 'auto',
-                height: '32px',
-                display: 'block',
-                filter: 'invert(1) brightness(2)',
-              }}
-              priority
-            />
-          </div>
 
-          {/* Desktop nav */}
-          <nav className="team-nav" aria-label="Hoofdmenu">
-            {(user.location === 'markt' || user.location === 'both' || isAdmin) && (
-              <Link
-                href="/team/markt"
-                className={`tn-link${onTeam && location === 'markt' ? ' active' : ''}`}
-                aria-current={onTeam && location === 'markt' ? 'page' : undefined}
-              >
-                <ScheduleIcon size={20} />
-                {user.location === 'both' || isAdmin ? 'Rooster Markt' : 'Rooster'}
-              </Link>
-            )}
-            {(user.location === 'nootmagazijn' || user.location === 'both' || isAdmin) && (
-              <Link
-                href="/team/nootmagazijn"
-                className={`tn-link${onTeam && location === 'nootmagazijn' ? ' active' : ''}`}
-                aria-current={onTeam && location === 'nootmagazijn' ? 'page' : undefined}
-              >
-                <ScheduleIcon size={20} />
-                {user.location === 'both' || isAdmin ? 'Rooster Noot' : 'Rooster'}
-              </Link>
-            )}
-            <Link
-              href="/me"
-              className={`tn-link${onMe ? ' active' : ''}`}
-              aria-current={onMe ? 'page' : undefined}
-            >
-              <MyScheduleIcon size={20} />
-              Mijn rooster
-            </Link>
-            <Link
-              href="/me/leave"
-              className={`tn-link${onLeave ? ' active' : ''}`}
-              aria-current={onLeave ? 'page' : undefined}
-            >
-              <LeaveIcon size={20} />
-              Verlof
-            </Link>
-            <Link
-              href="/me/hours"
-              className={`tn-link${onHours ? ' active' : ''}`}
-              aria-current={onHours ? 'page' : undefined}
-            >
-              <HoursIcon size={20} />
-              Mijn uren
-            </Link>
-            <Link
-              href="/me/open-shifts"
-              className={`tn-link${onOpenShifts ? ' active' : ''}`}
-              aria-current={onOpenShifts ? 'page' : undefined}
-            >
-              <ScheduleIcon size={20} />
-              Open diensten
-            </Link>
-            <Link
-              href="/me/chat"
-              className={`tn-link${onChat ? ' active' : ''}`}
-              aria-current={onChat ? 'page' : undefined}
-            >
-              <MessageCircle size={20} />
-              Teamchat
-            </Link>
-            <Link
-              href="/me/profile"
-              className={`tn-link${onProfile ? ' active' : ''}`}
-              aria-current={onProfile ? 'page' : undefined}
-            >
-              <ProfileIcon size={20} />
-              Mijn profiel
-            </Link>
-            <Link
-              href="/me/documents"
-              className={`tn-link${onDocuments ? ' active' : ''}`}
-              aria-current={onDocuments ? 'page' : undefined}
-            >
-              <DocumentIcon size={20} />
-              Documenten
-            </Link>
-            <Link
-              href="/me/expenses"
-              className={`tn-link${onExpenses ? ' active' : ''}`}
-              aria-current={onExpenses ? 'page' : undefined}
-            >
-              <DocumentIcon size={20} />
-              Declaraties
-            </Link>
-            <Link
-              href="/me/support"
-              className={`tn-link${onSupport ? ' active' : ''}`}
-              aria-current={onSupport ? 'page' : undefined}
-            >
-              <span className="support-icon">🎫</span>
-              Support
-            </Link>
-          </nav>
-
-          {/* Right: user + admin link */}
-          <div className="team-header-right">
-            {isAdmin && (
-              <Link href="/admin" className="team-admin-link">
-                <SettingsIcon size={20} />
-                Beheer
-              </Link>
-            )}
-            <div className="team-user">
-              <span className="team-user-name">{user.display_name}</span>
-              <button className="team-logout" onClick={logout} aria-label="Uitloggen">
-                Uitloggen
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Sidebar
+        logoSrc="https://mhzmithddcdnouvlklev.supabase.co/storage/v1/object/public/Icons%20and%20Logo's/Notenman_2020_logo-300x72.png"
+        sections={sections}
+        footerSections={footerSections}
+        user={user}
+        onLogout={logout}
+      />
 
       {/* ── Content ─────────────────────────────────────────────────── */}
-      <main className={`team-main${onChat ? ' chat-main' : ''}`}>{children}</main>
+      <main className="team-main" data-loc={location}>
+        <div className={`team-main-inner${onChat ? ' chat-main' : ''}`}>{children}</div>
+      </main>
 
       {/* ── Mobile bottom nav ───────────────────────────────────────── */}
       <nav className="team-bnav" aria-label="Mobiele navigatie">
@@ -194,7 +121,7 @@ export default function TeamLayout({ user, children, location }: Props) {
         >
           {onTeam && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon">
-            <ScheduleIcon size={22} />
+            <ScheduleIcon size={24} />
           </span>
           <span className="tbn-label">Rooster</span>
         </Link>
@@ -205,7 +132,7 @@ export default function TeamLayout({ user, children, location }: Props) {
         >
           {onMe && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon">
-            <MyScheduleIcon size={22} />
+            <MyScheduleIcon size={24} />
           </span>
           <span className="tbn-label">Mijn rooster</span>
         </Link>
@@ -216,7 +143,7 @@ export default function TeamLayout({ user, children, location }: Props) {
         >
           {onChat && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon">
-            <MessageCircle size={22} />
+            <MessageCircle size={24} />
           </span>
           <span className="tbn-label">Chat</span>
         </Link>
@@ -227,7 +154,7 @@ export default function TeamLayout({ user, children, location }: Props) {
         >
           {onOpenShifts && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon">
-            <ScheduleIcon size={22} />
+            <ScheduleIcon size={24} />
           </span>
           <span className="tbn-label">Open</span>
         </Link>
@@ -241,7 +168,7 @@ export default function TeamLayout({ user, children, location }: Props) {
         >
           {moreOpen && <span className="tbn-bar" aria-hidden="true" />}
           <span className="tbn-icon">
-            <MoreHorizontal size={22} />
+            <MoreHorizontal size={24} />
           </span>
           <span className="tbn-label">Meer</span>
         </button>
@@ -259,156 +186,31 @@ export default function TeamLayout({ user, children, location }: Props) {
       />
 
       <style jsx>{`
-        .support-icon {
-          font-size: 1.1rem;
-          line-height: 1;
-        }
-
         .team-shell {
           min-height: 100vh;
           display: flex;
-          flex-direction: column;
-        }
-
-        /* ─── Header ─────────────────────────────────── */
-        .team-header {
-          background: #100c0a;
-          box-shadow: 0 3px 0 var(--markt);
-          position: sticky;
-          top: 0;
-          z-index: 50;
-        }
-        .team-header.is-noot {
-          box-shadow: 0 3px 0 var(--noot);
-        }
-        .team-inner {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 var(--s6);
-          display: flex;
-          align-items: center;
-          gap: var(--s5);
-          height: 58px;
-        }
-
-        /* Brand */
-        .team-brand {
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-          text-decoration: none;
-        }
-
-        /* Desktop nav */
-        .team-nav {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          flex: 1;
-          min-width: 0;
-          padding-left: var(--s4);
-          overflow-x: auto;
-          scrollbar-width: none;
-        }
-        .team-nav::-webkit-scrollbar {
-          display: none;
-        }
-        .tn-link {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 14px;
-          border-radius: var(--r2);
-          min-height: 40px;
-          font-size: 0.9375rem;
-          font-weight: 500;
-          color: #fff;
-          opacity: 0.7;
-          transition:
-            background 0.14s,
-            opacity 0.14s;
-          text-decoration: none;
-          white-space: nowrap;
-        }
-        .tn-link svg {
-          flex-shrink: 0;
-        }
-        .tn-link:hover {
-          background: rgba(255, 255, 255, 0.09);
-          opacity: 1;
-        }
-        .tn-link.active {
-          background: rgba(200, 136, 42, 0.18);
-          color: #ffcf6b;
-          opacity: 1;
-          font-weight: 600;
-        }
-
-        /* Right side */
-        .team-header-right {
-          display: flex;
-          align-items: center;
-          gap: var(--s3);
-          flex-shrink: 0;
-          margin-left: auto;
-        }
-        .team-admin-link {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          border-radius: var(--r2);
-          font-size: 0.8125rem;
-          font-weight: 500;
-          color: #fff;
-          opacity: 0.7;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          transition:
-            background 0.14s,
-            opacity 0.14s,
-            border-color 0.14s;
-          text-decoration: none;
-        }
-        .team-admin-link:hover {
-          background: rgba(255, 255, 255, 0.09);
-          opacity: 1;
-          border-color: rgba(255, 255, 255, 0.4);
-        }
-        .team-user {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 1px;
-        }
-        .team-user-name {
-          font-size: 0.875rem;
-          font-weight: 500;
-          color: #fff;
-          opacity: 0.75;
-          white-space: nowrap;
-        }
-        .team-logout {
-          font-size: 0.75rem;
-          color: #fff;
-          opacity: 0.4;
-          padding: 0;
-          transition: opacity 0.14s;
-        }
-        .team-logout:hover {
-          opacity: 0.85;
         }
 
         /* ─── Main ───────────────────────────────────── */
         .team-main {
           flex: 1;
+          margin-left: var(--sidebar-w);
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+        .team-main[data-loc="markt"] { box-shadow: inset 0 3px 0 0 var(--markt); }
+        .team-main[data-loc="nootmagazijn"] { box-shadow: inset 0 3px 0 0 var(--noot); }
+        .team-main-inner {
+          flex: 1;
+          width: 100%;
           max-width: 1200px;
           margin: 0 auto;
-          width: 100%;
           padding: var(--s8) var(--s6);
         }
-        .team-main.chat-main {
+        .team-main-inner.chat-main {
           max-width: 1440px;
+          padding: 0;
         }
 
         /* ─── Mobile bottom nav ──────────────────────── */
@@ -418,29 +220,14 @@ export default function TeamLayout({ user, children, location }: Props) {
 
         /* ─── Responsive ─────────────────────────────── */
         @media (max-width: 768px) {
-          .team-nav {
-            display: none;
-          }
-          .team-user {
-            display: none;
-          }
-          .team-admin-link {
-            display: none;
-          }
-
-          .team-inner {
-            padding: 0 var(--s4);
-            height: 52px;
-          }
-          .team-brand-name {
-            font-size: 0.9375rem;
-          }
-
           .team-main {
-            padding: var(--s4) var(--s3) calc(62px + env(safe-area-inset-bottom, 0px));
+            margin-left: 0;
           }
-          .team-main.chat-main {
-            padding: 0 0 calc(62px + env(safe-area-inset-bottom, 0px));
+          .team-main-inner {
+            padding: var(--s4) var(--s3) calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px));
+          }
+          .team-main-inner.chat-main {
+            padding: 0 0 calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px));
           }
 
           .team-bnav {
@@ -449,6 +236,7 @@ export default function TeamLayout({ user, children, location }: Props) {
             bottom: 0;
             left: 0;
             right: 0;
+            min-height: var(--bnav-h);
             background: var(--surface);
             border-top: 1px solid var(--border);
             z-index: 200;
@@ -483,11 +271,20 @@ export default function TeamLayout({ user, children, location }: Props) {
             background: var(--brand);
           }
           .tbn-icon {
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-top: 2px;
+            border-radius: var(--r2);
+            transition: background .16s ease;
           }
+          .tbn-item.active .tbn-icon {
+            background: rgba(200,136,42,.18);
+          }
+          .tbn-icon :global(svg) { transition: transform .16s ease; }
+          .tbn-item.active .tbn-icon :global(svg) { transform: scale(1.08); }
           .tbn-label {
             font-size: 0.625rem;
             font-weight: 600;
@@ -501,11 +298,11 @@ export default function TeamLayout({ user, children, location }: Props) {
         }
 
         @media (max-width: 390px) {
-          .team-main {
-            padding: var(--s3) var(--s2) calc(62px + env(safe-area-inset-bottom, 0px));
+          .team-main-inner {
+            padding: var(--s3) var(--s2) calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px));
           }
-          .team-main.chat-main {
-            padding: 0 0 calc(62px + env(safe-area-inset-bottom, 0px));
+          .team-main-inner.chat-main {
+            padding: 0 0 calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px));
           }
         }
       `}</style>

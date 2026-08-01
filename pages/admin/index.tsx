@@ -3,7 +3,7 @@ import Link from 'next/link'
 import AdminLayout from '@/components/layout/AdminLayout'
 import ShiftModal from '@/components/ui/ShiftModal'
 import LocationBadge from '@/components/ui/LocationBadge'
-import { PrevIcon, NextIcon } from '@/components/ui/Icons'
+import { PrevIcon, NextIcon, PlusIcon, CloseIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
 import { currentWeekYear } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
@@ -318,7 +318,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
       {loading ? (
         <div className="loading-row"><Spinner /> Laden…</div>
       ) : (
-        <div className="plan-grid-wrap">
+        <div className="plan-grid-wrap scroll-fade-x">
           {weeksInRange(week, year, numWeeks).map((wk, wkIdx) => (
             <div key={`${wk.year}-${wk.week}`} className="admin-week-block">
               {numWeeks > 1 && (
@@ -386,7 +386,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                               onClick={() => setModal({ shift: null, employee: emp, day, week: wk.week, year: wk.year })}
                               aria-label={`Dienst toevoegen voor ${emp.name} op ${day}`}
                               title="Dienst toevoegen"
-                            >+</button>
+                            ><PlusIcon size={18} /></button>
                           </td>
                         )
                       })}
@@ -420,7 +420,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                                       <span className={`chip-invite ${s.open_invite_status}`}>{s.open_invite_status}</span>
                                     )}
                                   </button>
-                                  <button className="chip-delete" onClick={e => { e.stopPropagation(); void withdrawOpenShift(s.id) }} title="Open dienst veilig intrekken" aria-label="Open dienst intrekken">×</button>
+                                  <button className="chip-delete" onClick={e => { e.stopPropagation(); void withdrawOpenShift(s.id) }} title="Open dienst veilig intrekken" aria-label="Open dienst intrekken"><CloseIcon size={18} /></button>
                                 </div>
                               ))}
                             </div>
@@ -488,7 +488,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                               className="mobile-add-btn"
                               onClick={() => setModal({ shift: null, employee: emp, day, week: wk.week, year: wk.year })}
                               aria-label={`Dienst toevoegen voor ${emp.name} op ${day}`}
-                            >+</button>
+                            ><PlusIcon size={18} /></button>
                           </div>
                         </div>
                       )
@@ -673,8 +673,8 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         .mobile-emp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
         .mobile-emp-header { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); background: var(--surface-alt); border-bottom: 1px solid var(--border); }
         .mobile-emp-name { font-size: .875rem; font-weight: 600; flex: 1; }
-        .mobile-days-strip { display: grid; grid-template-columns: repeat(7, 1fr); }
-        .mobile-day-col { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 64px; }
+        .mobile-days-strip { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); }
+        .mobile-day-col { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 64px; min-width: 44px; }
         .mobile-day-col:last-child { border-right: none; }
         .mobile-day-head { display: flex; flex-direction: column; align-items: center; padding: 4px 2px; background: var(--surface-alt); border-bottom: 1px solid var(--border); gap: 1px; }
         .mobile-day-short { font-size: .625rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
@@ -728,6 +728,18 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           .loc-tabs { justify-content: center; }
           .week-nav { justify-content: center; }
           .mobile-chip-time { display: none; }
+        }
+
+        /* 320–360px (iPhone SE-klasse): 7 kolommen passen niet meer comfortabel
+           binnen de viewport zonder te comprimeren onder de tap-target-minimum.
+           Laat de strip scrollen i.p.v. oneindig te knijpen — zelfde strategie
+           als de desktoptabel (zie .scroll-fade-x hierboven). */
+        @media (max-width: 360px) {
+          .mobile-days-strip {
+            grid-template-columns: repeat(7, 44px);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
         }
       `}</style>
     </AdminLayout>
