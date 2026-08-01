@@ -27,6 +27,9 @@
 .fixedNotice { display: flex; align-items: flex-start; gap: 9px; margin: 0 14px 12px; padding: 11px 12px; color: #695a4e; background: #f2ece5; border-radius: 13px; font-size: .76rem; line-height: 1.4; }
 .fixedNotice svg { flex: 0 0 auto; margin-top: 1px; color: #2c6e49; }
 .conversationItems { padding: 2px 10px 18px; overflow: auto; }
+.emptyInbox { display: flex; min-height: 160px; align-items: center; justify-content: center; flex-direction: column; gap: 6px; padding: 22px 14px; color: var(--chat-muted); text-align: center; }
+.emptyInbox strong { color: var(--chat-ink); font-size: .86rem; }
+.emptyInbox span { max-width: 260px; font-size: .74rem; line-height: 1.45; }
 .conversationItem { position: relative; display: flex; width: 100%; min-height: 72px; align-items: center; gap: 11px; padding: 11px 10px; color: inherit; text-align: left; border-radius: 15px; }
 .conversationItem:hover { background: rgba(255,255,255,.7); }
 .activeConversation { background: #fff; box-shadow: 0 4px 16px rgba(33,25,20,.07); }

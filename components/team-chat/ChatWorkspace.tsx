@@ -22,6 +22,7 @@ export default function ChatWorkspace({ user }: Props) {
   const preferredConversation = Number.isInteger(routeConversation) && routeConversation > 0 ? routeConversation : null
   const initialShiftId = Number.isInteger(routeShift) && routeShift > 0 ? routeShift : null
   const chat = useTeamChat(preferredConversation)
+  const { activeConversationId, bootstrap, selectConversation: setActiveConversation } = chat
   const [mobileOpen, setMobileOpen] = useState(Boolean(preferredConversation || initialShiftId))
   const [exchangeShift, setExchangeShift] = useState<TeamShiftSnapshot | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -30,27 +31,27 @@ export default function ChatWorkspace({ user }: Props) {
   const [searching, setSearching] = useState(false)
   const [watchOpen, setWatchOpen] = useState(false)
   const handledShiftRef = useRef<number | null>(null)
-  const searchDialogRef = useRef<HTMLElement>(null)
+  const searchDialogRef = useRef<HTMLDivElement>(null)
   const watchDialogRef = useRef<HTMLElement>(null)
   useDialogFocus(searchOpen, searchDialogRef, () => setSearchOpen(false))
   useDialogFocus(watchOpen, watchDialogRef, () => setWatchOpen(false))
 
   const active = useMemo(
-    () => chat.bootstrap?.conversations.find(conversation => conversation.id === chat.activeConversationId) ?? null,
-    [chat.activeConversationId, chat.bootstrap?.conversations],
+    () => bootstrap?.conversations.find(conversation => conversation.id === activeConversationId) ?? null,
+    [activeConversationId, bootstrap?.conversations],
   )
 
   useEffect(() => {
-    if (!initialShiftId || !chat.bootstrap) return
+    if (!initialShiftId || !bootstrap) return
     if (handledShiftRef.current === initialShiftId) return
     handledShiftRef.current = initialShiftId
-    const nootschap = chat.bootstrap.conversations.find(conversation => conversation.slug === 'nootschap')
-    if (nootschap && chat.activeConversationId !== nootschap.id) chat.selectConversation(nootschap.id)
+    const nootschap = bootstrap.conversations.find(conversation => conversation.slug === 'nootschap')
+    if (nootschap && activeConversationId !== nootschap.id) setActiveConversation(nootschap.id)
     setMobileOpen(true)
-  }, [chat.activeConversationId, chat.bootstrap, chat.selectConversation, initialShiftId])
+  }, [activeConversationId, bootstrap, initialShiftId, setActiveConversation])
 
   function selectConversation(id: number) {
-    chat.selectConversation(id)
+    setActiveConversation(id)
     setMobileOpen(true)
     void router.replace({ pathname: '/me/chat', query: { conversation: id } }, undefined, { shallow: true })
   }
@@ -80,6 +81,7 @@ export default function ChatWorkspace({ user }: Props) {
         activeId={chat.activeConversationId}
         onSelect={selectConversation}
         onSearch={() => setSearchOpen(true)}
+        emptyMessage={chat.error}
       />
 
       <section className={styles.conversation} aria-label={active?.name ?? 'Gesprek'}>

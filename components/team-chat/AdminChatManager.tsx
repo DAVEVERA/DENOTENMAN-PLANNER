@@ -11,6 +11,24 @@ const EMPTY: ManagedConversationInput = {
   archived: false,
 }
 
+function ManagerStatus({ error, retry }: { error: string | null; retry?: () => void }) {
+  return (
+    <div className="chat-manager">
+      <div className="manager-error" role={error ? 'alert' : 'status'}>
+        <span>{error ?? 'Chatbeheer laden...'}</span>
+        {retry && <button type="button" onClick={retry}>Opnieuw proberen</button>}
+      </div>
+      <style jsx>{`
+        .chat-manager { max-width: 1060px; margin: 0 auto; }
+        .manager-error { display: flex; min-height: 120px; align-items: center; justify-content: center; gap: 10px; padding: 20px; color: var(--danger); text-align: center; background: #fff1ed; border: 1px solid #ffd6ca; border-radius: 15px; }
+        .manager-error span { max-width: 520px; line-height: 1.45; }
+        .manager-error button { min-height: 44px; padding: 8px 12px; color: var(--text); background: #fff; border-radius: 10px; font-weight: 800; }
+        @media (max-width: 700px) { .manager-error { align-items: stretch; flex-direction: column; text-align: left; } .manager-error button { width: 100%; } }
+      `}</style>
+    </div>
+  )
+}
+
 export default function AdminChatManager() {
   const [data, setData] = useState<TeamChatAdminData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -102,8 +120,8 @@ export default function AdminChatManager() {
     if (response.ok) await load()
   }
 
-  if (loading) return <div className="manager-loading">Chatbeheer laden…</div>
-  if (!data) return <div className="manager-error" role="alert">{error}<button type="button" onClick={() => void load()}>Opnieuw proberen</button></div>
+  if (loading) return <ManagerStatus error={null} />
+  if (!data) return <ManagerStatus error={error} retry={() => void load()} />
 
   const fixed = data.conversations.filter(conversation => conversation.fixed)
   const custom = data.conversations.filter(conversation => !conversation.fixed)

@@ -8,6 +8,7 @@ interface Props {
   activeId: number | null
   onSelect(id: number): void
   onSearch(): void
+  emptyMessage?: string | null
 }
 
 function relativeTime(value: string | null): string {
@@ -19,7 +20,7 @@ function relativeTime(value: string | null): string {
   return new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short' }).format(new Date(value))
 }
 
-export default function ConversationList({ conversations, activeId, onSelect, onSearch }: Props) {
+export default function ConversationList({ conversations, activeId, onSelect, onSearch, emptyMessage }: Props) {
   return (
     <section className={styles.inbox} aria-label="Gesprekken">
       <div className={styles.inboxHeader}>
@@ -38,6 +39,13 @@ export default function ConversationList({ conversations, activeId, onSelect, on
       </div>
 
       <div className={styles.conversationItems}>
+        {conversations.length === 0 && (
+          <div className={styles.emptyInbox} role="status">
+            <MessageCircle size={24} />
+            <strong>Geen gesprekken geladen</strong>
+            <span>{emptyMessage ?? 'Probeer het zo opnieuw.'}</span>
+          </div>
+        )}
         {conversations.map(conversation => (
           <button
             key={conversation.id}
