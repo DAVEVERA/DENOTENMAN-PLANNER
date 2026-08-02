@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { calcHoursWorked } from '@/lib/dateUtils'
+import { interpretHourSubmissionResponse } from '@/lib/hour-submission-client'
 import { getPlannedShiftHours } from '@/lib/shift-hours'
 import type { HourConfirmationMode, Shift, TimeLog } from '@/types'
 import Spinner from './Spinner'
@@ -31,15 +32,26 @@ export default function ShiftHoursModal({ shift, latestLog, onClose, onSubmitted
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const closeRef = useRef<HTMLButtonElement>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
+  const submitLockRef = useRef(false)
 
   useEffect(() => {
     closeRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !saving) onClose()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose, saving])
+
+  useEffect(() => {
+    if (!error) return
+    errorRef.current?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+    errorRef.current?.focus({ preventScroll: true })
+  }, [error])
 
   const workedHours = calcHoursWorked(clockIn || null, clockOut || null, Number(breakMinutes) || 0)
   const dateLabel = new Date(`${planned.log_date}T12:00:00`).toLocaleDateString('nl-NL', {
@@ -74,12 +86,17 @@ export default function ShiftHoursModal({ shift, latestLog, onClose, onSubmitted
   }
 
   async function submit() {
+    if (submitLockRef.current) return
+    submitLockRef.current = true
     setSaving(true)
     setError('')
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 15000)
     try {
       const response = await fetch('/api/hours/shift', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           shift_id: shift.id,
           confirmation_mode: mode,
@@ -89,15 +106,27 @@ export default function ShiftHoursModal({ shift, latestLog, onClose, onSubmitted
           note: note.trim() || null,
         }),
       })
-      const result = await response.json()
-      if (!response.ok || !result.success) {
-        setError(result.message ?? 'Indienen is niet gelukt. Probeer het opnieuw.')
+      const text = await response.text()
+      let result: unknown = null
+      try {
+        result = text ? JSON.parse(text) : {}
+      } catch {
+        // Gateway/proxy errors are not guaranteed to return JSON.
+      }
+      const outcome = interpretHourSubmissionResponse(response.status, result)
+      if (outcome.kind === 'error') {
+        setError(outcome.message)
         return
       }
-      onSubmitted(result.data)
-    } catch {
-      setError('Geen verbinding. Je invoer is bewaard; probeer het opnieuw.')
+      onSubmitted(outcome.data)
+    } catch (err) {
+      const aborted = typeof err === 'object' && err !== null && 'name' in err && err.name === 'AbortError'
+      setError(aborted
+        ? 'Het opslaan duurt te lang. Controleer je status voordat je opnieuw probeert.'
+        : 'Geen verbinding. Je invoer staat nog in dit scherm; probeer het opnieuw.')
     } finally {
+      window.clearTimeout(timeout)
+      submitLockRef.current = false
       setSaving(false)
     }
   }
@@ -119,7 +148,7 @@ export default function ShiftHoursModal({ shift, latestLog, onClose, onSubmitted
             <span>{latestLog?.review_note || 'Controleer je uren en dien ze opnieuw in.'}</span>
           </div>
         )}
-        {error && <div className="form-error" role="alert">{error}</div>}
+        {error && <div ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{error}</div>}
 
         {step === 'choice' && (
           <div className="choice-step">

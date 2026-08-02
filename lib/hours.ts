@@ -57,9 +57,18 @@ export async function submitEmployeeHours(data: {
     .single())
 }
 
-export class HourSubmissionConflictError extends Error {}
+export class HourSubmissionConflictError extends Error {
+  constructor(
+    message: string,
+    public readonly existingLog: TimeLog | null = null,
+    public readonly isSameSubmission = false,
+  ) {
+    super(message)
+    this.name = 'HourSubmissionConflictError'
+  }
+}
 
-export async function submitEmployeeShiftHours(data: {
+type EmployeeShiftHourSubmission = {
   employee_id: number
   employee_name: string
   shift_id: number
@@ -75,7 +84,19 @@ export async function submitEmployeeShiftHours(data: {
   planned_clock_out: string | null
   planned_break_minutes: number
   created_by: string
-}): Promise<TimeLog> {
+}
+
+function matchesSubmission(log: TimeLog, data: EmployeeShiftHourSubmission): boolean {
+  const time = (value: string | null | undefined) => value?.slice(0, 5) ?? null
+  const note = (value: string | null | undefined) => value?.trim() || null
+  return log.confirmation_mode === data.confirmation_mode
+    && time(log.clock_in) === time(data.clock_in)
+    && time(log.clock_out) === time(data.clock_out)
+    && log.break_minutes === data.break_minutes
+    && note(log.note) === note(data.note)
+}
+
+export async function submitEmployeeShiftHours(data: EmployeeShiftHourSubmission): Promise<TimeLog> {
   const history = unwrap<TimeLog[]>(await supabase
     .from(T('time_logs'))
     .select('*')
@@ -86,7 +107,11 @@ export async function submitEmployeeShiftHours(data: {
   const active = history.find(log => ['pending', 'approved', 'direct'].includes(log.submission_status))
   if (active) {
     const label = active.submission_status === 'pending' ? 'al ingediend' : 'al definitief verwerkt'
-    throw new HourSubmissionConflictError(`De uren voor deze dienst zijn ${label}.`)
+    throw new HourSubmissionConflictError(
+      `De uren voor deze dienst zijn ${label}.`,
+      active,
+      matchesSubmission(active, data),
+    )
   }
 
   const revision = history.reduce(
@@ -127,7 +152,18 @@ export async function submitEmployeeShiftHours(data: {
     .single()
 
   if (result.error && (result.error as { code?: string }).code === '23505') {
-    throw new HourSubmissionConflictError('De uren voor deze dienst zijn zojuist al ingediend.')
+    const retryHistory = unwrap<TimeLog[]>(await supabase
+      .from(T('time_logs'))
+      .select('*')
+      .eq('shift_id', data.shift_id)
+      .eq('employee_id', data.employee_id)
+      .order('created_at', { ascending: false }))
+    const existingLog = retryHistory.find(log => ['pending', 'approved', 'direct'].includes(log.submission_status)) ?? null
+    throw new HourSubmissionConflictError(
+      'De uren voor deze dienst zijn zojuist al ingediend.',
+      existingLog,
+      existingLog ? matchesSubmission(existingLog, data) : false,
+    )
   }
   return unwrap<TimeLog>(result)
 }

@@ -23,10 +23,22 @@ jobs:
           cache: "npm"
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@54.7.1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run regression checks
+        run: |
+          npm run test:chat
+          npx tsc --noEmit
+          npm run lint
 
       - name: Pull Vercel environment information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Verify production hours schema
+        run: vercel env run -e production --token=${{ secrets.VERCEL_TOKEN }} -- node scripts/verify-hours-schema.mjs
 
       - name: Build project artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}

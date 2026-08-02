@@ -8,6 +8,60 @@ import { sendHourSubmissionAlertEmail } from '@/lib/email'
 import type { HourConfirmationMode } from '@/types'
 import { WORK_TYPES } from '@/types'
 
+type HourSubmissionFailure = {
+  status: 500 | 503
+  body: {
+    success: false
+    code: 'HOURS_SCHEMA_UNAVAILABLE' | 'HOURS_SUBMISSION_FAILED'
+    message: string
+    retryable: boolean
+  }
+}
+
+export function hourSubmissionConflictResponse(err: HourSubmissionConflictError) {
+  const code = err.isSameSubmission ? 'HOURS_ALREADY_SUBMITTED' : 'HOURS_SUBMISSION_CONFLICT'
+  const message = err.isSameSubmission
+    ? err.message
+    : 'Voor deze dienst zijn al uren opgeslagen. Je nieuwe aanpassing is niet opgeslagen; vernieuw je rooster.'
+  return {
+    status: 409 as const,
+    body: {
+      success: false as const,
+      code,
+      message,
+      data: err.existingLog,
+    },
+  }
+}
+
+export function hourSubmissionFailure(err: unknown): HourSubmissionFailure {
+  const code = typeof err === 'object' && err !== null && 'code' in err
+    ? String((err as { code?: unknown }).code ?? '')
+    : ''
+
+  if (code === 'PGRST204' || code === '42703') {
+    return {
+      status: 503,
+      body: {
+        success: false,
+        code: 'HOURS_SCHEMA_UNAVAILABLE',
+        message: 'Uren opslaan is tijdelijk niet beschikbaar. Probeer het later opnieuw.',
+        retryable: true,
+      },
+    }
+  }
+
+  return {
+    status: 500,
+    body: {
+      success: false,
+      code: 'HOURS_SUBMISSION_FAILED',
+      message: 'Uren opslaan is niet gelukt. Probeer het opnieuw.',
+      retryable: false,
+    },
+  }
+}
+
 function cleanTime(value: unknown): string | null {
   const text = String(value ?? '').slice(0, 5)
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(text) ? text : null
@@ -107,10 +161,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(201).json({ success: true, data: log, auto_approved: mode === 'confirmed' })
   } catch (err: unknown) {
     if (err instanceof HourSubmissionConflictError) {
-      return res.status(409).json({ success: false, message: err.message })
+      const conflict = hourSubmissionConflictResponse(err)
+      return res.status(conflict.status).json(conflict.body)
     }
     console.error('[/api/hours/shift]', err)
-    const message = err instanceof Error ? err.message : 'Serverfout'
-    return res.status(500).json({ success: false, message })
+    const failure = hourSubmissionFailure(err)
+    if (failure.status === 503) res.setHeader('Retry-After', '60')
+    return res.status(failure.status).json(failure.body)
   }
 }

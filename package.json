@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:chat": "tsx --test tests/team-chat/*.test.ts"
+    "test:chat": "tsx --test tests/team-chat/*.test.ts",
+    "verify:hours-schema": "node scripts/verify-hours-schema.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
