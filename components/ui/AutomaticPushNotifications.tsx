@@ -15,6 +15,7 @@ function urlBase64ToArrayBuffer(value: string): ArrayBuffer {
  */
 export default function AutomaticPushNotifications() {
   const subscribing = useRef(false);
+  const pushUnavailable = useRef(false);
 
   useEffect(() => {
     if (
@@ -27,7 +28,13 @@ export default function AutomaticPushNotifications() {
     let disposed = false;
 
     async function ensureSubscription(requestPermission: boolean) {
-      if (disposed || subscribing.current || Notification.permission === 'denied') return;
+      if (
+        disposed ||
+        subscribing.current ||
+        pushUnavailable.current ||
+        Notification.permission === 'denied'
+      )
+        return;
       subscribing.current = true;
 
       try {
@@ -40,6 +47,10 @@ export default function AutomaticPushNotifications() {
         const keyResponse = await fetch('/api/notifications/subscribe', { cache: 'no-store' });
         if (keyResponse.status === 401) return;
         const keyData = await keyResponse.json();
+        if (keyResponse.ok && keyData.success && keyData.configured === false) {
+          pushUnavailable.current = true;
+          return;
+        }
         if (!keyResponse.ok || !keyData.success || !keyData.publicKey) return;
 
         const registration = await navigator.serviceWorker.ready;

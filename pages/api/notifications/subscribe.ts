@@ -1,18 +1,26 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from '@/lib/auth'
 import { savePushSubscription } from '@/lib/push'
+import { getPublicPushConfiguration } from '@/lib/push-config'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
   if (!session.user) return res.status(401).json({ success: false })
 
+  const pushConfiguration = getPublicPushConfiguration(
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
+  )
+
   if (req.method === 'GET') {
-    const publicKey = process.env.VAPID_PUBLIC_KEY
-    if (!publicKey) return res.status(503).json({ success: false, message: 'Pushmeldingen zijn niet geconfigureerd' })
-    return res.json({ success: true, publicKey })
+    return res.status(200).json({ success: true, ...pushConfiguration })
   }
 
   if (req.method !== 'POST') return res.status(405).json({ success: false })
+
+  if (!pushConfiguration.configured) {
+    return res.status(200).json({ success: true, configured: false })
+  }
 
   const { subscription } = req.body
   if (!subscription?.endpoint) return res.status(400).json({ success: false })
@@ -23,5 +31,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     req.headers['user-agent'] ?? undefined,
   )
 
-  return res.json({ success: true })
+  return res.json({ success: true, configured: true })
 }
