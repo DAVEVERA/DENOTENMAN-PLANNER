@@ -1,16 +1,12 @@
-name: Deploy Next.js to Vercel
+name: Validate Next.js
 
 on:
   push:
     branches: ["master"]
   workflow_dispatch:
 
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,9 +18,6 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@54.7.1
-
       - name: Install dependencies
         run: npm ci
 
@@ -33,15 +26,3 @@ jobs:
           npm run test:chat
           npx tsc --noEmit
           npm run lint
-
-      - name: Pull Vercel environment information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Verify production hours schema
-        run: vercel env run -e production --token=${{ secrets.VERCEL_TOKEN }} -- node scripts/verify-hours-schema.mjs
-
-      - name: Build project artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

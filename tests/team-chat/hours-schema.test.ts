@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { isDirectInvocation, verifyHoursSchema } from '../../scripts/verify-hours-schema.mjs'
+import { shouldVerifyProductionSchema } from '../../scripts/verify-production-schema.mjs'
 
 test('hours schema gate accepts the complete production column contract', async () => {
   const requestedUrls: string[] = []
@@ -126,4 +127,11 @@ test('hours schema gate blocks deployment when constraints or indexes are missin
     code: 'INCOMPLETE_SCHEMA_CONTRACT',
     status: 200,
   })
+})
+
+test('schema preflight runs only inside the real Vercel production build', () => {
+  assert.equal(shouldVerifyProductionSchema({ VERCEL: '1', VERCEL_ENV: 'production' }), true)
+  assert.equal(shouldVerifyProductionSchema({ VERCEL: '1', VERCEL_ENV: 'preview' }), false)
+  assert.equal(shouldVerifyProductionSchema({ CI: 'true', VERCEL_ENV: 'production' }), false)
+  assert.equal(shouldVerifyProductionSchema({}), false)
 })
