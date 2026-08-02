@@ -43,6 +43,10 @@ interface Stats {
   pendingExpenses: number;
 }
 
+type DashboardWidget = 'quicknav' | 'load' | 'insights';
+
+const DEFAULT_WIDGET_ORDER: DashboardWidget[] = ['quicknav', 'load', 'insights'];
+
 const MONTHS_NL = [
   'jan',
   'feb',
@@ -86,6 +90,8 @@ export default function AdminDashboard({ user, week, year }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loc, setLoc] = useState<'markt' | 'nootmagazijn'>('markt');
+  const [widgetOrder, setWidgetOrder] = useState<DashboardWidget[]>(DEFAULT_WIDGET_ORDER);
+  const [editingLayout, setEditingLayout] = useState(false);
 
   const now = new Date();
   const greeting =
@@ -109,6 +115,24 @@ export default function AdminDashboard({ user, week, year }: Props) {
       setLoading(false);
     });
   }, [week, year, loc]);
+
+  useEffect(() => {
+    try {
+      const savedOrder = window.localStorage.getItem(`dashboard-layout:${user.user_id}`);
+      if (!savedOrder) return;
+
+      const parsed = JSON.parse(savedOrder) as unknown;
+      if (
+        Array.isArray(parsed) &&
+        parsed.length === DEFAULT_WIDGET_ORDER.length &&
+        DEFAULT_WIDGET_ORDER.every((widget) => parsed.includes(widget))
+      ) {
+        setWidgetOrder(parsed as DashboardWidget[]);
+      }
+    } catch {
+      // Een ongeldige lokale voorkeur mag het dashboard nooit blokkeren.
+    }
+  }, [user.user_id]);
 
   const QUICK_LINKS = [
     {
@@ -167,6 +191,118 @@ export default function AdminDashboard({ user, week, year }: Props) {
       desc: 'Systeeminstellingen',
     },
   ];
+
+  const saveWidgetOrder = (nextOrder: DashboardWidget[]) => {
+    setWidgetOrder(nextOrder);
+    try {
+      window.localStorage.setItem(`dashboard-layout:${user.user_id}`, JSON.stringify(nextOrder));
+    } catch {
+      // De gekozen volgorde blijft voor deze sessie actief als opslag niet beschikbaar is.
+    }
+  };
+
+  const moveWidget = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= widgetOrder.length || fromIndex === toIndex) return;
+    const nextOrder = [...widgetOrder];
+    const [widget] = nextOrder.splice(fromIndex, 1);
+    nextOrder.splice(toIndex, 0, widget);
+    saveWidgetOrder(nextOrder);
+  };
+
+  const renderWidget = (widget: DashboardWidget) => {
+    if (widget === 'quicknav') {
+      return (
+        <section className="db-section db-quicknav" aria-label="Snelnavigatie">
+          <h3 className="db-section-title">Snelnavigatie</h3>
+          <div className="db-quicknav-grid">
+            {QUICK_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className="db-qlink">
+                <span className="db-qlink-icon">{link.icon}</span>
+                <div className="db-qlink-body">
+                  <span className="db-qlink-label">{link.label}</span>
+                  <span className="db-qlink-desc">{link.desc}</span>
+                </div>
+                <span className="db-qlink-arrow">→</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (widget === 'load') {
+      return (
+        <section className="db-section db-load" aria-label="Belasting medewerkers">
+          <h3 className="db-section-title">
+            Uren vs contract
+            <span className="db-section-sub">Huidige week</span>
+          </h3>
+          {loadData.length === 0 ? (
+            <div className="db-empty">
+              <span className="db-empty-icon">
+                <NutIcon size={20} />
+              </span>
+              <span>Geen medewerkers gevonden.</span>
+            </div>
+          ) : (
+            <div className="db-load-list">
+              {loadData.map((employee) => (
+                <div key={employee.employeeId} className="db-load-row">
+                  <div className="db-load-info">
+                    <span className="db-load-name">{employee.employeeName}</span>
+                    <span className="db-load-hours">
+                      {employee.scheduledHours}u&nbsp;/&nbsp;{employee.contractHours}u
+                    </span>
+                    <span
+                      className={`db-load-pct ${employee.utilizationPct > 110 ? 'pct-over' : employee.utilizationPct < 60 ? 'pct-under' : 'pct-ok'}`}
+                    >
+                      {employee.utilizationPct}%
+                    </span>
+                  </div>
+                  <UtilBar pct={employee.utilizationPct} />
+                </div>
+              ))}
+              <div className="db-load-legend">
+                <span className="leg-item leg-ok">● Normaal (60–110%)</span>
+                <span className="leg-item leg-under">● Onderbenut (&lt;60%)</span>
+                <span className="leg-item leg-over">● Overbelast (&gt;110%)</span>
+              </div>
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    return (
+      <section className="db-section db-alerts" aria-label="Planningsanalyse">
+        <h3 className="db-section-title">
+          Planningsanalyse
+          <span className="db-section-sub">
+            Week {week} · {weekDateRange(week, year)}
+          </span>
+        </h3>
+        {insights.length === 0 ? (
+          <div className="db-empty">
+            <span className="db-empty-icon">
+              <LeafIcon size={20} />
+            </span>
+            <span>Alles ziet er goed uit voor deze week!</span>
+          </div>
+        ) : (
+          <div className="db-insight-list">
+            {insights.map((card) => (
+              <div key={card.id} className={`db-insight-card sev-${card.severity}`}>
+                <div className="db-insight-body">
+                  <span className="db-insight-title">{card.title}</span>
+                  <span className="db-insight-msg">{card.message}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  };
 
   return (
     <AdminLayout user={user} title="Dashboard">
@@ -231,99 +367,65 @@ export default function AdminDashboard({ user, week, year }: Props) {
           <Spinner /> Laden…
         </div>
       ) : (
-        <div className="db-main-grid">
-          {/* ── Insights / Alerts ── */}
-          <section className="db-section db-alerts" aria-label="Planningsanalyse">
-            <h3 className="db-section-title">
-              Planningsanalyse
-              <span className="db-section-sub">
-                Week {week} · {weekDateRange(week, year)}
-              </span>
-            </h3>
-            {insights.length === 0 ? (
-              <div className="db-empty">
-                <span className="db-empty-icon">
-                  <LeafIcon size={20} />
-                </span>
-                <span>Alles ziet er goed uit voor deze week!</span>
-              </div>
-            ) : (
-              <div className="db-insight-list">
-                {insights.map((card) => (
-                  <div key={card.id} className={`db-insight-card sev-${card.severity}`}>
-                    <div className="db-insight-body">
-                      <span className="db-insight-title">{card.title}</span>
-                      <span className="db-insight-msg">{card.message}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <>
+          <div className="db-layout-toolbar">
+            {editingLayout && (
+              <span>Sleep de blokken of gebruik Omhoog en Omlaag. Uw keuze wordt automatisch bewaard.</span>
             )}
-          </section>
-
-          {/* ── Employee Load Balance ── */}
-          <section className="db-section db-load" aria-label="Belasting medewerkers">
-            <h3 className="db-section-title">
-              Uren vs contract
-              <span className="db-section-sub">Huidige week</span>
-            </h3>
-            {loadData.length === 0 ? (
-              <div className="db-empty">
-                <span className="db-empty-icon">
-                  <NutIcon size={20} />
-                </span>
-                <span>Geen medewerkers gevonden.</span>
-              </div>
-            ) : (
-              <div className="db-load-list">
-                {loadData.map((emp) => (
-                  <div key={emp.employeeId} className="db-load-row">
-                    <div className="db-load-info">
-                      <span className="db-load-name">{emp.employeeName}</span>
-                      <span className="db-load-hours">
-                        {emp.scheduledHours}u&nbsp;/&nbsp;{emp.contractHours}u
-                      </span>
-                      <span
-                        className={`db-load-pct ${emp.utilizationPct > 110 ? 'pct-over' : emp.utilizationPct < 60 ? 'pct-under' : 'pct-ok'}`}
+            <div className="db-layout-actions">
+              {editingLayout && (
+                <button type="button" onClick={() => saveWidgetOrder(DEFAULT_WIDGET_ORDER)}>
+                  Standaard herstellen
+                </button>
+              )}
+              <button type="button" onClick={() => setEditingLayout((editing) => !editing)}>
+                {editingLayout ? 'Klaar' : 'Dashboard indelen'}
+              </button>
+            </div>
+          </div>
+          <div className={`db-main-grid${editingLayout ? ' is-editing' : ''}`}>
+            {widgetOrder.map((widget, index) => (
+              <div
+                key={widget}
+                className={`db-widget db-widget-${widget}`}
+                draggable={editingLayout}
+                onDragStart={(event) => event.dataTransfer.setData('text/plain', String(index))}
+                onDragOver={(event) => {
+                  if (editingLayout) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const fromIndex = Number(event.dataTransfer.getData('text/plain'));
+                  if (Number.isInteger(fromIndex)) moveWidget(fromIndex, index);
+                }}
+              >
+                {editingLayout && (
+                  <div className="db-widget-controls">
+                    <span>{widget === 'quicknav' ? 'Snelnavigatie' : widget === 'load' ? 'Uren vs contract' : 'Planningsanalyse'}</span>
+                    <div>
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => moveWidget(index, index - 1)}
                       >
-                        {emp.utilizationPct}%
-                      </span>
+                        Omhoog
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === widgetOrder.length - 1}
+                        onClick={() => moveWidget(index, index + 1)}
+                      >
+                        Omlaag
+                      </button>
                     </div>
-                    <UtilBar pct={emp.utilizationPct} />
                   </div>
-                ))}
-                <div className="db-load-legend">
-                  <span className="leg-item leg-ok">● Normaal (60–110%)</span>
-                  <span className="leg-item leg-under">● Onderbenut (&lt;60%)</span>
-                  <span className="leg-item leg-over">● Overbelast (&gt;110%)</span>
-                </div>
+                )}
+                {renderWidget(widget)}
               </div>
-            )}
-          </section>
-        </div>
+            ))}
+          </div>
+        </>
       )}
-
-      {/* ── Quick navigation ── */}
-      <section className="db-section db-quicknav" aria-label="Snelnavigatie">
-        <h3 className="db-section-title">
-          <span>
-            <AlmondIcon size={18} />
-          </span>{' '}
-          Snelnavigatie
-        </h3>
-        <div className="db-quicknav-grid">
-          {QUICK_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="db-qlink">
-              <span className="db-qlink-icon">{l.icon}</span>
-              <div className="db-qlink-body">
-                <span className="db-qlink-label">{l.label}</span>
-                <span className="db-qlink-desc">{l.desc}</span>
-              </div>
-              <span className="db-qlink-arrow">→</span>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <style jsx>{`
         /* ── Greeting ── */
@@ -433,6 +535,76 @@ export default function AdminDashboard({ user, week, year }: Props) {
           grid-template-columns: 1fr 1fr;
           gap: var(--s4);
           margin-bottom: var(--s5);
+        }
+        .db-layout-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: var(--s3);
+          min-height: 36px;
+          margin: calc(var(--s2) * -1) 0 var(--s3);
+          color: var(--text-muted);
+          font-size: 0.75rem;
+        }
+        .db-layout-toolbar > span {
+          margin-right: auto;
+        }
+        .db-layout-actions,
+        .db-widget-controls > div {
+          display: flex;
+          gap: var(--s2);
+        }
+        .db-layout-actions button,
+        .db-widget-controls button {
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          background: var(--surface);
+          color: var(--text);
+          padding: 7px 11px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          transition:
+            border-color 0.14s,
+            background 0.14s;
+        }
+        .db-layout-actions button:hover:not(:disabled),
+        .db-widget-controls button:hover:not(:disabled) {
+          border-color: var(--brand);
+          background: var(--surface-alt);
+        }
+        .db-widget-controls button:disabled {
+          cursor: not-allowed;
+          opacity: 0.4;
+        }
+        .db-widget {
+          display: flex;
+          min-width: 0;
+          flex-direction: column;
+        }
+        .db-widget-insights {
+          grid-column: 1 / -1;
+        }
+        .db-widget > .db-section {
+          flex: 1;
+        }
+        .db-main-grid.is-editing .db-widget {
+          cursor: grab;
+          border-radius: var(--radius-lg);
+          outline: 1px dashed var(--brand);
+          outline-offset: 4px;
+        }
+        .db-main-grid.is-editing .db-widget:active {
+          cursor: grabbing;
+        }
+        .db-widget-controls {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--s3);
+          padding: 0 var(--s2) var(--s3);
+          color: var(--text-sub);
+          font-size: 0.75rem;
+          font-weight: 700;
         }
 
         /* ── Sections ── */
@@ -689,6 +861,17 @@ export default function AdminDashboard({ user, week, year }: Props) {
         @media (max-width: 768px) {
           .db-main-grid {
             grid-template-columns: 1fr;
+          }
+          .db-widget-insights {
+            grid-column: auto;
+          }
+          .db-layout-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+          .db-layout-actions {
+            align-self: stretch;
+            justify-content: flex-end;
           }
           .db-kpi-row {
             grid-template-columns: repeat(2, 1fr);
