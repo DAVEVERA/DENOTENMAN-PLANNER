@@ -22,6 +22,7 @@ Thumbs.db
 lint_*.txt
 eslint_output.txt
 build.log
+.playwright-cli/
 
 # Scratch / dev utilities (never commit)
 scratch/

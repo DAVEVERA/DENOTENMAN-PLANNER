@@ -263,9 +263,9 @@ export default function AdminDashboard({ user, week, year }: Props) {
                 </div>
               ))}
               <div className="db-load-legend">
-                <span className="leg-item leg-ok">● Normaal (60–110%)</span>
-                <span className="leg-item leg-under">● Onderbenut (&lt;60%)</span>
-                <span className="leg-item leg-over">● Overbelast (&gt;110%)</span>
+                <span className="leg-item leg-ok">Normaal (60–110%)</span>
+                <span className="leg-item leg-under">Onderbenut (&lt;60%)</span>
+                <span className="leg-item leg-over">Overbelast (&gt;110%)</span>
               </div>
             </div>
           )}
@@ -427,7 +427,7 @@ export default function AdminDashboard({ user, week, year }: Props) {
         </>
       )}
 
-      <style jsx>{`
+      <style jsx global>{`
         /* ── Greeting ── */
         .db-greeting {
           display: flex;
@@ -801,6 +801,7 @@ export default function AdminDashboard({ user, week, year }: Props) {
         .db-qlink {
           display: flex;
           align-items: center;
+          min-width: 0;
           gap: var(--s3);
           padding: var(--s3) var(--s4);
           border-radius: var(--radius);
