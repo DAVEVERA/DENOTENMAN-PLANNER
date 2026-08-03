@@ -3,6 +3,7 @@ import { getWeekShifts, saveShift, fmtTime, getISOWeeksInYear } from './schedule
 import { validateShiftAssignment, type GuardrailWarning } from './guardrails'
 import type { Shift, Location, Day } from '@/types'
 import { DAYS } from '@/types'
+import { isSamePlannedShift } from '@/lib/schedule-view'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,11 +50,7 @@ export async function copyWeek(
 
     // Check if already exists in target
     if (!overwrite) {
-      const exists = existingTarget.some(t =>
-        t.employee_id === src.employee_id &&
-        t.day_of_week === src.day_of_week &&
-        t.shift_type === src.shift_type,
-      )
+      const exists = existingTarget.some(t => isSamePlannedShift(t, src))
       if (exists) { result.skipped++; continue }
     }
 
@@ -68,7 +65,6 @@ export async function copyWeek(
       start_time: src.start_time,
       end_time: src.end_time,
       full_day: src.full_day,
-      buddy: src.buddy,
       break_minutes: src.break_minutes,
       location: src.location,
       is_open: 0,
@@ -114,11 +110,7 @@ export async function copyWeekPreview(
 
   for (const src of sourceShifts) {
     if (src.is_open) continue
-    const exists = existingTarget.some(t =>
-      t.employee_id === src.employee_id &&
-      t.day_of_week === src.day_of_week &&
-      t.shift_type === src.shift_type,
-    )
+    const exists = existingTarget.some(t => isSamePlannedShift(t, src))
     if (exists) { wouldSkip++; continue }
 
     const warns = await validateShiftAssignment({

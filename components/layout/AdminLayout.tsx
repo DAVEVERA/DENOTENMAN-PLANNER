@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { MessageCircle, Menu } from 'lucide-react'
 import { useRef, useState } from 'react'
-import type { SessionUser, Capability } from '@/types'
+import type { SessionUser, Capability, Location } from '@/types'
 import { can } from '@/lib/capabilities'
 import {
   ScheduleIcon, EmployeesIcon, LeaveIcon,
@@ -10,8 +10,9 @@ import {
 } from '@/components/ui/Icons'
 import Sidebar, { type SidebarItem, type SidebarSection } from '@/components/layout/Sidebar'
 import AdminMobileMoreNav from '@/components/layout/AdminMobileMoreNav'
+import ReleaseUpdatePopout from '@/components/ui/ReleaseUpdatePopout'
 
-interface Props { user: SessionUser; children: React.ReactNode; title?: string; location?: 'markt' | 'nootmagazijn' }
+interface Props { user: SessionUser; children: React.ReactNode; title?: string; location?: Location }
 
 /** Icon stored as a component (not pre-sized JSX) so sidebar (M/20) and
  *  bottom-nav/sheet (L/24) can render the same config row at different sizes. */
@@ -62,8 +63,9 @@ export default function AdminLayout({ user, children, title, location }: Props) 
   // desktop in de sidebar-footer staan.
   const mobileMenuItems = [
     ...links.map(l => ({ href: l.href, icon: <l.Icon size={24} />, label: l.label })),
+    { href: '/team/both', icon: <TeamViewIcon size={24} />, label: 'Team beide locaties' },
     { href: '/team/markt', icon: <TeamViewIcon size={24} />, label: 'Team Markt' },
-    { href: '/team/nootmagazijn', icon: <TeamViewIcon size={24} />, label: 'Team Nootmagazijn' },
+    { href: '/team/nootmagazijn', icon: <TeamViewIcon size={24} />, label: 'Team Magazijn' },
     { href: '/admin/view', icon: <MyScheduleIcon size={24} />, label: 'Individueel' },
   ]
 
@@ -71,6 +73,7 @@ export default function AdminLayout({ user, children, title, location }: Props) 
     { label: 'Menu', items: sidebarItems },
   ]
 
+  const onTeamBoth  = router.pathname === '/team/[location]' && router.query.location === 'both'
   const onTeamMarkt = router.pathname === '/team/[location]' && router.query.location === 'markt'
   const onTeamNoot  = router.pathname === '/team/[location]' && router.query.location === 'nootmagazijn'
   const onIndividueel = router.pathname.startsWith('/admin/view')
@@ -79,8 +82,9 @@ export default function AdminLayout({ user, children, title, location }: Props) 
     {
       label: 'Weergave',
       items: [
+        { href: '/team/both',         icon: <TeamViewIcon size={20} />,  label: 'Team beide',        isActive: onTeamBoth },
         { href: '/team/markt',        icon: <TeamViewIcon size={20} />,  label: 'Team Markt',        isActive: onTeamMarkt },
-        { href: '/team/nootmagazijn', icon: <TeamViewIcon size={20} />,  label: 'Team Nootmagazijn', isActive: onTeamNoot },
+        { href: '/team/nootmagazijn', icon: <TeamViewIcon size={20} />,  label: 'Team Magazijn',     isActive: onTeamNoot },
         { href: '/admin/view',        icon: <MyScheduleIcon size={20} />, label: 'Individueel',       isActive: onIndividueel },
       ],
     },
@@ -131,6 +135,12 @@ export default function AdminLayout({ user, children, title, location }: Props) 
         onLogout={logout}
       />
 
+      <ReleaseUpdatePopout
+        userId={user.user_id}
+        audience="admin"
+        autoOpen={router.pathname === '/admin'}
+      />
+
       <style jsx>{`
 
         /* ─── Shell ─────────────────────────────────────── */
@@ -142,6 +152,7 @@ export default function AdminLayout({ user, children, title, location }: Props) 
         /* ─── Main content ──────────────────────────────── */
         .admin-main {
           flex: 1;
+          min-width: 0;
           margin-left: var(--sidebar-w);
           min-height: 100vh;
           display: flex;
@@ -189,6 +200,7 @@ export default function AdminLayout({ user, children, title, location }: Props) 
         }
         .admin-content[data-loc="markt"] { box-shadow: inset 0 3px 0 0 var(--markt); }
         .admin-content[data-loc="nootmagazijn"] { box-shadow: inset 0 3px 0 0 var(--noot); }
+        .admin-content[data-loc="both"] { border-top: 3px solid transparent; border-image: linear-gradient(90deg, var(--markt) 0 50%, var(--noot) 50%) 1; }
 
         /* ─── Mobile bottom nav ─────────────────────────── */
         .admin-bnav { display: none; }

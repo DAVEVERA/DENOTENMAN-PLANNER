@@ -36,8 +36,7 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
     open_note_author_employee_id: shift?.open_note_author_employee_id ?? null,
     opened_at:      shift?.opened_at      ?? null,
     break_minutes:  shift?.break_minutes  ?? 0,    // AM-004
-    buddy:          shift?.buddy          ?? '',
-    location:       shift?.location       ?? location,
+    location:       shift?.location       ?? (location === 'both' ? undefined : location),
     shift_category: shift?.shift_category ?? 'regular',
     is_open:        shift?.is_open        ?? 0,
     ...shift,
@@ -57,6 +56,10 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
 
   async function save(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.location || form.location === 'both') {
+      setError('Kies Markt of Magazijn voor deze dienst.')
+      return
+    }
     setSaving(true); setError('')
     const url    = isNew ? '/api/shifts' : `/api/shifts/${shift!.id}`
     const method = isNew ? 'POST' : 'PUT'
@@ -109,20 +112,24 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="location">Locatie</label>
-                <select id="location" className="form-control" value={form.location} onChange={e => set('location', e.target.value as Location)} title="Selecteer locatie">
-                  <option value="markt">De Notenkar (Markt)</option>
-                  <option value="nootmagazijn">Het Nootmagazijn</option>
+                <label className="form-label required" htmlFor="location">Locatie</label>
+                <select id="location" className="form-control" value={form.location ?? ''} onChange={e => set('location', e.target.value as Location)} title="Selecteer locatie" required>
+                  <option value="" disabled>Kies een locatie</option>
+                  <option value="markt">Markt</option>
+                  <option value="nootmagazijn">Magazijn</option>
                 </select>
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="shift_full" className="form-checkbox-label">
-                <input id="shift_full" type="checkbox" checked={fullDay} onChange={e => set('full_day', e.target.checked ? 1 : 0)} title="Hele dag dienst" />
-                Hele dag
-              </label>
-            </div>
+            <button
+              id="shift_full"
+              type="button"
+              className={`full-day-toggle${fullDay ? ' active' : ''}`}
+              aria-pressed={fullDay}
+              onClick={() => set('full_day', fullDay ? 0 : 1)}
+            >
+              Hele dag
+            </button>
 
             {!fullDay && (
               <>
@@ -171,7 +178,7 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
               </>
             )}
 
-            <div className="form-grid">
+            <div className="form-grid category-grid">
               <div className="form-group">
                 <label className="form-label" htmlFor="shift_category">Categorie</label>
                 <select id="shift_category" className="form-control" value={form.shift_category ?? 'regular'} onChange={e => set('shift_category', e.target.value as Shift['shift_category'])} title="Selecteer categorie">
@@ -180,10 +187,6 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
                   <option value="overtime">Overwerk</option>
                   <option value="special">Bijzondere uitvraag</option>
                 </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="buddy">Buddy</label>
-                <input id="buddy" className="form-control" placeholder="Naam collega" value={form.buddy ?? ''} onChange={e => set('buddy', e.target.value)} title="Buddy naam" />
               </div>
             </div>
 
@@ -218,6 +221,29 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
           </div>
         </form>
       </div>
+      <style jsx>{`
+        .full-day-toggle {
+          min-height: 44px;
+          margin-bottom: var(--s4);
+          padding: 0 var(--s4);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          background: var(--surface);
+          color: var(--text);
+          font-size: .9375rem;
+          font-weight: 600;
+          transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+        }
+        .full-day-toggle:hover { border-color: var(--brand); }
+        .full-day-toggle:focus-visible { outline: 3px solid rgba(200,136,42,.25); outline-offset: 2px; }
+        .full-day-toggle.active {
+          border-color: var(--brand);
+          background: var(--brand);
+          color: #fff;
+          box-shadow: 0 2px 8px rgba(123,79,46,.2);
+        }
+        .category-grid { grid-template-columns: minmax(0, 1fr); }
+      `}</style>
     </div>
   )
 }

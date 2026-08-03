@@ -6,6 +6,9 @@ import { currentWeekYear } from '@/lib/dateUtils';
 import type { GetServerSideProps } from 'next';
 import type { SessionUser } from '@/types';
 import Spinner from '@/components/ui/Spinner';
+import DashboardWidgetLayout from '@/components/dashboard/DashboardWidgetLayout';
+import ReleaseUpdatesWidget from '@/components/release/ReleaseUpdatesWidget';
+import { openReleaseUpdates } from '@/lib/release-updates';
 import {
   NutIcon,
   AlmondIcon,
@@ -43,9 +46,9 @@ interface Stats {
   pendingExpenses: number;
 }
 
-type DashboardWidget = 'quicknav' | 'load' | 'insights';
+type DashboardWidget = 'updates' | 'quicknav' | 'load' | 'insights';
 
-const DEFAULT_WIDGET_ORDER: DashboardWidget[] = ['quicknav', 'load', 'insights'];
+const DEFAULT_WIDGET_ORDER: DashboardWidget[] = ['updates', 'quicknav', 'load', 'insights'];
 
 const MONTHS_NL = [
   'jan',
@@ -90,8 +93,6 @@ export default function AdminDashboard({ user, week, year }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loc, setLoc] = useState<'markt' | 'nootmagazijn'>('markt');
-  const [widgetOrder, setWidgetOrder] = useState<DashboardWidget[]>(DEFAULT_WIDGET_ORDER);
-  const [editingLayout, setEditingLayout] = useState(false);
 
   const now = new Date();
   const greeting =
@@ -115,24 +116,6 @@ export default function AdminDashboard({ user, week, year }: Props) {
       setLoading(false);
     });
   }, [week, year, loc]);
-
-  useEffect(() => {
-    try {
-      const savedOrder = window.localStorage.getItem(`dashboard-layout:${user.user_id}`);
-      if (!savedOrder) return;
-
-      const parsed = JSON.parse(savedOrder) as unknown;
-      if (
-        Array.isArray(parsed) &&
-        parsed.length === DEFAULT_WIDGET_ORDER.length &&
-        DEFAULT_WIDGET_ORDER.every((widget) => parsed.includes(widget))
-      ) {
-        setWidgetOrder(parsed as DashboardWidget[]);
-      }
-    } catch {
-      // Een ongeldige lokale voorkeur mag het dashboard nooit blokkeren.
-    }
-  }, [user.user_id]);
 
   const QUICK_LINKS = [
     {
@@ -192,24 +175,15 @@ export default function AdminDashboard({ user, week, year }: Props) {
     },
   ];
 
-  const saveWidgetOrder = (nextOrder: DashboardWidget[]) => {
-    setWidgetOrder(nextOrder);
-    try {
-      window.localStorage.setItem(`dashboard-layout:${user.user_id}`, JSON.stringify(nextOrder));
-    } catch {
-      // De gekozen volgorde blijft voor deze sessie actief als opslag niet beschikbaar is.
-    }
-  };
-
-  const moveWidget = (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= widgetOrder.length || fromIndex === toIndex) return;
-    const nextOrder = [...widgetOrder];
-    const [widget] = nextOrder.splice(fromIndex, 1);
-    nextOrder.splice(toIndex, 0, widget);
-    saveWidgetOrder(nextOrder);
-  };
-
   const renderWidget = (widget: DashboardWidget) => {
+    if (widget === 'updates') {
+      return (
+        <ReleaseUpdatesWidget
+          onOpen={openReleaseUpdates}
+        />
+      );
+    }
+
     if (widget === 'quicknav') {
       return (
         <section className="db-section db-quicknav" aria-label="Snelnavigatie">
@@ -326,7 +300,7 @@ export default function AdminDashboard({ user, week, year }: Props) {
               data-loc={l}
               onClick={() => setLoc(l)}
             >
-              {l === 'markt' ? 'De Notenkar' : 'Het Nootmagazijn'}
+              {l === 'markt' ? 'Markt' : 'Magazijn'}
             </button>
           ))}
         </div>
@@ -368,62 +342,23 @@ export default function AdminDashboard({ user, week, year }: Props) {
         </div>
       ) : (
         <>
-          <div className="db-layout-toolbar">
-            {editingLayout && (
-              <span>Sleep de blokken of gebruik Omhoog en Omlaag. Uw keuze wordt automatisch bewaard.</span>
-            )}
-            <div className="db-layout-actions">
-              {editingLayout && (
-                <button type="button" onClick={() => saveWidgetOrder(DEFAULT_WIDGET_ORDER)}>
-                  Standaard herstellen
-                </button>
-              )}
-              <button type="button" onClick={() => setEditingLayout((editing) => !editing)}>
-                {editingLayout ? 'Klaar' : 'Dashboard indelen'}
-              </button>
-            </div>
-          </div>
-          <div className={`db-main-grid${editingLayout ? ' is-editing' : ''}`}>
-            {widgetOrder.map((widget, index) => (
-              <div
-                key={widget}
-                className={`db-widget db-widget-${widget}`}
-                draggable={editingLayout}
-                onDragStart={(event) => event.dataTransfer.setData('text/plain', String(index))}
-                onDragOver={(event) => {
-                  if (editingLayout) event.preventDefault();
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const fromIndex = Number(event.dataTransfer.getData('text/plain'));
-                  if (Number.isInteger(fromIndex)) moveWidget(fromIndex, index);
-                }}
-              >
-                {editingLayout && (
-                  <div className="db-widget-controls">
-                    <span>{widget === 'quicknav' ? 'Snelnavigatie' : widget === 'load' ? 'Uren vs contract' : 'Planningsanalyse'}</span>
-                    <div>
-                      <button
-                        type="button"
-                        disabled={index === 0}
-                        onClick={() => moveWidget(index, index - 1)}
-                      >
-                        Omhoog
-                      </button>
-                      <button
-                        type="button"
-                        disabled={index === widgetOrder.length - 1}
-                        onClick={() => moveWidget(index, index + 1)}
-                      >
-                        Omlaag
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {renderWidget(widget)}
-              </div>
-            ))}
-          </div>
+          <DashboardWidgetLayout<DashboardWidget>
+            storageKey={`dashboard-layout:${user.user_id}`}
+            defaultOrder={DEFAULT_WIDGET_ORDER}
+            widgets={DEFAULT_WIDGET_ORDER.map((widget) => ({
+              id: widget,
+              label:
+                widget === 'updates'
+                  ? 'Nieuw in de planner'
+                  : widget === 'quicknav'
+                    ? 'Snelnavigatie'
+                    : widget === 'load'
+                      ? 'Uren vs contract'
+                      : 'Planningsanalyse',
+              content: renderWidget(widget),
+              fullWidth: widget === 'updates' || widget === 'insights',
+            }))}
+          />
         </>
       )}
 

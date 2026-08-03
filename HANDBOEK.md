@@ -39,7 +39,7 @@
 
 ## 1. Wat is de Planner?
 
-De Notenkar Planner is een privé webapplicatie voor het plannen van diensten, het bijhouden van uren en het beheren van verlofaanvragen voor beide locaties: **De Notenkar (Markt)** en **Het Nootmagazijn**.
+De Notenkar Planner is een privé webapplicatie voor het plannen van diensten, het bijhouden van uren en het beheren van verlofaanvragen voor beide locaties: **Markt** en **Magazijn**.
 
 De planner werkt op elk apparaat — computer, tablet én telefoon — en kan als app op je startscherm worden gezet (zie [hoofdstuk 6](#6-de-app-installeren-op-je-telefoon)).
 
@@ -116,7 +116,7 @@ Dit is het hart van de planner. Hier bouw je het wekelijkse rooster op.
 
 - Gebruik de **pijl links / rechts** naast het weeknummer om een week voor- of achteruit te gaan.
 - Klik op **Vandaag** om direct naar de huidige week te springen.
-- Bovenaan kun je filteren op locatie: **Alle locaties**, **De Notenkar (Markt)** of **Het Nootmagazijn**.
+- Bovenaan kun je filteren op locatie: **Alle locaties**, **Markt** of **Magazijn**.
 
 **Het rooster lezen**
 

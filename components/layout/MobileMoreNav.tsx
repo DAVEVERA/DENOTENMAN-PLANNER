@@ -30,29 +30,17 @@ const ICON_SIZE = 24
 // sidebar (ROOSTER / MIJN ZAKEN / CONTACT), zodat mobiel en desktop
 // dezelfde mentale kaart van de app geven.
 export default function MobileMoreNav({ open, user, isAdmin, onClose, onLogout }: Props) {
-  const showMarkt = user.location === 'markt' || user.location === 'both' || isAdmin
-  const showNoot = user.location === 'nootmagazijn' || user.location === 'both' || isAdmin
-  const bothLocations = user.location === 'both' || isAdmin
-
   const items: MoreSheetItem[] = []
 
   // ROOSTER
-  if (showMarkt) {
-    items.push({
-      href: '/team/markt',
-      icon: <ScheduleIcon size={ICON_SIZE} />,
-      label: bothLocations ? 'Rooster Markt' : 'Rooster',
-      helper: 'Teambezetting en diensten',
-    })
-  }
-  if (showNoot) {
-    items.push({
-      href: '/team/nootmagazijn',
-      icon: <ScheduleIcon size={ICON_SIZE} />,
-      label: bothLocations ? 'Rooster Noot' : 'Rooster',
-      helper: 'Teambezetting en diensten',
-    })
-  }
+  items.push({
+    href: '/team/both',
+    icon: <ScheduleIcon size={ICON_SIZE} />,
+    label: 'Rooster beide',
+    helper: 'Alle diensten op beide locaties',
+  })
+  items.push({ href: '/team/markt', icon: <ScheduleIcon size={ICON_SIZE} />, label: 'Rooster Markt', helper: 'Teambezetting op de Markt' })
+  items.push({ href: '/team/nootmagazijn', icon: <ScheduleIcon size={ICON_SIZE} />, label: 'Rooster Magazijn', helper: 'Teambezetting in het Magazijn' })
   items.push(
     { href: '/me', icon: <MyScheduleIcon size={ICON_SIZE} />, label: 'Mijn rooster', helper: 'Jouw ingeplande diensten' },
     { href: '/me/open-shifts', icon: <ScheduleIcon size={ICON_SIZE} />, label: 'Open diensten', helper: 'Beschikbare diensten claimen' },

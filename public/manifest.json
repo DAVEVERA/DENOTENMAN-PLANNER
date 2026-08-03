@@ -1,7 +1,7 @@
 {
   "name": "De Notenkar Planner",
   "short_name": "Planner",
-  "description": "Rooster- en verlofbeheer voor De Notenkar en Het Nootmagazijn",
+  "description": "Rooster- en verlofbeheer voor Markt en Magazijn",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8F5F0",

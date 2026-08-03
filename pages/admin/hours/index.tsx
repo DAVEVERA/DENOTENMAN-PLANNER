@@ -293,7 +293,7 @@ export default function HoursPage({ user }: Props) {
             <select id="filter_loc" className="form-control form-control-sm" value={locFilter} onChange={e => setLocFilter(e.target.value as Location | '')} title="Filter op locatie">
               <option value="">Alle locaties</option>
               <option value="markt">Markt</option>
-              <option value="nootmagazijn">Nootmagazijn</option>
+              <option value="nootmagazijn">Magazijn</option>
             </select>
           </div>
           <div className="form-group-filter">
@@ -351,7 +351,7 @@ export default function HoursPage({ user }: Props) {
                 <label htmlFor="new_loc" className="form-label">Locatie</label>
                 <select id="new_loc" className="form-control" value={newForm.location} onChange={e => setNewForm(f => ({ ...f, location: e.target.value as Location }))} title="Locatie van de dienst">
                   <option value="markt">Markt</option>
-                  <option value="nootmagazijn">Nootmagazijn</option>
+                  <option value="nootmagazijn">Magazijn</option>
                 </select>
               </div>
               <div className="form-group">
@@ -427,7 +427,7 @@ export default function HoursPage({ user }: Props) {
                         <td>
                           <select aria-label="Wijzig locatie" className="form-control form-control-xs" value={editForm.location ?? 'markt'} onChange={e => setEditForm(f => ({ ...f, location: e.target.value as Location }))}>
                             <option value="markt">Markt</option>
-                            <option value="nootmagazijn">Nootmagazijn</option>
+                            <option value="nootmagazijn">Magazijn</option>
                           </select>
                         </td>
                         <td><input aria-label="Wijzig inkloktijd" type="time" className="form-control form-control-xs" value={editForm.clock_in ?? ''} onChange={e => setEditForm(f => ({ ...f, clock_in: e.target.value }))} /></td>
@@ -518,7 +518,7 @@ export default function HoursPage({ user }: Props) {
                               <label className="form-label" htmlFor={`mob_loc_${log.id}`}>Locatie</label>
                               <select id={`mob_loc_${log.id}`} className="form-control" value={editForm.location ?? 'markt'} onChange={e => setEditForm(f => ({ ...f, location: e.target.value as Location }))}>
                                 <option value="markt">Markt</option>
-                                <option value="nootmagazijn">Nootmagazijn</option>
+                                <option value="nootmagazijn">Magazijn</option>
                               </select>
                             </div>
                             <div className="form-group">

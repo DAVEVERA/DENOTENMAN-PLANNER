@@ -1,0 +1,54 @@
+.widget {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s4);
+  height: 100%;
+  padding: var(--s5);
+  border: 1px solid #b9d8c7;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(110deg, var(--success-bg), var(--surface) 72%);
+  box-shadow: var(--shadow-sm);
+}
+
+.icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--success);
+  color: var(--text-inv);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.body { min-width: 0; }
+.eyebrow {
+  margin: 0 0 var(--s1);
+  color: var(--success);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.body h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+.body > p:last-child { margin: var(--s1) 0 0; color: var(--text-sub); font-size: 0.875rem; }
+
+.widget button {
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border: 1px solid var(--success);
+  border-radius: var(--r2);
+  background: var(--success);
+  color: var(--text-inv);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.widget button:hover { background: #235a3b; }
+
+@media (max-width: 600px) {
+  .widget { grid-template-columns: auto minmax(0, 1fr); padding: var(--s4); }
+  .widget button { grid-column: 1 / -1; width: 100%; }
+}

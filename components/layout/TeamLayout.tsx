@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { MessageCircle, Menu } from 'lucide-react';
 import { useRef, useState } from 'react';
-import type { SessionUser } from '@/types';
+import type { SessionUser, Location } from '@/types';
 import { can } from '@/lib/capabilities';
 import {
   ScheduleIcon,
@@ -16,11 +16,12 @@ import {
 } from '@/components/ui/Icons';
 import Sidebar, { type SidebarItem, type SidebarSection } from '@/components/layout/Sidebar';
 import MobileMoreNav from '@/components/layout/MobileMoreNav';
+import ReleaseUpdatePopout from '@/components/ui/ReleaseUpdatePopout';
 
 interface Props {
   user: SessionUser;
   children: React.ReactNode;
-  location?: 'markt' | 'nootmagazijn';
+  location?: Location;
 }
 
 export default function TeamLayout({ user, children, location }: Props) {
@@ -46,27 +47,24 @@ export default function TeamLayout({ user, children, location }: Props) {
   const onSupport = router.pathname === '/me/support';
 
   // ── Sidebar navigation (desktop ≥768px) — 3 sections + footer crosslink ──
-  const showMarkt = user.location === 'markt' || user.location === 'both' || isAdmin;
-  const showNoot = user.location === 'nootmagazijn' || user.location === 'both' || isAdmin;
-  const bothLocations = user.location === 'both' || isAdmin;
-
-  const roosterItems: SidebarItem[] = [];
-  if (showMarkt) {
-    roosterItems.push({
-      href: '/team/markt',
-      icon: <ScheduleIcon size={20} />,
-      label: bothLocations ? 'Rooster Markt' : 'Rooster',
-      isActive: onTeam && location === 'markt',
-    });
-  }
-  if (showNoot) {
-    roosterItems.push({
-      href: '/team/nootmagazijn',
-      icon: <ScheduleIcon size={20} />,
-      label: bothLocations ? 'Rooster Noot' : 'Rooster',
-      isActive: onTeam && location === 'nootmagazijn',
-    });
-  }
+  const roosterItems: SidebarItem[] = [{
+    href: '/team/both',
+    icon: <ScheduleIcon size={20} />,
+    label: 'Rooster beide',
+    isActive: onTeam && location === 'both',
+  }];
+  roosterItems.push({
+    href: '/team/markt',
+    icon: <ScheduleIcon size={20} />,
+    label: 'Rooster Markt',
+    isActive: onTeam && location === 'markt',
+  });
+  roosterItems.push({
+    href: '/team/nootmagazijn',
+    icon: <ScheduleIcon size={20} />,
+    label: 'Rooster Magazijn',
+    isActive: onTeam && location === 'nootmagazijn',
+  });
   roosterItems.push(
     { href: '/me', icon: <MyScheduleIcon size={20} />, label: 'Mijn rooster', isActive: onMe },
     { href: '/me/open-shifts', icon: <ScheduleIcon size={20} />, label: 'Open diensten', isActive: onOpenShifts },
@@ -137,6 +135,12 @@ export default function TeamLayout({ user, children, location }: Props) {
         onLogout={logout}
       />
 
+      <ReleaseUpdatePopout
+        userId={user.user_id}
+        audience="employee"
+        autoOpen={!isAdmin && router.pathname === '/team/[location]' && router.query.location === 'both'}
+      />
+
       <style jsx>{`
         .team-shell {
           min-height: 100vh;
@@ -146,6 +150,7 @@ export default function TeamLayout({ user, children, location }: Props) {
         /* ─── Main ───────────────────────────────────── */
         .team-main {
           flex: 1;
+          min-width: 0;
           margin-left: var(--sidebar-w);
           min-height: 100vh;
           display: flex;
@@ -153,6 +158,7 @@ export default function TeamLayout({ user, children, location }: Props) {
         }
         .team-main[data-loc="markt"] { box-shadow: inset 0 3px 0 0 var(--markt); }
         .team-main[data-loc="nootmagazijn"] { box-shadow: inset 0 3px 0 0 var(--noot); }
+        .team-main[data-loc="both"] { border-top: 3px solid transparent; border-image: linear-gradient(90deg, var(--markt) 0 50%, var(--noot) 50%) 1; }
         .team-main-inner {
           flex: 1;
           width: 100%;

@@ -17,10 +17,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
     return { redirect: { destination: '/admin', permanent: false } }
   }
 
-  // Employee → team view for their location, else /me
-  if (user.location && user.location !== 'both') {
-    return { redirect: { destination: `/team/${user.location}`, permanent: false } }
-  }
-
-  return { redirect: { destination: '/me', permanent: false } }
+  // Employees open the complete roster; personal and location-specific views remain in navigation.
+  return { redirect: { destination: '/team/both', permanent: false } }
 }

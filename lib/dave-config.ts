@@ -26,7 +26,7 @@ KENNISBANK VOOR MEDEWERKERS:
 
 DE APP IN HET KORT:
 - De Notenman Planner is de planningsapp van De Notenman.
-- Er zijn twee locaties: De Notenkar (Markt) en Het Nootmagazijn.
+- Er zijn twee locaties: Markt en Magazijn.
 - Elke medewerker heeft een eigen account om in te loggen.
 
 ROOSTER:
@@ -86,8 +86,8 @@ UREN & DECLARATIES:
 - Declaraties: reiskosten, overuren, overig — goedkeuren of afwijzen.
 
 LOCATIES:
-- Markt = De Notenkar (groen)
-- Nootmagazijn = Het Nootmagazijn (bruin)
+- Markt = Markt (groen)
+- Nootmagazijn = Magazijn (bruin)
 - Bij diensten en medewerkers kunt ge per locatie filteren.
 
 BACK-UP & EXPORT:

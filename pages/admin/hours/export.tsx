@@ -124,8 +124,8 @@ export default function ExportPage({ user }: Props) {
               <label className="form-label" htmlFor="filter-location">Locatie</label>
               <select id="filter-location" className="form-control" value={location} onChange={e => setLocation(e.target.value as Location | '')}>
                 <option value="">Alle locaties</option>
-                <option value="markt">De Notenkar (Markt)</option>
-                <option value="nootmagazijn">Het Nootmagazijn</option>
+                <option value="markt">Markt</option>
+                <option value="nootmagazijn">Magazijn</option>
               </select>
             </div>
             <div className="form-group">

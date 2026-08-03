@@ -63,7 +63,7 @@ export const ADMIN_TOOLS: Anthropic.Tool[] = [
         start_time: { type: 'string', description: 'Starttijd in HH:MM formaat (optioneel)' },
         end_time: { type: 'string', description: 'Eindtijd in HH:MM formaat (optioneel)' },
         break_minutes: { type: 'number', description: 'Pauzeminuten (standaard 0)' },
-        location: { type: 'string', description: 'Locatie: markt of nootmagazijn (optioneel, standaard locatie medewerker)' },
+        location: { type: 'string', description: 'Locatie: Markt (markt) of Magazijn (nootmagazijn), optioneel; standaard locatie medewerker' },
         note: { type: 'string', description: 'Optionele notitie bij de dienst' },
       },
       required: ['employee_name', 'day_of_week', 'shift_type'],
@@ -81,7 +81,7 @@ export const ADMIN_TOOLS: Anthropic.Tool[] = [
         year: { type: 'number', description: 'Jaar (optioneel, standaard huidig jaar)' },
         start_time: { type: 'string', description: 'Starttijd HH:MM (optioneel)' },
         end_time: { type: 'string', description: 'Eindtijd HH:MM (optioneel)' },
-        location: { type: 'string', description: 'Locatie: markt of nootmagazijn' },
+        location: { type: 'string', description: 'Locatie: Markt (markt) of Magazijn (nootmagazijn)' },
         note: { type: 'string', description: 'Optionele notitie' },
       },
       required: ['day_of_week', 'shift_type'],
@@ -95,7 +95,7 @@ export const ADMIN_TOOLS: Anthropic.Tool[] = [
       properties: {
         week_number: { type: 'number', description: 'Weeknummer (optioneel, standaard huidige week)' },
         year: { type: 'number', description: 'Jaar (optioneel, standaard huidig jaar)' },
-        location: { type: 'string', description: 'Filter op locatie: markt of nootmagazijn (optioneel)' },
+        location: { type: 'string', description: 'Filter op locatie: Markt (markt) of Magazijn (nootmagazijn), optioneel' },
         employee_name: { type: 'string', description: 'Filter op medewerker naam (optioneel)' },
       },
       required: [],
@@ -107,7 +107,7 @@ export const ADMIN_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        location: { type: 'string', description: 'Filter op locatie: markt of nootmagazijn (optioneel)' },
+        location: { type: 'string', description: 'Filter op locatie: Markt (markt) of Magazijn (nootmagazijn), optioneel' },
         include_inactive: { type: 'boolean', description: 'Inclusief inactieve medewerkers (standaard false)' },
       },
       required: [],

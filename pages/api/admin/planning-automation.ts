@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from '@/lib/auth'
 import { copyWeek, copyWeekPreview, autoFill, autoFillPreview } from '@/lib/planning-automation'
 import type { Location } from '@/types'
+import { isScheduleLocation } from '@/lib/schedule-view'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Methode niet toegestaan' })
@@ -24,6 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!action || !sourceWeek || !sourceYear) {
     return res.status(400).json({ success: false, error: 'action, sourceWeek en sourceYear zijn vereist' })
+  }
+  if (!location || !isScheduleLocation(location)) {
+    return res.status(400).json({ success: false, error: 'Kies Markt, Magazijn of beide locaties' })
   }
 
   try {

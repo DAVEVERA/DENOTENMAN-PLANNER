@@ -9,8 +9,8 @@ function defaults(): AppSettings {
     accountant_email:          '',
     accountant_name:           'Boekhouder',
     export_auto_email:         false,
-    location_markt_name:       'De Notenkar (Markt)',
-    location_nootmagazijn_name: 'Het Nootmagazijn',
+    location_markt_name:       'Markt',
+    location_nootmagazijn_name: 'Magazijn',
   }
 }
 

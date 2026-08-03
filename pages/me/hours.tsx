@@ -153,8 +153,8 @@ export default function MyHoursPage({ user }: Props) {
                   <label className="form-label required" htmlFor="hrs_loc">Locatie</label>
                   <select id="hrs_loc" className="form-control" value={form.location}
                     onChange={e => setForm(f => ({ ...f, location: e.target.value as Location }))}>
-                    <option value="markt">De Notenkar (Markt)</option>
-                    <option value="nootmagazijn">Het Nootmagazijn</option>
+                    <option value="markt">Markt</option>
+                    <option value="nootmagazijn">Magazijn</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -396,7 +396,7 @@ function LogRow({ log, onWithdraw }: { log: TimeLog; onWithdraw?: (id: number) =
       <div className="log-meta">
         <div className="log-loc">
           <span className={`loc-dot loc-${log.location}`} />
-          {log.location === 'markt' ? 'Markt' : 'Nootmagazijn'}
+          {log.location === 'markt' ? 'Markt' : 'Magazijn'}
         </div>
         {log.overtime_hours > 0 && (
           <div className="log-overtime">+{log.overtime_hours}u overwerk</div>

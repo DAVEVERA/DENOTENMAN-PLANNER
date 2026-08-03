@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import TeamLayout from '@/components/layout/TeamLayout'
+import LocationBadge from '@/components/ui/LocationBadge'
 import OccupancyBar from '@/components/ui/OccupancyBar'
 import { PrevIcon, NextIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
@@ -9,13 +10,20 @@ import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Employee, Location } from '@/types'
 import { DAYS, DAY_SHORT, LOCATION_LABELS } from '@/types'
 import Spinner from '@/components/ui/Spinner'
+import { isScheduleLocation } from '@/lib/schedule-view'
+import DashboardWidgetLayout from '@/components/dashboard/DashboardWidgetLayout'
+import ReleaseUpdatesWidget from '@/components/release/ReleaseUpdatesWidget'
+import { openReleaseUpdates } from '@/lib/release-updates'
 
 interface Props {
   user: SessionUser
-  location: Exclude<Location, 'both'>
+  location: Location
   initialWeek: number
   initialYear: number
 }
+
+type TeamDashboardWidget = 'updates'
+const TEAM_DASHBOARD_WIDGETS: TeamDashboardWidget[] = ['updates']
 
 function fmtTime(t: string | null) {
   return t ? t.slice(0, 5) : ''
@@ -83,11 +91,12 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
   const shiftsForDay = (day: string) => shifts.filter(s => s.day_of_week === day && !s.is_open)
   const occupancyForDay = (day: string) => {
     const dayShifts = shiftsForDay(day)
+    const uniqueEmployees = (items: Shift[]) => new Set(items.map(shift => shift.employee_id)).size
     return {
-      total:   dayShifts.length,
-      ochtend: dayShifts.filter(s => s.shift_type === 'Ochtend').length,
-      middag:  dayShifts.filter(s => s.shift_type === 'Middag').length,
-      avond:   dayShifts.filter(s => s.shift_type === 'Avond').length,
+      total:   uniqueEmployees(dayShifts),
+      ochtend: uniqueEmployees(dayShifts.filter(s => s.shift_type === 'Ochtend')),
+      middag:  uniqueEmployees(dayShifts.filter(s => s.shift_type === 'Middag')),
+      avond:   uniqueEmployees(dayShifts.filter(s => s.shift_type === 'Avond')),
     }
   }
 
@@ -111,6 +120,26 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
           {LOCATION_LABELS[location]}
         </div>
       </div>
+
+      {location === 'both' && (
+        <DashboardWidgetLayout<TeamDashboardWidget>
+          storageKey={`team-dashboard-layout:${user.user_id}`}
+          defaultOrder={TEAM_DASHBOARD_WIDGETS}
+          widgets={[
+            {
+              id: 'updates',
+              label: 'Nieuw in de planner',
+              fullWidth: true,
+              content: (
+                <ReleaseUpdatesWidget
+                  onOpen={openReleaseUpdates}
+                />
+              ),
+            },
+          ]}
+          emptyText="Je hebt nu geen widgets boven je rooster."
+        />
+      )}
 
       {loading ? (
         <div className="loading-row"><Spinner /> Laden…</div>
@@ -160,6 +189,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                           >
                             {s.shift_type}
                           </div>
+                          {location === 'both' && <LocationBadge location={s.location} size="xs" label="short" />}
                           <span className="day-shift-name">{s.employee_name}</span>
                           {(s.start_time || s.end_time) && (
                             <span className="day-shift-time">
@@ -206,6 +236,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                               aria-label={`${s.shift_type} - ${emp.name} - ${day}`}
                             >
                               <span className="mobile-chip-type">{s.shift_type.slice(0, 3)}</span>
+                              {location === 'both' && <LocationBadge location={s.location} size="xs" label="initial" />}
                               {s.start_time && <span className="mobile-chip-time">{fmtTime(s.start_time)}</span>}
                             </div>
                           ))}
@@ -254,6 +285,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
                                 aria-label={`${s.shift_type} dienst`}
                               >
                                 <span>{s.shift_type}</span>
+                                {location === 'both' && <LocationBadge location={s.location} size="xs" label="short" />}
                                 {(s.start_time) && <span className="pill-time">{fmtTime(s.start_time)}</span>}
                               </div>
                             ))}
@@ -286,6 +318,12 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .loc-label { font-size: .9375rem; font-weight: 600; }
         .loc-label[data-location="nootmagazijn"] { color: var(--noot); }
         .loc-label[data-location="markt"]        { color: var(--markt); }
+        .loc-label[data-location="both"] {
+          color: var(--text);
+          padding-left: 12px;
+          border-left: 4px solid var(--markt);
+          box-shadow: -2px 0 0 var(--noot);
+        }
 
         /* ── Occupancy cards ── */
         .occ-overview { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s3); margin-bottom: var(--s6); }
@@ -327,7 +365,7 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
         .mobile-day-short { font-size: .625rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .mobile-day-num { font-size: .75rem; font-weight: 600; }
         .mobile-day-shifts { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 3px 2px; }
-        .mobile-shift-chip { border-radius: 3px; padding: 3px 4px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+        .mobile-shift-chip { border-radius: 3px; padding: 3px 4px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; overflow: hidden; }
         .mobile-chip-type { font-size: .6875rem; font-weight: 700; line-height: 1.2; }
         .mobile-chip-time { font-size: .625rem; color: var(--text-sub); line-height: 1.2; }
 
@@ -393,9 +431,9 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, params 
   const session  = await getSession(req as any, res as any)
   if (!session.user) return { redirect: { destination: '/login', permanent: false } }
 
-  const loc = String(params?.location ?? 'markt')
-  if (loc !== 'markt' && loc !== 'nootmagazijn')
-    return { redirect: { destination: '/team/markt', permanent: false } }
+  const loc = String(params?.location ?? 'both')
+  if (!isScheduleLocation(loc))
+    return { redirect: { destination: '/team/both', permanent: false } }
 
   const { week, year } = currentWeekYear()
   return { props: { user: session.user, location: loc, initialWeek: week, initialYear: year } }

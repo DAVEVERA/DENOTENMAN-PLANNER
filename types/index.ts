@@ -1,8 +1,9 @@
 // ─── Locations ────────────────────────────────────────────────────────────────
 export type Location = 'markt' | 'nootmagazijn' | 'both'
-export const LOCATION_LABELS: Record<Exclude<Location, 'both'>, string> = {
-  markt:        'De Notenkar (Markt)',
-  nootmagazijn: 'Het Nootmagazijn',
+export const LOCATION_LABELS: Record<Location, string> = {
+  markt:        'Markt',
+  nootmagazijn: 'Magazijn',
+  both:         'Beide locaties',
 }
 export const LOCATION_COLORS: Record<Exclude<Location, 'both'>, string> = {
   markt:        '#2C6E49',

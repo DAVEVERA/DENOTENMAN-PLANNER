@@ -1,0 +1,137 @@
+.layout {
+  --widget-control-height: 44px;
+  --widget-control-radius: var(--r2);
+  margin-bottom: var(--s5);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: var(--widget-control-height);
+  margin-bottom: var(--s3);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.toolbar p { margin: 0; }
+.toolbarActions,
+.widgetControls > div,
+.addPanel > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.toolbar button,
+.widgetControls button,
+.addPanel button,
+.empty button {
+  min-height: var(--widget-control-height);
+  padding: 0 var(--s3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--widget-control-radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.toolbar button:hover:not(:disabled),
+.widgetControls button:hover:not(:disabled),
+.addPanel button:hover,
+.empty button:hover {
+  border-color: var(--brand);
+  background: var(--brand-subtle);
+}
+
+.widgetControls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.addPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+  padding: var(--s3) var(--s4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-alt);
+  font-size: 0.8125rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+}
+
+.widget {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.widget[data-full-width='true'] { grid-column: 1 / -1; }
+.widget[data-editing='true'] {
+  border-radius: var(--radius-lg);
+  outline: 1px dashed var(--brand);
+  outline-offset: 4px;
+}
+
+.widgetControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: 0 var(--s2) var(--s3);
+  color: var(--text-sub);
+  font-size: 0.75rem;
+}
+
+.widgetControls .removeButton { color: var(--danger); }
+.content { display: contents; }
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s5);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-alt);
+  color: var(--text-sub);
+}
+
+@media (max-width: 768px) {
+  .toolbar,
+  .widgetControls,
+  .addPanel,
+  .empty {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .toolbarActions,
+  .widgetControls > div,
+  .addPanel > div { width: 100%; }
+  .toolbarActions button,
+  .widgetControls button,
+  .addPanel button { flex: 1 1 auto; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .widget[data-full-width='true'] { grid-column: auto; }
+}
+
+@media (max-width: 390px) {
+  .toolbarActions,
+  .widgetControls > div,
+  .addPanel > div { flex-direction: column; }
+  .toolbarActions button,
+  .widgetControls button,
+  .addPanel button { width: 100%; }
+}

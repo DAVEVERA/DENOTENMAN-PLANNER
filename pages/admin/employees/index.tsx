@@ -12,8 +12,8 @@ interface Props { user: SessionUser }
 
 const LOCATION_OPTIONS: { value: Location | ''; label: string }[] = [
   { value: '',            label: 'Alle locaties' },
-  { value: 'markt',       label: 'De Notenkar (Markt)' },
-  { value: 'nootmagazijn',label: 'Het Nootmagazijn' },
+  { value: 'markt',       label: 'Markt' },
+  { value: 'nootmagazijn',label: 'Magazijn' },
   { value: 'both',        label: 'Beide' },
 ]
 
@@ -148,8 +148,8 @@ export default function EmployeesPage({ user }: Props) {
               <div className="form-group">
                 <label htmlFor="new_location" className="form-label">Locatie</label>
                 <select id="new_location" className="form-control" value={newForm.location} onChange={e => setNewForm(f => ({ ...f, location: e.target.value as Location }))} title="Voorkeurslocatie">
-                  <option value="markt">De Notenkar (Markt)</option>
-                  <option value="nootmagazijn">Het Nootmagazijn</option>
+                  <option value="markt">Markt</option>
+                  <option value="nootmagazijn">Magazijn</option>
                   <option value="both">Beide</option>
                 </select>
               </div>

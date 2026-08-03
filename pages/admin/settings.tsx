@@ -31,8 +31,8 @@ export default function SettingsPage({ user }: Props) {
   const [form, setForm]   = useState<AppSettings>({
     accountant_email: '', accountant_name: 'Boekhouder',
     export_auto_email: false,
-    location_markt_name: 'De Notenkar (Markt)',
-    location_nootmagazijn_name: 'Het Nootmagazijn',
+    location_markt_name: 'Markt',
+    location_nootmagazijn_name: 'Magazijn',
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved]   = useState(false)
@@ -164,17 +164,17 @@ export default function SettingsPage({ user }: Props) {
                 className="form-control"
                 value={form.location_markt_name}
                 onChange={e => set('location_markt_name', e.target.value)}
-                placeholder="De Notenkar (Markt)"
+                placeholder="Markt"
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="location-noot-name">Naam Nootmagazijn-locatie</label>
+              <label className="form-label" htmlFor="location-noot-name">Naam Magazijn-locatie</label>
               <input
                 id="location-noot-name"
                 className="form-control"
                 value={form.location_nootmagazijn_name}
                 onChange={e => set('location_nootmagazijn_name', e.target.value)}
-                placeholder="Het Nootmagazijn"
+                placeholder="Magazijn"
               />
             </div>
           </div>

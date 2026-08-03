@@ -10,7 +10,7 @@ import { getOpenShiftReminderStage, getOpenShiftReminderText } from '@/lib/open-
 
 interface Props { user: SessionUser }
 
-const LOC: Record<string, string> = { markt: 'De Notenkar', nootmagazijn: 'Nootmagazijn' }
+const LOC: Record<string, string> = { markt: 'Markt', nootmagazijn: 'Magazijn' }
 const DAY_NL: Record<string, string> = {
   maandag: 'Maandag', dinsdag: 'Dinsdag', woensdag: 'Woensdag',
   donderdag: 'Donderdag', vrijdag: 'Vrijdag', zaterdag: 'Zaterdag', zondag: 'Zondag',

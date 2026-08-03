@@ -27,7 +27,7 @@ export default function ShiftMessageCard({ shift, currentEmployeeId, onExchange 
       </div>
       <strong>{formatShiftSnapshot(shift)}</strong>
       <div className={styles.shiftMeta}>
-        <span><MapPin size={15} />{shift.location === 'markt' ? 'Markt' : 'Nootmagazijn'}</span>
+        <span><MapPin size={15} />{shift.location === 'markt' ? 'Markt' : 'Magazijn'}</span>
         <span><UserRound size={15} />{shift.employee_name || 'Open dienst'}</span>
         <span><CalendarClock size={15} />{shift.break_minutes} min pauze</span>
       </div>

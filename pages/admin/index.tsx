@@ -8,14 +8,15 @@ import { getSession } from '@/lib/auth'
 import { currentWeekYear } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Employee, Location, Day } from '@/types'
-import { DAYS, DAY_SHORT, SHIFT_TYPES } from '@/types'
+import { DAYS, DAY_SHORT, SHIFT_TYPES, LOCATION_LABELS } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 
 interface Props { user: SessionUser; initialWeek: number; initialYear: number }
 
-const LOCATIONS: { value: Exclude<Location, 'both'>; label: string }[] = [
-  { value: 'markt',        label: 'De Notenkar (Markt)' },
-  { value: 'nootmagazijn', label: 'Het Nootmagazijn' },
+const LOCATIONS: { value: Location; label: string }[] = [
+  { value: 'both',         label: 'Beide locaties' },
+  { value: 'markt',        label: 'Markt' },
+  { value: 'nootmagazijn', label: 'Magazijn' },
 ]
 
 type ViewMode = 'week' | 'month' | '3months'
@@ -41,7 +42,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   const [view, setView]         = useState<ViewMode>('week')
   const [week, setWeek]         = useState(initialWeek)
   const [year, setYear]         = useState(initialYear)
-  const [location, setLocation] = useState<Exclude<Location, 'both'>>('markt')
+  const [location, setLocation] = useState<Location>('both')
   const [employees, setEmployees] = useState<Employee[]>([])
   const [shifts, setShifts]     = useState<Shift[]>([])
   const [loading, setLoading]   = useState(true)
@@ -62,6 +63,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   const [fillWeeks, setFillWeeks] = useState(4)
   const [fillBusy, setFillBusy]   = useState(false)
   const [fillMsg, setFillMsg]     = useState('')
+  const [automationLocation, setAutomationLocation] = useState<Location | ''>('')
 
   const numWeeks = view === 'week' ? 1 : view === 'month' ? 4 : 13
 
@@ -164,15 +166,20 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     const tw = week < 52 ? week + 1 : 1
     const ty = week < 52 ? year : year + 1
     setCopyTarget({ week: tw, year: ty })
+    setAutomationLocation(location === 'both' ? '' : location)
     setCopyMsg(''); setShowCopy(true)
   }
 
   async function executeCopy() {
+    if (!automationLocation) {
+      setCopyMsg('Kies eerst welke locatie(s) je wilt kopieren.')
+      return
+    }
     setCopyBusy(true); setCopyMsg('')
     try {
       const res = await fetch('/api/admin/planning-automation', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'copy', sourceWeek: week, sourceYear: year, targetWeek: copyTarget.week, targetYear: copyTarget.year, location }),
+        body: JSON.stringify({ action: 'copy', sourceWeek: week, sourceYear: year, targetWeek: copyTarget.week, targetYear: copyTarget.year, location: automationLocation }),
       })
       const d = await res.json()
       if (d.success) {
@@ -186,15 +193,19 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
 
   // ── Auto-fill handler ──
   function openFillModal() {
-    setFillWeeks(4); setFillMsg(''); setShowFill(true)
+    setFillWeeks(4); setAutomationLocation(location === 'both' ? '' : location); setFillMsg(''); setShowFill(true)
   }
 
   async function executeFill() {
+    if (!automationLocation) {
+      setFillMsg('Kies eerst welke locatie(s) je wilt vullen.')
+      return
+    }
     setFillBusy(true); setFillMsg('')
     try {
       const res = await fetch('/api/admin/planning-automation', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'autofill', sourceWeek: week, sourceYear: year, numberOfWeeks: fillWeeks, location }),
+        body: JSON.stringify({ action: 'autofill', sourceWeek: week, sourceYear: year, numberOfWeeks: fillWeeks, location: automationLocation }),
       })
       const d = await res.json()
       if (d.success) {
@@ -209,7 +220,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   const openShiftCount = shifts.filter(s => s.is_open === 1).length
 
   return (
-    <AdminLayout user={user} title="Rooster">
+    <AdminLayout user={user} title="Rooster" location={location}>
       {/* ── Controls ── */}
       <div className="plan-controls">
         <div className="view-tabs" role="tablist" aria-label="Weergave">
@@ -286,11 +297,17 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
             <div className="modal-fields">
               <label>Week: <input type="number" min={1} max={52} value={copyTarget.week} onChange={e => setCopyTarget(t => ({ ...t, week: +e.target.value }))} /></label>
               <label>Jaar: <input type="number" min={2024} max={2030} value={copyTarget.year} onChange={e => setCopyTarget(t => ({ ...t, year: +e.target.value }))} /></label>
+              <label className="scope-field">Locatie(s):
+                <select value={automationLocation} onChange={e => setAutomationLocation(e.target.value as Location | '')} required>
+                  <option value="" disabled>Kies locatie(s)</option>
+                  {LOCATIONS.map(option => <option key={option.value} value={option.value}>{LOCATION_LABELS[option.value]}</option>)}
+                </select>
+              </label>
             </div>
             {copyMsg && <p className="modal-msg">{copyMsg}</p>}
             <div className="modal-actions">
               <button className="btn btn-outline btn-sm" onClick={() => setShowCopy(false)}>Annuleren</button>
-              <button className="btn btn-primary btn-sm" onClick={executeCopy} disabled={copyBusy}>{copyBusy ? 'Bezig…' : 'Kopiëren'}</button>
+              <button className="btn btn-primary btn-sm" onClick={executeCopy} disabled={copyBusy || !automationLocation}>{copyBusy ? 'Bezig…' : 'Kopiëren'}</button>
             </div>
           </div>
         </div>
@@ -304,11 +321,17 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
             <p className="modal-desc">Herhaal week {week} ({year}) voor de volgende X weken:</p>
             <div className="modal-fields">
               <label>Aantal weken: <input type="number" min={1} max={12} value={fillWeeks} onChange={e => setFillWeeks(+e.target.value)} /></label>
+              <label className="scope-field">Locatie(s):
+                <select value={automationLocation} onChange={e => setAutomationLocation(e.target.value as Location | '')} required>
+                  <option value="" disabled>Kies locatie(s)</option>
+                  {LOCATIONS.map(option => <option key={option.value} value={option.value}>{LOCATION_LABELS[option.value]}</option>)}
+                </select>
+              </label>
             </div>
             {fillMsg && <p className="modal-msg">{fillMsg}</p>}
             <div className="modal-actions">
               <button className="btn btn-outline btn-sm" onClick={() => setShowFill(false)}>Annuleren</button>
-              <button className="btn btn-primary btn-sm" onClick={executeFill} disabled={fillBusy}>{fillBusy ? 'Bezig…' : `${fillWeeks} weken vullen`}</button>
+              <button className="btn btn-primary btn-sm" onClick={executeFill} disabled={fillBusy || !automationLocation}>{fillBusy ? 'Bezig…' : `${fillWeeks} weken vullen`}</button>
             </div>
           </div>
         </div>
@@ -374,6 +397,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                                     aria-label={`${s.shift_type} dienst van ${emp.name} bewerken`}
                                   >
                                     <span className="chip-type">{s.shift_type}</span>
+                                    {location === 'both' && <LocationBadge location={s.location} size="xs" label="short" />}
                                     {(s.start_time || s.end_time) && (
                                       <span className="chip-time">{formatTime(s.start_time)}–{formatTime(s.end_time)}</span>
                                     )}
@@ -416,6 +440,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                                     aria-label={`Bewerken: ${s.shift_type}`}
                                   >
                                     <span className="chip-type">{s.shift_type}</span>
+                                    {location === 'both' && <LocationBadge location={s.location} size="xs" label="short" />}
                                     {s.open_invite_status && (
                                       <span className={`chip-invite ${s.open_invite_status}`}>{s.open_invite_status}</span>
                                     )}
@@ -479,6 +504,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                                 aria-label={`${s.shift_type} - ${emp.name} - ${day}. Tik om te bewerken.`}
                               >
                                 <span className="mobile-chip-type">{s.shift_type.slice(0, 3)}</span>
+                                {location === 'both' && <LocationBadge location={s.location} size="xs" label="initial" />}
                                 {s.start_time && (
                                   <span className="mobile-chip-time">{formatTime(s.start_time)}</span>
                                 )}
@@ -544,10 +570,12 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           display: flex; flex-direction: column; gap: 4px;
           font-size: .8125rem; font-weight: 500;
         }
-        .modal-fields input {
+        .modal-fields input, .modal-fields select {
           padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius);
           background: var(--surface-alt); color: var(--text); font-size: .875rem; width: 100px;
         }
+        .modal-fields .scope-field { flex: 1 0 100%; }
+        .modal-fields .scope-field select { width: 100%; min-height: 40px; }
         .modal-msg { font-size: .8125rem; margin: 0; }
         .modal-actions { display: flex; justify-content: flex-end; gap: var(--s2); }
 
@@ -581,6 +609,10 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
         }
         .loc-tab.active[data-loc="markt"]        { background: var(--markt); color: #fff; }
         .loc-tab.active[data-loc="nootmagazijn"] { background: var(--noot);  color: #fff; }
+        .loc-tab.active[data-loc="both"] {
+          color: #fff;
+          background: linear-gradient(105deg, var(--markt) 0 49%, var(--noot) 51%);
+        }
         .loc-tab:not(.active):hover { background: var(--border); color: var(--text); }
 
         .plan-grid-wrap {
@@ -684,6 +716,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
           width: 100%; min-height: 32px; border: none; border-radius: 3px;
           display: flex; flex-direction: column; align-items: flex-start;
           padding: 3px 4px; cursor: pointer; gap: 1px; font: inherit; text-align: left;
+          min-width: 0; overflow: hidden;
         }
         .mobile-shift-chip:active { opacity: .8; }
         .mobile-chip-type { font-size: .6875rem; font-weight: 700; line-height: 1.2; }

@@ -74,7 +74,7 @@ export default function ExchangeSheet({ shift, currentEmployeeId, conversationId
           <div><span>Dienst</span><strong>#{shift.shift_id} · {shift.shift_type}</strong></div>
           <div><span>Moment</span><strong>Week {shift.week_number}, {shift.day_of_week}</strong></div>
           <div><span>Tijd</span><strong>{shift.full_day ? 'Hele dag' : `${shift.start_time?.slice(0, 5)}–${shift.end_time?.slice(0, 5)}`}</strong></div>
-          <div><span>Locatie</span><strong>{shift.location === 'markt' ? 'Markt' : 'Nootmagazijn'}</strong></div>
+          <div><span>Locatie</span><strong>{shift.location === 'markt' ? 'Markt' : 'Magazijn'}</strong></div>
         </div>
 
         {isOwn && (

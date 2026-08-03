@@ -227,8 +227,8 @@ export default function EmployeeDetailPage({ user }: Props) {
               <div className="form-group">
                 <label htmlFor="emp_location" className="form-label">Locatie</label>
                 <select id="emp_location" className="form-control" value={form.location ?? 'markt'} onChange={e => set('location', e.target.value as Location)} title="Voorkeurslocatie">
-                  <option value="markt">De Notenkar (Markt)</option>
-                  <option value="nootmagazijn">Het Nootmagazijn</option>
+                  <option value="markt">Markt</option>
+                  <option value="nootmagazijn">Magazijn</option>
                   <option value="both">Beide</option>
                 </select>
               </div>
