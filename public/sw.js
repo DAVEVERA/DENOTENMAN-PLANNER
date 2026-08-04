@@ -10,14 +10,17 @@ self.addEventListener('push', e => {
   try { payload = e.data.json() } catch { payload = { title: 'Planner', body: e.data.text() } }
 
   const { title = 'De Notenkar Planner', body = '', url = '/' } = payload
-  e.waitUntil(
-    self.registration.showNotification(title, {
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+    // Block planner notifications while the restricted inspection surface is open,
+    // including during the short race before an older worker unregisters.
+    if (clients.some(client => new URL(client.url).pathname.startsWith('/inspectie'))) return
+    return self.registration.showNotification(title, {
       body,
       icon:  '/favicon.png',
       data:  { url },
       vibrate: [100, 50, 100],
-    }),
-  )
+    })
+  }))
 })
 
 self.addEventListener('notificationclick', e => {

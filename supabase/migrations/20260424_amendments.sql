@@ -61,18 +61,8 @@ CREATE TABLE IF NOT EXISTS planner20_users (
 -- VALUES ('admin', '<hash_uit_users_json>', 'admin', NULL, 'Administrator')
 -- ON CONFLICT (username) DO NOTHING;
 --
--- ALTERNATIEF: Als je de hash niet weet, gebruik dan een tijdelijk wachtwoord:
--- (De hash hieronder is voor wachtwoord 'admin123')
-INSERT INTO planner20_users (username, password_hash, role, employee_id, display_name)
-VALUES (
-  'admin',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-  'admin',
-  NULL,
-  'Administrator'
-)
-ON CONFLICT (username) DO NOTHING;
+-- Gebruik voor provisioning uitsluitend `ADMIN_BOOTSTRAP_PASSWORD` of de
+-- beveiligde accountbeheerflow; er is bewust geen voorspelbaar seedaccount.
 
 -- Verificatie
 -- SELECT username, role, display_name FROM planner20_users;
-

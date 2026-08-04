@@ -17,6 +17,7 @@ import { buildSystemPrompt } from '@/lib/dave-config'
 import { getToolsForRole, executeTool } from '@/lib/dave-tools'
 import { getISOWeek } from '@/lib/scheduler'
 import { DAVE_MAX_CONTEXT_MESSAGES } from '@/lib/dave-config'
+import { hasSameOrigin } from '@/lib/request-security'
 
 // ── Lazy Anthropic client ────────────────────────────────────────────────────
 // Instantiated on first request, after the ANTHROPIC_API_KEY guard has run.
@@ -62,6 +63,7 @@ async function loadHistory(sessionId: string, limit = DAVE_MAX_CONTEXT_MESSAGES)
     .from(T('chat_messages'))
     .select('role, content, tool_name, tool_input, tool_result')
     .eq('session_id', sessionId)
+    .is('archived_at', null)
     .order('created_at', { ascending: false })
     .limit(limit)
   return (data ?? []).reverse()
@@ -153,6 +155,11 @@ function buildMessages(history: Awaited<ReturnType<typeof loadHistory>>, newUser
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
   if (!session.user) return res.status(401).json({ success: false, message: 'Niet ingelogd' })
+  const user = session.user
+  if (user.role === 'inspector') return res.status(403).json({ success: false, message: 'Geen toegang' })
+  if (req.method !== 'GET' && !hasSameOrigin(req)) {
+    return res.status(403).json({ success: false, message: 'Ongeldige herkomst' })
+  }
 
   // Guard: ANTHROPIC_API_KEY must be set
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -160,7 +167,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ success: false, message: 'Support is niet geconfigureerd (API-sleutel ontbreekt).' })
   }
 
-  const { user } = session
   const sessionId = user.user_id
 
   // ── GET: geschiedenis ────────────────────────────────────────────────────
@@ -169,7 +175,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from(T('chat_messages'))
       .select('id, role, content, tool_name, tool_result, created_at')
       .eq('session_id', sessionId)
-      .order('created_at', { ascending: true })
+      .is('archived_at', null)
+    .order('created_at', { ascending: true })
       .limit(100)
 
     if (error) return res.status(500).json({ success: false, message: error.message })
@@ -178,8 +185,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // ── DELETE: wis gesprek ──────────────────────────────────────────────────
   if (req.method === 'DELETE') {
-    await supabase.from(T('chat_messages')).delete().eq('session_id', sessionId)
-    return res.json({ success: true, message: 'Gesprek gewist.' })
+    const { error } = await supabase.from(T('chat_messages'))
+      .update({ archived_at: new Date().toISOString(), archived_by: user.user_id })
+      .eq('session_id', sessionId)
+      .is('archived_at', null)
+    if (error) {
+      console.error('[chat] archive conversation failed:', error.message)
+      return res.status(500).json({ success: false, message: 'Gesprek kon niet veilig worden gearchiveerd.' })
+    }
+    return res.json({ success: true, message: 'Gesprek gearchiveerd.' })
   }
 
   // ── POST: stuur bericht ──────────────────────────────────────────────────

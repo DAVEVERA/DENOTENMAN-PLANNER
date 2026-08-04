@@ -166,7 +166,7 @@ export interface PushSubscriptionRow {
 export interface SessionUser {
   user_id: string
   display_name: string
-  role: 'admin' | 'manager' | 'employee'
+  role: 'admin' | 'manager' | 'employee' | 'inspector'
   employee_id: number | null
   location: Location | null
 }
@@ -181,6 +181,7 @@ export type Capability =
   | 'export_data'
   | 'send_notifications'
   | 'manage_settings'
+  | 'view_inspection'
 
 export const ROLE_CAPS: Record<string, Capability[]> = {
   admin: [
@@ -193,6 +194,9 @@ export const ROLE_CAPS: Record<string, Capability[]> = {
     'export_data', 'send_notifications', 'view_own', 'read',
   ],
   employee: ['read', 'view_own'],
+  // Bewust geen `read` of `view_own`: inspecteurs mogen uitsluitend de
+  // afzonderlijke, server-side begrensde inspectieroutes gebruiken.
+  inspector: ['view_inspection'],
 }
 
 // ─── App Settings ─────────────────────────────────────────────────────────────
@@ -244,6 +248,7 @@ export interface EmployeeDocument {
   uploaded_by:  string
   uploaded_at:  string
   notes:        string | null
+  inspection_released: boolean
   download_url: string | null   // signed URL, server-generated
 }
 

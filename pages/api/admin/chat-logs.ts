@@ -12,12 +12,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession, can } from '@/lib/auth'
 import { supabase, T } from '@/lib/db'
+import { hasSameOrigin } from '@/lib/request-security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
   if (!session.user) return res.status(401).json({ success: false, message: 'Niet ingelogd' })
   if (!can(session.user, 'manage_shifts')) {
     return res.status(403).json({ success: false, message: 'Alleen admins kunnen chat-logs inzien.' })
+  }
+  if (req.method !== 'GET' && !hasSameOrigin(req)) {
+    return res.status(403).json({ success: false, message: 'Ongeldige herkomst' })
   }
 
   const sessionFilter = req.query.session as string | undefined
@@ -31,6 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from(T('chat_messages'))
         .select('id, role, content, tool_name, tool_result, created_at')
         .eq('session_id', sessionFilter)
+        .is('archived_at', null)
         .order('created_at', { ascending: true })
         .limit(500)
 
@@ -42,6 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await supabase
       .from(T('chat_messages'))
       .select('session_id, role, created_at')
+      .is('archived_at', null)
       .order('created_at', { ascending: false })
       .limit(5_000)
 
@@ -86,11 +92,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { error } = await supabase
       .from(T('chat_messages'))
-      .delete()
+      .update({ archived_at: new Date().toISOString(), archived_by: session.user.user_id })
       .eq('session_id', sessionFilter)
+      .is('archived_at', null)
 
     if (error) return res.status(500).json({ success: false, message: error.message })
-    return res.json({ success: true, message: 'Gesprek gewist.' })
+    return res.json({ success: true, message: 'Gesprek gearchiveerd.' })
   }
 
   res.status(405).json({ success: false })

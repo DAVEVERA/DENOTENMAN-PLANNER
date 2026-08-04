@@ -1,11 +1,15 @@
 import type { SessionOptions } from 'iron-session'
 import type { SessionUser } from '@/types'
 
-declare module 'iron-session' {
-  interface IronSessionData {
-    user?: SessionUser
-    csrf?: string
-  }
+export interface PlannerSessionData {
+  user?: SessionUser
+  csrf?: string
+  inspection_expires_at?: number
+  inspection_admin_return?: SessionUser
+  inspection_admin_csrf?: string
+  inspection_service_number_hash?: string
+  inspection_service_number_suffix?: string
+  inspection_integrity_accepted_at?: number
 }
 
 // In production this MUST come from the environment — a hardcoded fallback

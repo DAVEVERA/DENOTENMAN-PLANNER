@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Allows isolated verification builds while a local dev server owns `.next`.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   compress: true,
   poweredByHeader: false, // Do not expose "X-Powered-By: Next.js" to clients
 
@@ -67,6 +69,31 @@ const nextConfig = {
         source: '/api/:path*',
         headers: [
           { key: 'Cache-Control', value: 'no-store, max-age=0' },
+        ],
+      },
+      {
+        // No third-party connections, embeds, support widget, push client or
+        // externally hosted assets are permitted in the inspection surface.
+        source: '/inspectie/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self'",
+              "img-src 'self' data: blob:",
+              "connect-src 'self'",
+              "frame-src blob:",
+              "object-src 'none'",
+              "base-uri 'none'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+            ].join('; '),
+          },
+          { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
         ],
       },
     ]

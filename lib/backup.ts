@@ -94,7 +94,7 @@ export async function getImportPreview(data: BackupData): Promise<BackupPreview>
   const { count: sc } = await supabase.from(T('shifts')).select('id', { count: 'exact', head: true })
   const { count: ec } = await supabase.from(T('employees')).select('id', { count: 'exact', head: true })
   preview.conflicts = { existingShifts: sc ?? 0, existingEmployees: ec ?? 0 }
-  if ((sc ?? 0) > 0) preview.warnings.push(`Er zijn al ${sc} diensten — worden overschreven bij "vervangen"`)
+  if ((sc ?? 0) > 0) preview.warnings.push(`Er zijn al ${sc} diensten. Alleen veilig samenvoegen is beschikbaar; bestaande diensten blijven behouden.`)
   return preview
 }
 
@@ -106,14 +106,24 @@ export async function importBackup(
   const errors: string[] = []
   const imported: Record<string, number> = { shifts: 0, employees: 0, leave_requests: 0, time_logs: 0 }
 
+  if (mode === 'replace') {
+    return {
+      success: false,
+      imported,
+      errors: ['Vervangmodus is uitgeschakeld om bestaande productiegegevens te bewaren. Gebruik samenvoegen.'],
+    }
+  }
+
   try {
-    // Employees — upsert by name
+    // Employees — add missing names only; never overwrite production values.
     for (const emp of data.tables.employees ?? []) {
       const { id, ...fields } = emp as Employee & { id: number }
       const { data: ex } = await supabase.from(T('employees')).select('id').eq('name', fields.name).maybeSingle()
-      if (ex) await supabase.from(T('employees')).update(fields).eq('id', ex.id)
-      else await supabase.from(T('employees')).insert(fields)
-      imported.employees++
+      if (!ex) {
+        const { error } = await supabase.from(T('employees')).insert(fields)
+        if (!error) imported.employees++
+        else errors.push(`Medewerker: ${error.message}`)
+      }
     }
 
     // Build name→id map
@@ -123,13 +133,6 @@ export async function importBackup(
 
     // Shifts
     if (data.tables.shifts?.length) {
-      if (mode === 'replace') {
-        const weeks = new Set(data.tables.shifts.map((s: Shift) => `${s.year}-${s.week_number}`))
-        for (const key of weeks) {
-          const [yr, wk] = key.split('-').map(Number)
-          await supabase.from(T('shifts')).delete().eq('week_number', wk).eq('year', yr)
-        }
-      }
       for (const shift of data.tables.shifts) {
         const { id, created_at, ...fields } = shift as Shift & { id: number; created_at: string }
         if (fields.employee_name && nameMap.has(fields.employee_name)) fields.employee_id = nameMap.get(fields.employee_name)!
@@ -141,7 +144,6 @@ export async function importBackup(
 
     // Leave requests
     if (data.tables.leave_requests?.length) {
-      if (mode === 'replace') await supabase.from(T('leave_requests')).delete().neq('id', 0)
       for (const lr of data.tables.leave_requests) {
         const { id, created_at, reviewed_at, ...fields } = lr as LeaveRequest & { id: number }
         if (fields.employee_name && nameMap.has(fields.employee_name)) fields.employee_id = nameMap.get(fields.employee_name)!
@@ -152,7 +154,6 @@ export async function importBackup(
 
     // Time logs
     if (data.tables.time_logs?.length) {
-      if (mode === 'replace') await supabase.from(T('time_logs')).delete().neq('id', 0)
       for (const tl of data.tables.time_logs) {
         const { id, created_at, processed_at, ...fields } = tl as TimeLog & { id: number }
         if (fields.employee_name && nameMap.has(fields.employee_name)) fields.employee_id = nameMap.get(fields.employee_name)!

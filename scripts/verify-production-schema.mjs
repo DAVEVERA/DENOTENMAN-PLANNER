@@ -1,5 +1,6 @@
 import { isDirectInvocation, verifyHoursSchema } from './verify-hours-schema.mjs'
 import { verifyShiftArchiveSchema } from './verify-shift-archive-schema.mjs'
+import { verifyInspectionSchema } from './verify-inspection-schema.mjs'
 
 export function shouldVerifyProductionSchema(env) {
   return env.VERCEL === '1' && env.VERCEL_ENV === 'production'
@@ -31,7 +32,17 @@ async function main() {
     process.exitCode = 1
     return
   }
-  console.log('Production hours and shift archive schema preflight passed.')
+  const inspectionResult = await verifyInspectionSchema({
+    supabaseUrl: process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    tablePrefix: process.env.DB_PREFIX ?? 'planner20_',
+  })
+  if (!inspectionResult.ok) {
+    console.error(`Production inspection schema preflight failed (${inspectionResult.code}, HTTP ${inspectionResult.status}).`)
+    process.exitCode = 1
+    return
+  }
+  console.log('Production hours, shift archive and inspection schema preflight passed.')
 }
 
 if (isDirectInvocation(process.argv[1], import.meta.url)) {

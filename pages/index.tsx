@@ -12,6 +12,10 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
 
   const user = session.user
 
+  if (user.role === 'inspector') {
+    return { redirect: { destination: '/inspectie', permanent: false } }
+  }
+
   // Admin or manager → planning grid
   if (can(user, 'manage_shifts')) {
     return { redirect: { destination: '/admin', permanent: false } }

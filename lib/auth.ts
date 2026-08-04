@@ -10,7 +10,7 @@ import crypto from 'crypto'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import type { IncomingMessage, ServerResponse } from 'http'
 import { getIronSession } from 'iron-session'
-import { sessionOptions } from './session'
+import { sessionOptions, type PlannerSessionData } from './session'
 import type { SessionUser } from '@/types'
 import { supabase, T } from './db'
 import { sendInviteEmail, sendPasswordResetEmail } from './email'
@@ -21,9 +21,11 @@ export { can } from './capabilities'
 interface StoredUser {
   username:      string
   password_hash: string
-  role:          'admin' | 'manager' | 'employee'
+  role:          'admin' | 'manager' | 'employee' | 'inspector'
   employee_id:   number | null
   display_name:  string
+  archived_at?:  string | null
+  archived_by?:  string | null
 }
 
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ function hashResetToken(token: string): string {
 }
 
 async function dbLoadUsers(): Promise<StoredUser[]> {
-  const { data, error } = await supabase.from(USERS_TABLE()).select('*')
+  const { data, error } = await supabase.from(USERS_TABLE()).select('*').is('archived_at', null)
   if (error) { console.error('[auth] loadUsers error:', error.message); return [] }
   return (data ?? []) as StoredUser[]
 }
@@ -47,7 +49,18 @@ async function dbFindUser(username: string): Promise<StoredUser | null> {
     .from(USERS_TABLE())
     .select('*')
     .eq('username', username)
+    .is('archived_at', null)
     .maybeSingle()
+  return data ?? null
+}
+
+async function dbFindUserIncludingArchived(username: string): Promise<StoredUser | null> {
+  const { data, error } = await supabase
+    .from(USERS_TABLE())
+    .select('*')
+    .eq('username', username)
+    .maybeSingle()
+  if (error) throw error
   return data ?? null
 }
 
@@ -56,6 +69,7 @@ async function dbFindByEmployeeId(employeeId: number): Promise<StoredUser | null
     .from(USERS_TABLE())
     .select('*')
     .eq('employee_id', employeeId)
+    .is('archived_at', null)
     .maybeSingle()
   return data ?? null
 }
@@ -80,12 +94,12 @@ async function dbUpsertUser(user: StoredUser): Promise<void> {
   if (error) throw new Error('[auth] upsertUser: ' + error.message)
 }
 
-async function dbDeleteUser(username: string): Promise<boolean> {
-  const { error } = await supabase
-    .from(USERS_TABLE())
-    .delete()
-    .eq('username', username)
-  return !error
+async function dbDeleteUser(username: string, actor: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc(T('archive_user_account'), {
+    p_username: username,
+    p_actor: actor,
+  })
+  return !error && Boolean(data)
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -117,6 +131,8 @@ export async function ensureDefaultAdmin(): Promise<void> {
     role:          'admin',
     employee_id:   null,
     display_name:  'Administrator',
+    archived_at:   null,
+    archived_by:   null,
   })
 }
 
@@ -125,9 +141,11 @@ export async function attemptLogin(
   res: NextApiResponse | ServerResponse,
   username: string,
   password: string,
+  requiredRole?: StoredUser['role'],
 ): Promise<boolean> {
   const user = await dbFindUser(username)
   if (!user || !bcrypt.compareSync(password, user.password_hash)) return false
+  if (requiredRole ? user.role !== requiredRole : user.role === 'inspector') return false
 
   // Haal locatie op zodat index-page correct kan doorsturen
   let empLocation: string | null = null
@@ -140,7 +158,7 @@ export async function attemptLogin(
     empLocation = empData?.location ?? null
   }
 
-  const session = await getIronSession<{ user?: SessionUser; csrf?: string }>(req, res, sessionOptions)
+  const session = await getIronSession<PlannerSessionData>(req, res, sessionOptions)
   session.user = {
     user_id:      user.username,
     display_name: user.display_name,
@@ -149,6 +167,13 @@ export async function attemptLogin(
     location:     empLocation as any,
   }
   session.csrf = crypto.randomBytes(32).toString('hex')
+  if (user.role === 'inspector') {
+    session.inspection_expires_at = Date.now() + 30 * 60 * 1000
+  } else {
+    delete session.inspection_expires_at
+    delete session.inspection_admin_return
+    delete session.inspection_admin_csrf
+  }
   await session.save()
   return true
 }
@@ -160,11 +185,40 @@ const DEV_USER: SessionUser = {
 export async function getSession(
   req: NextApiRequest | IncomingMessage,
   res: NextApiResponse | ServerResponse,
-) {
-  if (process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
-    return { user: DEV_USER, csrf: 'dev' } as { user?: SessionUser; csrf?: string }
+): Promise<PlannerSessionData> {
+  const session = await getRawSession(req, res)
+  if (process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production' && !session.user) {
+    return { user: DEV_USER, csrf: 'dev' }
   }
-  return getIronSession<{ user?: SessionUser; csrf?: string }>(req, res, sessionOptions)
+  if (session.user?.role === 'inspector') {
+    if (!session.inspection_expires_at || session.inspection_expires_at <= Date.now()) {
+      session.user = undefined
+      session.destroy()
+      return session
+    }
+    if (!isInspectorPathAllowed(req.url)) session.user = undefined
+  }
+  return session
+}
+
+export function getRawSession(
+  req: NextApiRequest | IncomingMessage,
+  res: NextApiResponse | ServerResponse,
+) {
+  return getIronSession<PlannerSessionData>(req, res, sessionOptions)
+}
+
+/** Central deny-by-default boundary for the restricted inspection role. */
+export function isInspectorPathAllowed(rawUrl?: string): boolean {
+  const path = (rawUrl ?? '/').split('?')[0]
+  return path === '/'
+    || path === '/login'
+    || path === '/api/session'
+    || path === '/api/auth/logout'
+    || path === '/inspectie'
+    || path.startsWith('/inspectie/')
+    || path === '/api/inspectie'
+    || path.startsWith('/api/inspectie/')
 }
 
 export async function changePassword(username: string, newPassword: string): Promise<boolean> {
@@ -266,7 +320,10 @@ export async function checkEmployeeHasAccount(employeeId: number): Promise<boole
 export async function upsertUser(
   data: Omit<StoredUser, 'password_hash'> & { password?: string }
 ): Promise<void> {
-  const existing = await dbFindUser(data.username)
+  const existing = await dbFindUserIncludingArchived(data.username)
+  if (existing?.archived_at) {
+    throw new Error('[auth] archived usernames cannot be silently reactivated')
+  }
   const hash = data.password
     ? bcrypt.hashSync(data.password, 10)
     : existing?.password_hash ?? ''
@@ -276,11 +333,13 @@ export async function upsertUser(
     role:          data.role,
     employee_id:   data.employee_id,
     display_name:  data.display_name,
+    archived_at:   existing?.archived_at ?? null,
+    archived_by:   existing?.archived_by ?? null,
   })
 }
 
-export async function deleteUser(username: string): Promise<boolean> {
-  return dbDeleteUser(username)
+export async function deleteUser(username: string, actor: string): Promise<boolean> {
+  return dbDeleteUser(username, actor)
 }
 
 /**

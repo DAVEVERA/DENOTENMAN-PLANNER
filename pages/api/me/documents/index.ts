@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from '@/lib/auth'
 import { listDocuments, uploadDocument } from '@/lib/documents'
 import type { DocType } from '@/types'
+import { hasSameOrigin } from '@/lib/request-security'
 
 // Grotere body-limit voor base64-gecodeerde bestanden (max 10MB → ~13.3MB base64)
 export const config = { api: { bodyParser: { sizeLimit: '14mb' } } }
@@ -27,12 +28,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const docs = await listDocuments(employee_id)
       return res.json({ success: true, data: docs })
     } catch (err: unknown) {
-      return res.status(500).json({ success: false, message: String(err) })
+      console.error('[/api/me/documents GET]', err)
+      return res.status(500).json({ success: false, message: 'Documenten konden niet veilig worden geladen' })
     }
   }
 
   // ── POST: upload nieuw document ────────────────────────────────────────────
   if (req.method === 'POST') {
+    if (!hasSameOrigin(req)) return res.status(403).json({ success: false })
     try {
       const { doc_type, filename, mime_type, base64, notes } = req.body as {
         doc_type:  string
@@ -49,8 +52,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!ALLOWED_MIME.includes(mime_type)) {
         return res.status(400).json({ success: false, message: 'Bestandstype niet toegestaan. Gebruik PDF, JPEG of PNG.' })
       }
-      if (!filename || !base64) {
+      if (!filename || filename.length > 180 || !base64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64) || base64.length % 4 !== 0) {
         return res.status(400).json({ success: false, message: 'Bestandsnaam en inhoud zijn verplicht' })
+      }
+      if (notes && String(notes).length > 1000) {
+        return res.status(400).json({ success: false, message: 'Notitie is te lang' })
       }
 
       const buffer = Buffer.from(base64, 'base64')
@@ -71,7 +77,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json({ success: true, data: doc })
     } catch (err: unknown) {
-      return res.status(500).json({ success: false, message: String(err) })
+      console.error('[/api/me/documents POST]', err)
+      return res.status(500).json({ success: false, message: 'Document kon niet veilig worden opgeslagen' })
     }
   }
 

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from '@/lib/auth'
 import { deleteDocument, getDownloadUrl } from '@/lib/documents'
+import { hasSameOrigin } from '@/lib/request-security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession(req, res)
@@ -18,17 +19,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const url = await getDownloadUrl(id, employee_id)
       return res.json({ success: true, data: { url } })
     } catch (err: unknown) {
-      return res.status(404).json({ success: false, message: String(err) })
+      console.error('[/api/me/documents/:id GET]', err)
+      return res.status(404).json({ success: false, message: 'Document niet gevonden of niet beschikbaar' })
     }
   }
 
   // ── DELETE: verwijder document ─────────────────────────────────────────────
   if (req.method === 'DELETE') {
+    if (!hasSameOrigin(req)) return res.status(403).json({ success: false })
     try {
-      await deleteDocument(id, employee_id)
+      await deleteDocument(id, employee_id, session.user.user_id)
       return res.json({ success: true })
     } catch (err: unknown) {
-      return res.status(500).json({ success: false, message: String(err) })
+      console.error('[/api/me/documents/:id DELETE]', err)
+      return res.status(500).json({ success: false, message: 'Document kon niet veilig worden gearchiveerd' })
     }
   }
 

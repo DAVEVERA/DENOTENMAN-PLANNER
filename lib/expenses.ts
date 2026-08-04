@@ -13,6 +13,7 @@ export async function getExpenseClaims(filters?: {
   let q = supabase
     .from(T('expense_claims'))
     .select('*')
+    .is('archived_at', null)
     .order('created_at', { ascending: false })
 
   if (filters?.employeeId) q = q.eq('employee_id', filters.employeeId)
@@ -43,6 +44,7 @@ export async function getExpenseClaim(id: number): Promise<ExpenseClaim | null> 
     .from(T('expense_claims'))
     .select('*')
     .eq('id', id)
+    .is('archived_at', null)
     .maybeSingle()
   return data ?? null
 }
@@ -80,9 +82,10 @@ export async function updateExpenseClaimStatus(
   return data
 }
 
-export async function deleteExpenseClaim(id: number): Promise<void> {
-  const { error } = await supabase.from(T('expense_claims')).delete().eq('id', id)
+export async function deleteExpenseClaim(id: number, actor: string): Promise<void> {
+  const { data, error } = await supabase.rpc(T('archive_expense_claim'), { p_claim_id: id, p_actor: actor })
   if (error) throw error
+  if (!data) throw new Error('Declaratie niet gevonden')
 }
 
 // ─── Summary (voor export / boekhouding) ─────────────────────────────────────
@@ -100,6 +103,7 @@ export async function getExpenseSummaryByEmployee(): Promise<ExpenseSummary[]> {
   const { data, error } = await supabase
     .from(T('expense_claims'))
     .select('employee_id, employee_name, status, amount')
+    .is('archived_at', null)
     .in('status', ['pending', 'approved'])
   if (error) throw error
 

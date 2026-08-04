@@ -9,7 +9,7 @@ interface Props { user: SessionUser }
 
 interface UserAccount {
   username: string
-  role: 'admin' | 'manager' | 'employee'
+  role: 'admin' | 'manager' | 'employee' | 'inspector'
   display_name: string
   employee_id: number | null
 }
@@ -18,12 +18,14 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
   manager: 'Manager',
   employee: 'Medewerker',
+  inspector: 'Inspectiedienst',
 }
 
 const ROLE_BADGE_CLASS: Record<string, string> = {
   admin: 'role-admin',
   manager: 'role-manager',
   employee: 'role-employee',
+  inspector: 'role-inspector',
 }
 
 export default function SettingsPage({ user }: Props) {
@@ -83,8 +85,9 @@ export default function SettingsPage({ user }: Props) {
   async function addUser(e: React.FormEvent) {
     e.preventDefault()
     setUserSaving(true); setUserError(''); setUserSuccess('')
-    if (!newUser.password || newUser.password.length < 6) {
-      setUserError('Wachtwoord moet minimaal 6 tekens zijn')
+    const minimumPasswordLength = newUser.role === 'inspector' ? 14 : 8
+    if (!newUser.password || newUser.password.length < minimumPasswordLength) {
+      setUserError(`Wachtwoord moet minimaal ${minimumPasswordLength} tekens zijn`)
       setUserSaving(false)
       return
     }
@@ -103,8 +106,19 @@ export default function SettingsPage({ user }: Props) {
     setTimeout(() => setUserSuccess(''), 4000)
   }
 
+  async function startInspectionPreview() {
+    if (!confirm('Veilige voorbeeldsessie starten? U schakelt tijdelijk over naar de beperkte inspectierechten.')) return
+    setUserError('')
+    const response = await fetch('/api/admin/inspection/impersonate', { method: 'POST' })
+    if (!response.ok) {
+      setUserError('De veilige voorbeeldsessie kon niet worden gestart')
+      return
+    }
+    window.location.assign('/inspectie')
+  }
+
   async function removeUser(username: string) {
-    if (!confirm(`Account "${username}" definitief verwijderen?`)) return
+    if (!confirm(`Account "${username}" archiveren? De accountgegevens blijven bewaard.`)) return
     const r = await fetch('/api/admin/users', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -188,6 +202,14 @@ export default function SettingsPage({ user }: Props) {
       </form>
 
       {/* ══════════════════ GEBRUIKERSACCOUNTS ══════════════════ */}
+      <div className="settings-form inspection-admin-card">
+        <div>
+          <h3>Inspectieomgeving</h3>
+          <p>Bekijk exact wat een inspecteur vandaag kan zien. De voorbeeldsessie blijft alleen-lezen en gebruikt een eigen inzageteller.</p>
+        </div>
+        <button type="button" className="btn btn-markt" onClick={startInspectionPreview}>Start veilige voorbeeldsessie</button>
+      </div>
+
       <div className="settings-form settings-accounts-section">
         <div className="settings-section">
           <div className="section-header">
@@ -246,6 +268,7 @@ export default function SettingsPage({ user }: Props) {
                     <option value="admin">Admin</option>
                     <option value="manager">Manager</option>
                     <option value="employee">Medewerker</option>
+                    <option value="inspector">Inspectiedienst</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -257,8 +280,8 @@ export default function SettingsPage({ user }: Props) {
                     value={newUser.password}
                     onChange={e => setNewUser(u => ({ ...u, password: e.target.value }))}
                     required
-                    minLength={6}
-                    placeholder="min. 6 tekens"
+                    minLength={newUser.role === 'inspector' ? 14 : 8}
+                    placeholder={newUser.role === 'inspector' ? 'nieuw geheim, min. 14 tekens' : 'min. 8 tekens'}
                     autoComplete="new-password"
                   />
                 </div>
@@ -301,9 +324,9 @@ export default function SettingsPage({ user }: Props) {
                           <button
                             className="btn btn-ghost btn-xs text-danger"
                             onClick={() => removeUser(acc.username)}
-                            title="Account verwijderen"
+                            title="Account archiveren"
                           >
-                            Verwijderen
+                            Archiveren
                           </button>
                         )}
                         {acc.username === user.user_id && (
@@ -331,6 +354,9 @@ export default function SettingsPage({ user }: Props) {
           padding-bottom: var(--s2); border-bottom: 1px solid var(--border);
         }
         .settings-accounts-section { margin-top: 2rem; }
+        .inspection-admin-card { margin-top: 2rem; padding: var(--s4); border: 1px solid var(--markt); border-radius: var(--radius-lg); background: var(--markt-light); display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
+        .inspection-admin-card h3 { color: var(--markt); margin: 0 0 4px; }
+        .inspection-admin-card p { color: var(--text-sub); margin: 0; font-size: .875rem; }
         .section-title-inline { margin-bottom: 0 !important; border-bottom: none !important; padding-bottom: 0 !important; }
         .alert-spaced { margin-top: var(--s3); }
         .section-header {
@@ -376,6 +402,7 @@ export default function SettingsPage({ user }: Props) {
         .role-admin    { background: rgba(220,53,69,.15); color: #ef4444; }
         .role-manager  { background: rgba(245,158,11,.15); color: #f59e0b; }
         .role-employee { background: rgba(34,197,94,.15); color: #22c55e; }
+        .role-inspector { background: rgba(44,110,73,.16); color: #2c6e49; }
 
         .text-danger { color: #ef4444 !important; }
         .loading-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s8); color: var(--text-muted); }
@@ -384,6 +411,7 @@ export default function SettingsPage({ user }: Props) {
         @media (max-width: 768px) {
           .settings-form { max-width: 100%; }
           .section-header { flex-direction: column; align-items: stretch; }
+          .inspection-admin-card { align-items: stretch; flex-direction: column; }
         }
         @media (max-width: 480px) {
           .form-grid { grid-template-columns: 1fr; }

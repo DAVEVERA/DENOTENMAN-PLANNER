@@ -42,6 +42,8 @@ export default function EmployeeDetailPage({ user }: Props) {
   const [profile, setProfile]    = useState<EmployeeProfile | null>(null)
   const [docs, setDocs]          = useState<EmployeeDocument[]>([])
   const [docsLoading, setDocsLoading] = useState(false)
+  const [docActionId, setDocActionId] = useState<number | null>(null)
+  const [docError, setDocError] = useState('')
   const [profileLoading, setProfileLoading] = useState(false)
 
   const [inviting, setInviting]     = useState(false)
@@ -95,9 +97,29 @@ export default function EmployeeDetailPage({ user }: Props) {
   }
 
   async function handleDeleteDoc(docId: number) {
-    if (!confirm('Verwijder dit document?')) return
+    if (!confirm('Dit document archiveren? De gegevens en het bestand blijven bewaard.')) return
     await fetch(`/api/admin/employees/${id}/documents?docId=${docId}`, { method: 'DELETE' })
     loadDocs()
+  }
+
+  async function toggleInspectionRelease(doc: EmployeeDocument) {
+    const release = !doc.inspection_released
+    const action = release ? 'vrijgeven voor de inspectieomgeving' : 'de inspectievrijgave intrekken'
+    if (!confirm(`${DOC_TYPE_LABELS[doc.doc_type]} ${action}? Deze wijziging wordt geregistreerd.`)) return
+    setDocActionId(doc.id); setDocError('')
+    try {
+      const response = await fetch(`/api/admin/employees/${id}/documents?docId=${doc.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inspectionReleased: release }),
+      })
+      const result = await response.json()
+      if (!result.success) { setDocError(result.message || 'Inspectievrijgave bijwerken mislukt'); return }
+      await loadDocs()
+    } catch {
+      setDocError('Inspectievrijgave bijwerken mislukt. Controleer de verbinding en probeer opnieuw.')
+    } finally {
+      setDocActionId(null)
+    }
   }
 
   async function openDoc(doc: EmployeeDocument) {
@@ -343,6 +365,7 @@ export default function EmployeeDetailPage({ user }: Props) {
           <div className="docs-security-note">
             <span>🔒</span> Documenten zijn beveiligd. Links verlopen automatisch na 1 uur.
           </div>
+          {docError && <div className="alert alert-danger" role="alert">{docError}</div>}
           {docsLoading ? (
             <div className="loading-row"><Spinner /> Laden…</div>
           ) : docs.length === 0 ? (
@@ -361,8 +384,11 @@ export default function EmployeeDetailPage({ user }: Props) {
                     </span>
                   </div>
                   <div className="doc-actions">
-                    <button className="btn btn-outline btn-xs" onClick={() => openDoc(doc)}>Bekijken</button>
-                    <button className="btn btn-ghost btn-xs text-danger" onClick={() => handleDeleteDoc(doc.id)}>Verwijderen</button>
+                    <button disabled={docActionId === doc.id} className="btn btn-outline btn-xs" onClick={() => openDoc(doc)}>Bekijken</button>
+                    {doc.doc_type !== 'overig' && <button disabled={docActionId === doc.id} className={`btn btn-xs ${doc.inspection_released ? 'btn-outline' : 'btn-primary'}`} onClick={() => toggleInspectionRelease(doc)}>
+                      {docActionId === doc.id ? 'Bezig…' : doc.inspection_released ? 'Vrijgave intrekken' : 'Vrijgeven voor inspectie'}
+                    </button>}
+                    <button disabled={docActionId === doc.id} className="btn btn-ghost btn-xs text-danger" onClick={() => handleDeleteDoc(doc.id)}>Archiveren</button>
                   </div>
                 </div>
               ))}
@@ -455,11 +481,17 @@ export default function EmployeeDetailPage({ user }: Props) {
         .doc-name { display: block; font-size: .9375rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: .8125rem; color: var(--text-muted); }
         .doc-actions { display: flex; gap: var(--s2); flex-shrink: 0; }
+        .doc-actions .btn { min-height: 44px; }
         .text-danger { color: #dc2626; }
 
         @media (max-width: 900px) {
           .detail-grid { grid-template-columns: 1fr; }
           .profile-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 700px) {
+          .doc-row { align-items: stretch; flex-direction: column; }
+          .doc-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
+          .doc-actions .btn { min-height: 48px; width: 100%; white-space: normal; }
         }
       `}</style>
     </AdminLayout>

@@ -31,7 +31,7 @@ export default function BackupPage({ user }: Props) {
   const [importErr, setImportErr] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
   const [backupData, setBackupData] = useState<unknown>(null)
-  const [mode, setMode] = useState<'merge' | 'replace'>('merge')
+  const mode = 'merge' as const
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [histLoading, setHistLoading] = useState(true)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -179,12 +179,8 @@ export default function BackupPage({ user }: Props) {
                   <div className="import-mode">
                     <label className="mode-label">Importmodus:</label>
                     <label className="mode-option">
-                      <input type="radio" name="mode" value="merge" checked={mode === 'merge'} onChange={() => setMode('merge')} />
+                      <input type="radio" name="mode" value="merge" checked readOnly />
                       <span><strong>Samenvoegen</strong> — voegt ontbrekende data toe</span>
-                    </label>
-                    <label className="mode-option">
-                      <input type="radio" name="mode" value="replace" checked={mode === 'replace'} onChange={() => setMode('replace')} />
-                      <span><strong>Vervangen</strong> — overschrijft bestaande data</span>
                     </label>
                   </div>
 

@@ -3,11 +3,15 @@ import { getSession, can } from '@/lib/auth'
 import { getExpenseClaim, updateExpenseClaimStatus, deleteExpenseClaim } from '@/lib/expenses'
 import { getEmployee } from '@/lib/scheduler'
 import { sendExpenseReviewEmail } from '@/lib/email'
+import { hasSameOrigin } from '@/lib/request-security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const session = await getSession(req, res)
     if (!session.user) return res.status(401).json({ success: false })
+    if (req.method !== 'GET' && !hasSameOrigin(req)) {
+      return res.status(403).json({ success: false, message: 'Ongeldige herkomst' })
+    }
 
     const id = parseInt(String(req.query.id))
     if (!id || isNaN(id)) return res.status(400).json({ success: false, message: 'Ongeldig ID' })
@@ -69,13 +73,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!isAdmin && claim.status !== 'pending')
         return res.status(400).json({ success: false, message: 'Alleen openstaande declaraties kunnen worden ingetrokken' })
 
-      await deleteExpenseClaim(id)
+      await deleteExpenseClaim(id, session.user.user_id)
       return res.json({ success: true })
     }
 
     res.status(405).json({ success: false })
   } catch (err: any) {
     console.error('[api/expenses/[id]]', err)
-    res.status(500).json({ success: false, message: err.message })
+    res.status(500).json({ success: false, message: 'Declaratieactie kon niet veilig worden verwerkt' })
   }
 }

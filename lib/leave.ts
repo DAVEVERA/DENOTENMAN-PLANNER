@@ -1,5 +1,5 @@
 import { supabase, T, unwrap } from './db'
-import { saveShift, getISOWeek } from './scheduler'
+import { archiveShift, saveShift, getISOWeek } from './scheduler'
 import type { LeaveRequest, Day } from '@/types'
 import { DAYS } from '@/types'
 
@@ -55,13 +55,16 @@ export async function reviewLeaveRequest(
         const year = cursor.getFullYear()
 
         // Verwijder bestaande diensten van de medewerker op deze dag
-        await supabase
+        const { data: existingShifts, error: existingShiftError } = await supabase
           .from(T('shifts'))
-          .delete()
+          .select('id')
           .eq('employee_id', row.employee_id)
           .eq('year', year)
           .eq('week_number', week)
           .eq('day_of_week', dow)
+          .is('archived_at', null)
+        if (existingShiftError) throw existingShiftError
+        for (const existing of existingShifts ?? []) await archiveShift(existing.id, reviewedBy)
 
         await saveShift({
           employee_id:   row.employee_id,

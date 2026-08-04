@@ -23,6 +23,7 @@ lint_*.txt
 eslint_output.txt
 build.log
 .playwright-cli/
+output/
 
 # Scratch / dev utilities (never commit)
 scratch/

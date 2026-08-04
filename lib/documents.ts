@@ -6,18 +6,21 @@ const DOC_BUCKET   = 'employee-documents'
 const SIGNED_URL_TTL = 3600  // 1 uur — gevoelige documenten
 
 /** Toegestane MIME-types + magic bytes voor bestandsvalidatie */
-const ALLOWED_TYPES: Record<string, string> = {
-  'application/pdf': '25504446',  // %PDF
-  'image/jpeg':      'ffd8ff',    // JPEG SOI
-  'image/png':       '89504e47',  // PNG
-  'image/webp':      '52494646',  // RIFF (WebP container)
+const SAFE_EXTENSIONS: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
 }
 
 /** Valideer bestandsinhoud via magic bytes. Geeft false terug bij onbekende/foute bestandstypen. */
 export function validateFileMagic(buffer: Buffer, claimedMime: string): boolean {
-  if (!ALLOWED_TYPES[claimedMime]) return false
-  const magic = buffer.subarray(0, 4).toString('hex')
-  return magic.startsWith(ALLOWED_TYPES[claimedMime])
+  if (!SAFE_EXTENSIONS[claimedMime] || buffer.byteLength < 12) return false
+  if (claimedMime === 'application/pdf') return buffer.subarray(0, 4).toString('ascii') === '%PDF'
+  if (claimedMime === 'image/jpeg') return buffer.subarray(0, 3).toString('hex') === 'ffd8ff'
+  if (claimedMime === 'image/png') return buffer.subarray(0, 8).toString('hex') === '89504e470d0a1a0a'
+  return buffer.subarray(0, 4).toString('ascii') === 'RIFF'
+    && buffer.subarray(8, 12).toString('ascii') === 'WEBP'
 }
 
 /** Haal alle documenten op voor een medewerker, inclusief signed download URLs. */
@@ -26,6 +29,7 @@ export async function listDocuments(employee_id: number): Promise<EmployeeDocume
     .from(T('employee_documents'))
     .select('*')
     .eq('employee_id', employee_id)
+    .is('archived_at', null)
     .order('uploaded_at', { ascending: false })
 
   if (error) throw error
@@ -58,7 +62,7 @@ export async function uploadDocument(opts: {
     throw new Error('Bestandstype niet toegestaan of bestand is beschadigd')
   }
 
-  const ext          = opts.filename.split('.').pop()?.toLowerCase() ?? 'bin'
+  const ext          = SAFE_EXTENSIONS[opts.mime_type]
   const safeName     = crypto.randomUUID()
   const storagePath  = `${opts.employee_id}/${safeName}.${ext}`
 
@@ -75,7 +79,7 @@ export async function uploadDocument(opts: {
     .insert({
       employee_id:  opts.employee_id,
       doc_type:     opts.doc_type,
-      filename:     opts.filename,
+      filename:     opts.filename.split(/[\\/]/).pop()?.slice(0, 180) || `document.${ext}`,
       storage_path: storagePath,
       file_size:    opts.buffer.byteLength,
       mime_type:    opts.mime_type,
@@ -86,8 +90,21 @@ export async function uploadDocument(opts: {
     .single()
 
   if (dbError) {
-    // Verwijder het bestand als DB-insert mislukt
-    await supabase.storage.from(DOC_BUCKET).remove([storagePath])
+    // Bewaar de upload én registreer hem voor herstel; fysieke verwijdering is
+    // verboden en een los storage-object mag niet alleen in logs bestaan.
+    const { error: reconciliationError } = await supabase
+      .from(T('document_storage_reconciliation'))
+      .insert({
+        storage_path: storagePath,
+        employee_id: opts.employee_id,
+        mime_type: opts.mime_type,
+        file_size: opts.buffer.byteLength,
+        reason: 'metadata_insert_failed',
+      })
+    if (reconciliationError) {
+      console.error('[documents] reconciliation ledger insert failed:', reconciliationError.message)
+    }
+    console.error('[documents] metadata insert failed; storage object preserved:', storagePath)
     throw dbError
   }
 
@@ -99,26 +116,32 @@ export async function uploadDocument(opts: {
   return { ...data, download_url: signed?.signedUrl ?? null }
 }
 
-/** Verwijder een document (storage + database). Mag alleen door eigenaar of admin. */
-export async function deleteDocument(id: number, employee_id: number): Promise<void> {
-  const { data, error } = await supabase
-    .from(T('employee_documents'))
-    .select('storage_path')
-    .eq('id', id)
-    .eq('employee_id', employee_id)
-    .maybeSingle()
-
+/** Archiveer een document zonder database- of storagegegevens te verwijderen. */
+export async function deleteDocument(id: number, employee_id: number, actor: string): Promise<void> {
+  const { data, error } = await supabase.rpc(T('archive_employee_document'), {
+    p_document_id: id,
+    p_employee_id: employee_id,
+    p_actor: actor,
+  })
   if (error) throw error
   if (!data) throw new Error('Document niet gevonden of geen toegang')
+}
 
-  await supabase.storage.from(DOC_BUCKET).remove([data.storage_path])
-
-  const { error: delError } = await supabase
-    .from(T('employee_documents'))
-    .delete()
-    .eq('id', id)
-
-  if (delError) throw delError
+/** Beheer de expliciete inspectievrijgave; iedere wijziging wordt append-only geaudit. */
+export async function setDocumentInspectionRelease(
+  id: number,
+  employee_id: number,
+  released: boolean,
+  actor: string,
+): Promise<void> {
+  const { data, error } = await supabase.rpc(T('set_document_inspection_release'), {
+    p_document_id: id,
+    p_employee_id: employee_id,
+    p_released: released,
+    p_actor: actor,
+  })
+  if (error) throw error
+  if (!data) throw new Error('Document niet gevonden, gearchiveerd of niet geschikt voor inspectie')
 }
 
 /** Genereer een éénmalige signed download URL voor een specifiek document. */
@@ -128,6 +151,7 @@ export async function getDownloadUrl(id: number, employee_id: number): Promise<s
     .select('storage_path')
     .eq('id', id)
     .eq('employee_id', employee_id)
+    .is('archived_at', null)
     .maybeSingle()
 
   if (error) throw error
