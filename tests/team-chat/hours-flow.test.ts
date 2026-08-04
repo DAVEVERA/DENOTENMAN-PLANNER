@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 import { getPlannedShiftHours, isShiftReadyForHourConfirmation, latestTimeLogForShift } from '../../lib/shift-hours'
@@ -6,6 +7,8 @@ import { interpretHourSubmissionResponse } from '../../lib/hour-submission-clien
 import { HourSubmissionConflictError } from '../../lib/hours'
 import { hourSubmissionConflictResponse, hourSubmissionFailure } from '../../pages/api/hours/shift'
 import type { Shift, TimeLog } from '../../types'
+
+const emailSource = readFileSync('lib/email.ts', 'utf8')
 
 function shift(overrides: Partial<Shift> = {}): Shift {
   return {
@@ -192,4 +195,10 @@ test('null JSON from a gateway remains a safe submission error', () => {
     kind: 'error',
     message: 'Indienen is niet gelukt. Probeer het opnieuw.',
   })
+})
+
+test('hours and expense emails use the canonical application origin', () => {
+  assert.doesNotMatch(emailSource, /planner\.denotenman\.com/)
+  assert.doesNotMatch(emailSource, /NEXT_PUBLIC_BASE_URL/)
+  assert.match(emailSource, /const baseUrl = APP_URL/)
 })

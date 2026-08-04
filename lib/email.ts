@@ -613,7 +613,7 @@ export async function sendExpenseRequestAlertEmail(opts: {
             </table>
           </div>
           <p style="margin:0;font-size:14px;color:#8c7b6f">
-            Ga naar de <a href="${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://planner.denotenman.com'}/admin/expenses" style="color:#C8882A;text-decoration:none;font-weight:500">admin planner</a> om deze aanvraag te bekijken en af te handelen.
+            Ga naar de <a href="${APP_URL}/admin/expenses" style="color:#C8882A;text-decoration:none;font-weight:500">admin planner</a> om deze aanvraag te bekijken en af te handelen.
           </p>
         </td></tr>
       </table>
@@ -636,7 +636,7 @@ export async function sendHourSubmissionAlertEmail(opts: {
   assertSmtpConfigured()
   const transport = getTransport()
   const toEmail = process.env.ADMIN_EMAIL ?? 'info@denotenman.com'
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://planner.denotenman.com'
+  const baseUrl = APP_URL
   const fmtDate = new Date(opts.logDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
 
   await transport.sendMail({
@@ -695,7 +695,7 @@ export async function sendHourReviewEmail(opts: {
 }): Promise<void> {
   assertSmtpConfigured()
   const transport = getTransport()
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://planner.denotenman.com'
+  const baseUrl = APP_URL
   const statusNL = opts.decision === 'approved' ? 'goedgekeurd' : 'afgekeurd'
   const color = opts.decision === 'approved' ? '#2E7D32' : '#C62828'
   const fmtDate = new Date(opts.logDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -780,7 +780,7 @@ export async function sendExpenseReviewEmail(opts: {
           </p>
           ${opts.note ? `<p style="margin:0 0 24px;font-size:15px;color:#4a3728;line-height:1.6;font-style:italic"><strong>Opmerking beheerder:</strong><br/>${opts.note}</p>` : ''}
           <p style="margin:0;font-size:14px;color:#8c7b6f">
-            Ga naar de <a href="${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://planner.denotenman.com'}/me/expenses" style="color:#C8882A;text-decoration:none;font-weight:500">planner</a> om al je declaraties te bekijken.
+            Ga naar de <a href="${APP_URL}/me/expenses" style="color:#C8882A;text-decoration:none;font-weight:500">planner</a> om al je declaraties te bekijken.
           </p>
         </td></tr>
       </table>
