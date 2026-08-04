@@ -72,6 +72,7 @@ export async function createOpenShiftClaim(shift: Shift, employeeId: number, emp
     .from(T('shifts'))
     .update({ open_invite_emp_id: employeeId, open_invite_status: 'pending' })
     .eq('id', shift.id)
+    .is('archived_at', null)
 
   return data as OpenShiftClaim
 }
@@ -101,16 +102,17 @@ export async function approveOpenShiftClaim(shift: Shift, employeeId: number, re
   if (claimError) return { ok: false, error: claimError.message }
   if (!claim) return { ok: false, error: 'Geen open inschrijving gevonden voor deze medewerker' }
 
-  const { error: shiftError } = await supabase.from(T('shifts')).update({
+  const { data: updatedShift, error: shiftError } = await supabase.from(T('shifts')).update({
     employee_id: claim.employee_id,
     employee_name: claim.employee_name,
     is_open: 0,
     open_invite_status: 'accepted',
     shift_category: 'regular',
     open_invite_emp_id: null,
-  }).eq('id', shift.id)
+  }).eq('id', shift.id).is('archived_at', null).select('id').maybeSingle()
 
   if (shiftError) return { ok: false, error: shiftError.message }
+  if (!updatedShift) return { ok: false, error: 'Deze dienst is niet meer beschikbaar' }
 
   const now = new Date().toISOString()
   const { error: acceptError } = await supabase
@@ -156,4 +158,5 @@ export async function refreshShiftClaimSummary(shiftId: number): Promise<void> {
     .from(T('shifts'))
     .update({ open_invite_emp_id: next, open_invite_status: next ? 'pending' : null })
     .eq('id', shiftId)
+    .is('archived_at', null)
 }

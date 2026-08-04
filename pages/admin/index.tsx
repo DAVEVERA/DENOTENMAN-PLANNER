@@ -129,6 +129,17 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
     await load()
   }
 
+  async function archiveShift(id: number) {
+    if (!confirm('Dienst verwijderen uit het rooster? De volledige diensthistorie blijft veilig bewaard.')) return
+    const response = await fetch(`/api/shifts/${id}`, { method: 'DELETE' })
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null)
+      alert(payload?.message ?? 'Dienst kon niet worden verwijderd')
+      return
+    }
+    await load()
+  }
+
   const MONTHS_NL = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec']
 
   function weekStartDate(w: number, y: number) {
@@ -402,6 +413,12 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
                                       <span className="chip-time">{formatTime(s.start_time)}–{formatTime(s.end_time)}</span>
                                     )}
                                   </button>
+                                  <button
+                                    className="chip-delete"
+                                    onClick={e => { e.stopPropagation(); void archiveShift(s.id) }}
+                                    title="Dienst verwijderen (historie blijft bewaard)"
+                                    aria-label={`${s.shift_type} dienst van ${emp.name} verwijderen`}
+                                  ><CloseIcon size={18} /></button>
                                 </div>
                               ))}
                             </div>

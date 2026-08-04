@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           opened_at: new Date().toISOString(),
         })
         .eq('id', parseInt(shift_id))
+        .is('archived_at', null)
       if (error) throw error
 
       // Notifications are best-effort; the offer itself should not fail on SMTP/push issues.
@@ -102,6 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           opened_at: null,
         })
         .eq('id', parseInt(shift_id))
+        .is('archived_at', null)
         .eq('employee_id', employeeId)
       if (error) throw error
       return res.json({ success: true })

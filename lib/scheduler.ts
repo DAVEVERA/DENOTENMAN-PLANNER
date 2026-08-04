@@ -39,7 +39,7 @@ export async function getWeekShifts(
   week: number, year: number, location?: Location,
 ): Promise<Shift[]> {
   try {
-    let q = supabase.from(T('shifts')).select('*').eq('week_number', week).eq('year', year)
+    let q = supabase.from(T('shifts')).select('*').is('archived_at', null).eq('week_number', week).eq('year', year)
     if (location && location !== 'both') q = q.or(`location.eq.${location},location.eq.both`)
     const { data, error } = await q
     if (error) throw error
@@ -47,7 +47,7 @@ export async function getWeekShifts(
   } catch (err: any) {
     if (err.message?.includes('location')) {
       // Fallback: retry without location filter
-      const { data, error } = await supabase.from(T('shifts')).select('*').eq('week_number', week).eq('year', year)
+      const { data, error } = await supabase.from(T('shifts')).select('*').is('archived_at', null).eq('week_number', week).eq('year', year)
       if (error) throw error
       return sortByDay(data ?? [])
     }
@@ -58,7 +58,7 @@ export async function getWeekShifts(
 export async function getEmployeeShifts(
   employeeId: number, week?: number, year?: number,
 ): Promise<Shift[]> {
-  let q = supabase.from(T('shifts')).select('*').eq('employee_id', employeeId)
+  let q = supabase.from(T('shifts')).select('*').is('archived_at', null).eq('employee_id', employeeId)
   if (week && year) q = q.eq('week_number', week).eq('year', year)
   const { data, error } = await q.order('year', { ascending: false }).order('week_number', { ascending: false })
   if (error) throw error
@@ -66,7 +66,7 @@ export async function getEmployeeShifts(
 }
 
 export async function getShift(id: number): Promise<Shift | null> {
-  const { data } = await supabase.from(T('shifts')).select('*').eq('id', id).maybeSingle()
+  const { data } = await supabase.from(T('shifts')).select('*').eq('id', id).is('archived_at', null).maybeSingle()
   return data ?? null
 }
 
@@ -84,6 +84,7 @@ async function hasConflict(data: Partial<Shift>, excludeId?: number): Promise<bo
     .eq('week_number', data.week_number!)
     .eq('year', data.year!)
     .eq('day_of_week', data.day_of_week!)
+    .is('archived_at', null)
     .eq('full_day', 0)
     .lt('start_time', et)
     .gt('end_time', st)
@@ -140,8 +141,9 @@ export async function saveShift(
 
   if (data.id) {
     const { data: updated, error } = await supabase
-      .from(T('shifts')).update(fields).eq('id', data.id).select().single()
+      .from(T('shifts')).update(fields).eq('id', data.id).is('archived_at', null).select().maybeSingle()
     if (error) return { error: error.message }
+    if (!updated) return { error: 'Dienst niet gevonden of al gearchiveerd' }
     return updated
   }
 
@@ -151,9 +153,15 @@ export async function saveShift(
   return inserted
 }
 
-export async function deleteShift(id: number): Promise<boolean> {
-  void id
-  throw new Error('Fysiek verwijderen van diensten is uitgeschakeld om planningshistorie te bewaren')
+export async function archiveShift(id: number, archivedBy: string): Promise<'archived' | 'already_archived' | 'not_found'> {
+  const { data, error } = await supabase.rpc(T('archive_shift'), {
+    p_shift_id: id,
+    p_archived_by: archivedBy,
+  })
+  if (error) throw error
+  const status = (data as { status?: string } | null)?.status
+  if (status === 'archived' || status === 'already_archived' || status === 'not_found') return status
+  throw new Error('Ongeldig antwoord bij archiveren van dienst')
 }
 
 export async function clearWeekShifts(week: number, year: number): Promise<number> {
@@ -163,14 +171,14 @@ export async function clearWeekShifts(week: number, year: number): Promise<numbe
 }
 
 export async function bulkUpdateShift(id: number, data: Partial<Shift>): Promise<boolean> {
-  const { error } = await supabase.from(T('shifts')).update(data).eq('id', id)
-  return !error
+  const { data: updated, error } = await supabase.from(T('shifts')).update(data).eq('id', id).is('archived_at', null).select('id').maybeSingle()
+  return !error && Boolean(updated)
 }
 
 // ─── Open shifts ──────────────────────────────────────────────────────────────
 
 export async function getOpenShifts(location?: Location): Promise<Shift[]> {
-  let q = supabase.from(T('shifts')).select('*').eq('is_open', 1)
+  let q = supabase.from(T('shifts')).select('*').is('archived_at', null).eq('is_open', 1)
   if (location && location !== 'both') q = q.eq('location', location)
   const { data, error } = await q.order('year').order('week_number').order('day_of_week')
   if (error) throw error
@@ -199,6 +207,7 @@ export async function updateOpenShift(
     .from(T('shifts'))
     .update(update)
     .eq('id', shiftId)
+    .is('archived_at', null)
     .eq('is_open', 1)
     .select()
     .single()
@@ -216,6 +225,7 @@ export async function withdrawOpenShift(shiftId: number): Promise<boolean> {
     .from(T('shifts'))
     .update({ is_open: 0 })
     .eq('id', shiftId)
+    .is('archived_at', null)
     .eq('is_open', 1)
     .select('id')
     .maybeSingle()
@@ -249,6 +259,7 @@ export async function closeRemainingOpenShifts(
   const { data: remaining, error } = await supabase
     .from(T('shifts'))
     .select('id')
+    .is('archived_at', null)
     .eq('is_open', 1)
     .eq('day_of_week', day)
     .eq('week_number', weekNumber)
@@ -268,6 +279,7 @@ export async function closeRemainingOpenShifts(
       note: (new Date().toLocaleDateString('nl-NL')) + ' — automatisch gesloten (alle plekken gevuld)',
     })
     .in('id', ids)
+    .is('archived_at', null)
 
   if (closeErr) {
     console.error('[scheduler] closeRemainingOpenShifts error:', closeErr.message)
@@ -283,6 +295,7 @@ export async function inviteEmployeeToShift(
     .from(T('shifts'))
     .update({ open_invite_emp_id: employeeId, open_invite_status: 'pending' })
     .eq('id', shiftId)
+    .is('archived_at', null)
   return !error
 }
 
@@ -293,7 +306,7 @@ export async function respondToInvitation(
     response === 'accepted'
       ? { open_invite_status: 'accepted', is_open: 0 }
       : { open_invite_status: 'declined', open_invite_emp_id: null }
-  const { error } = await supabase.from(T('shifts')).update(update).eq('id', shiftId)
+  const { error } = await supabase.from(T('shifts')).update(update).eq('id', shiftId).is('archived_at', null)
   return !error
 }
 

@@ -73,7 +73,7 @@ export async function processOpenShiftReminders(): Promise<OpenShiftReminderRunR
     await supabase.from(T('open_shift_reminders')).select('*').in('id', eventIds),
   )
   const shifts = unwrap<Shift[]>(
-    await supabase.from(T('shifts')).select('*').in('id', shiftIds).eq('is_open', 1),
+    await supabase.from(T('shifts')).select('*').in('id', shiftIds).is('archived_at', null).eq('is_open', 1),
   )
   const shiftsById = new Map(shifts.map(shift => [shift.id, shift]))
 

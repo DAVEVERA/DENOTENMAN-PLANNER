@@ -31,6 +31,8 @@ function shift(overrides: Partial<Shift> = {}): Shift {
     open_invite_emp_id: null,
     open_invite_status: null,
     shift_category: 'regular',
+    archived_at: null,
+    archived_by: null,
     created_by: 'admin',
     created_at: '2026-07-01T08:00:00Z',
     claims: [],

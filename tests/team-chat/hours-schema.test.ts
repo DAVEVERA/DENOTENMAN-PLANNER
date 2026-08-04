@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { isDirectInvocation, verifyHoursSchema } from '../../scripts/verify-hours-schema.mjs'
+import { verifyShiftArchiveSchema } from '../../scripts/verify-shift-archive-schema.mjs'
 import { shouldVerifyProductionSchema } from '../../scripts/verify-production-schema.mjs'
 
 test('hours schema gate accepts the complete production column contract', async () => {
@@ -134,4 +135,40 @@ test('schema preflight runs only inside the real Vercel production build', () =>
   assert.equal(shouldVerifyProductionSchema({ VERCEL: '1', VERCEL_ENV: 'preview' }), false)
   assert.equal(shouldVerifyProductionSchema({ CI: 'true', VERCEL_ENV: 'production' }), false)
   assert.equal(shouldVerifyProductionSchema({}), false)
+})
+
+test('shift archive schema gate verifies columns and the read-only not-found RPC contract', async () => {
+  const requestedUrls: string[] = []
+  const result = await verifyShiftArchiveSchema({
+    supabaseUrl: 'https://project.supabase.co',
+    serviceRoleKey: 'test-key',
+    fetchImpl: async (url: string | URL | Request, init?: RequestInit) => {
+      requestedUrls.push(String(url))
+      if (String(url).includes('/rpc/')) {
+        assert.match(String(init?.body), /-2147483648/)
+        return new Response(JSON.stringify({ status: 'not_found', shift_id: -2147483648 }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } })
+    },
+  })
+
+  assert.deepEqual(result, { ok: true, status: 200 })
+  assert.match(requestedUrls[0], /id%2Carchived_at%2Carchived_by/)
+  assert.match(requestedUrls[1], /planner20_archive_shift/)
+})
+
+test('shift archive schema gate blocks a deployment with missing columns', async () => {
+  const result = await verifyShiftArchiveSchema({
+    supabaseUrl: 'https://project.supabase.co',
+    serviceRoleKey: 'test-key',
+    fetchImpl: async () => new Response(JSON.stringify({ code: '42703' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    }),
+  })
+
+  assert.deepEqual(result, { ok: false, code: '42703', status: 400 })
 })

@@ -21,6 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       supabase
         .from(T('shifts'))
         .select('id', { count: 'exact', head: true })
+        .is('archived_at', null)
         .eq('is_open', 1),
 
       supabase

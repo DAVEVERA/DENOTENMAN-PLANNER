@@ -281,6 +281,7 @@ function createPlanningWatchAdapter(): PlanningWatchAdapter {
       const { data, error } = await client
         .from(T('shifts'))
         .select('id, employee_id, employee_name, week_number, year, day_of_week, shift_type, start_time, end_time, full_day, break_minutes, location, is_open, opened_at, assignment_version')
+        .is('archived_at', null)
         .eq('is_open', 1)
         .order('year', { ascending: true })
         .order('week_number', { ascending: true })

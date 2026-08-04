@@ -506,6 +506,7 @@ export function createSupabaseTeamChatQueryAdapter(): TeamChatQueryAdapter {
       const { count, error } = await client
         .from(T('shifts'))
         .select('id', { count: 'exact', head: true })
+        .is('archived_at', null)
         .eq('is_open', 1)
       assertNoDatabaseError('count open shifts', error)
       return count ?? 0

@@ -42,6 +42,7 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
     ...shift,
   })
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError]   = useState('')
 
   useEffect(() => {
@@ -67,6 +68,16 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
     const d = await r.json()
     setSaving(false)
     if (!d.success) { setError(d.message || 'Opslaan mislukt'); return }
+    onSaved(); onClose()
+  }
+
+  async function archive() {
+    if (!shift?.id || !confirm('Dienst verwijderen uit het rooster? De volledige diensthistorie blijft veilig bewaard.')) return
+    setDeleting(true); setError('')
+    const r = await fetch(`/api/shifts/${shift.id}`, { method: 'DELETE' })
+    const d = await r.json().catch(() => null)
+    setDeleting(false)
+    if (!r.ok || !d?.success) { setError(d?.message || 'Verwijderen mislukt'); return }
     onSaved(); onClose()
   }
 
@@ -213,9 +224,14 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
             )}
           </div>
 
-          <div className="modal-footer">
+          <div className="modal-footer shift-modal-footer">
+            {!isNew && isAdmin && (
+              <button type="button" className="btn btn-danger btn-sm" onClick={archive} disabled={saving || deleting}>
+                {deleting ? <Spinner /> : 'Dienst verwijderen'}
+              </button>
+            )}
             <button type="button" className="btn btn-outline btn-sm" onClick={onClose}>Annuleren</button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={saving || deleting}>
               {saving ? <Spinner /> : isNew ? 'Toevoegen' : 'Opslaan'}
             </button>
           </div>
@@ -243,6 +259,14 @@ export default function ShiftModal({ shift, employeeId, employeeName, day, week,
           box-shadow: 0 2px 8px rgba(123,79,46,.2);
         }
         .category-grid { grid-template-columns: minmax(0, 1fr); }
+        .shift-modal-footer :global(.btn-danger) { margin-right: auto; }
+        @media (max-width: 480px) {
+          .shift-modal-footer { flex-wrap: wrap; }
+          .shift-modal-footer :global(.btn-danger) {
+            width: 100%;
+            margin-right: 0;
+          }
+        }
       `}</style>
     </div>
   )

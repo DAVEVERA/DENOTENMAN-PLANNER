@@ -73,6 +73,8 @@ export interface Shift {
   open_invite_emp_id: number | null
   open_invite_status: OpenInviteStatus | null
   shift_category: ShiftCategory | null
+  archived_at: string | null
+  archived_by: string | null
   created_by: string
   created_at: string
   claims?: OpenShiftClaim[]
