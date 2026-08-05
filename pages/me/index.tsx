@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import TeamLayout from '@/components/layout/TeamLayout'
 import { PrevIcon, NextIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
-import { currentWeekYear } from '@/lib/dateUtils'
+import { currentWeekYear, shiftWeekYear, weeksInRange } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import type { SessionUser, Shift, Location } from '@/types'
@@ -49,18 +49,6 @@ function weekDateRange(w: number, y: number) {
   return `${fmt(mon)} – ${fmt(sun)}${yearSuffix}`
 }
 
-function weeksInRange(startWeek: number, startYear: number, numWeeks: number): { week: number; year: number }[] {
-  const result = []
-  let w = startWeek, y = startYear
-  for (let i = 0; i < numWeeks; i++) {
-    result.push({ week: w, year: y })
-    w++
-    if (w > 52) { w = 1; y++ }
-  }
-  return result
-}
-
-
 export default function MySchedulePage({ user, initialWeek, initialYear }: Props) {
   const router = useRouter()
   const [view, setView]   = useState<ViewMode>('week')
@@ -97,18 +85,14 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
   useEffect(() => { load() }, [load])
 
   function prevPeriod() {
-    if (view === 'week') {
-      if (week === 1) { setWeek(52); setYear(y => y - 1) } else setWeek(w => w - 1)
-    } else {
-      setWeek(w => { const nw = w - numWeeks; if (nw < 1) { setYear(y => y - 1); return 52 + nw }; return nw })
-    }
+    const previous = shiftWeekYear(week, year, -numWeeks)
+    setWeek(previous.week)
+    setYear(previous.year)
   }
   function nextPeriod() {
-    if (view === 'week') {
-      if (week === 52) { setWeek(1); setYear(y => y + 1) } else setWeek(w => w + 1)
-    } else {
-      setWeek(w => { const nw = w + numWeeks; if (nw > 52) { setYear(y => y + 1); return nw - 52 }; return nw })
-    }
+    const next = shiftWeekYear(week, year, numWeeks)
+    setWeek(next.week)
+    setYear(next.year)
   }
 
   function goToday() {

@@ -5,7 +5,7 @@ import LocationBadge from '@/components/ui/LocationBadge'
 import OccupancyBar from '@/components/ui/OccupancyBar'
 import { PrevIcon, NextIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
-import { currentWeekYear } from '@/lib/dateUtils'
+import { currentWeekYear, shiftWeekYear } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Employee, Location } from '@/types'
 import { DAYS, DAY_SHORT, LOCATION_LABELS } from '@/types'
@@ -74,12 +74,14 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
   useEffect(() => { load() }, [load])
 
   function prevWeek() {
-    if (week === 1) { setWeek(52); setYear(y => y - 1) }
-    else setWeek(w => w - 1)
+    const previous = shiftWeekYear(week, year, -1)
+    setWeek(previous.week)
+    setYear(previous.year)
   }
   function nextWeek() {
-    if (week === 52) { setWeek(1); setYear(y => y + 1) }
-    else setWeek(w => w + 1)
+    const next = shiftWeekYear(week, year, 1)
+    setWeek(next.week)
+    setYear(next.year)
   }
 
 
