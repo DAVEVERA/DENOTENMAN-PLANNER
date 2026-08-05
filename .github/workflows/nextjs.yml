@@ -3,6 +3,8 @@ name: Validate Next.js
 on:
   push:
     branches: ["master"]
+  pull_request:
+    branches: ["master"]
   workflow_dispatch:
 
 jobs:
@@ -23,6 +25,6 @@ jobs:
 
       - name: Run regression checks
         run: |
-          npm run test:chat
+          npm test
           npx tsc --noEmit
           npm run lint

@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:chat": "tsx --test tests/team-chat/*.test.ts",
+    "test:core": "tsx --test tests/core/*.test.ts",
+    "test": "npm run test:chat && npm run test:core",
     "verify:hours-schema": "node scripts/verify-hours-schema.mjs"
   },
   "dependencies": {

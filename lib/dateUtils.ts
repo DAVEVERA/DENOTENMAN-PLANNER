@@ -21,14 +21,67 @@ export function currentWeekYear(): WeekInfo {
   return getISOWeekYear(new Date())
 }
 
+/** Returns the number of ISO weeks in an ISO week-year (52 or 53). */
+export function getISOWeeksInYear(year: number): number {
+  const jan1Day = new Date(Date.UTC(year, 0, 1)).getUTCDay()
+  const dec31Day = new Date(Date.UTC(year, 11, 31)).getUTCDay()
+  return jan1Day === 4 || dec31Day === 4 ? 53 : 52
+}
+
+export function isValidISOWeek(week: number, year: number): boolean {
+  return Number.isInteger(week)
+    && Number.isInteger(year)
+    && year >= 1
+    && week >= 1
+    && week <= getISOWeeksInYear(year)
+}
+
+/** Shift an ISO week/year pair by any whole number of weeks. */
+export function shiftWeekYear(week: number, year: number, offset: number): WeekInfo {
+  let shiftedWeek = week
+  let shiftedYear = year
+  let remaining = Math.trunc(offset)
+
+  while (remaining > 0) {
+    const weeksInYear = getISOWeeksInYear(shiftedYear)
+    if (shiftedWeek < weeksInYear) {
+      shiftedWeek++
+    } else {
+      shiftedWeek = 1
+      shiftedYear++
+    }
+    remaining--
+  }
+
+  while (remaining < 0) {
+    if (shiftedWeek > 1) {
+      shiftedWeek--
+    } else {
+      shiftedYear--
+      shiftedWeek = getISOWeeksInYear(shiftedYear)
+    }
+    remaining++
+  }
+
+  return { week: shiftedWeek, year: shiftedYear }
+}
+
 export function prevWeekYear(week: number, year: number): WeekInfo {
-  if (week > 1) return { week: week - 1, year }
-  return { week: 52, year: year - 1 }
+  return shiftWeekYear(week, year, -1)
 }
 
 export function nextWeekYear(week: number, year: number): WeekInfo {
-  if (week < 52) return { week: week + 1, year }
-  return { week: 1, year: year + 1 }
+  return shiftWeekYear(week, year, 1)
+}
+
+export function weeksInRange(
+  startWeek: number,
+  startYear: number,
+  numWeeks: number,
+): WeekInfo[] {
+  return Array.from({ length: Math.max(0, Math.trunc(numWeeks)) }, (_, index) =>
+    shiftWeekYear(startWeek, startYear, index),
+  )
 }
 
 /** Returns all ISO week/year combos that overlap with a given month span */

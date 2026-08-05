@@ -4,6 +4,9 @@ import '@/styles/globals.css'
 import AutomaticPushNotifications from '@/components/ui/AutomaticPushNotifications'
 import CrispChat from '@/components/ui/CrispChat'
 import { useRouter } from 'next/router'
+import { installCsrfFetch } from '@/lib/client-fetch'
+
+installCsrfFetch()
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()

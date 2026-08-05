@@ -1,6 +1,7 @@
 import { supabase, T, unwrap } from './db'
 import { getWeekShifts, shiftHours, getISOWeek, getISOWeeksInYear } from './scheduler'
 import { getLeaveRequests } from './leave'
+import { dateForDayInWeek } from './shiftDate'
 import type { Shift, Day, Location, LeaveRequest } from '@/types'
 import { DAYS } from '@/types'
 
@@ -90,17 +91,7 @@ function checkDuplicate(
 
 // ─── Leave conflict detection ─────────────────────────────────────────────────
 
-function dateForDayInWeek(day: Day, week: number, year: number): string {
-  const jan4 = new Date(year, 0, 4)
-  const dayOfWeek = jan4.getDay() || 7
-  const weekStart = new Date(jan4)
-  weekStart.setDate(jan4.getDate() - dayOfWeek + 1 + (week - 1) * 7)
-  const dayIdx = DAYS.indexOf(day)
-  weekStart.setDate(weekStart.getDate() + dayIdx)
-  return weekStart.toISOString().slice(0, 10)
-}
-
-function checkLeaveConflict(
+export function checkLeaveConflict(
   shift: Partial<Shift>,
   leaveRequests: LeaveRequest[],
 ): GuardrailWarning | null {
