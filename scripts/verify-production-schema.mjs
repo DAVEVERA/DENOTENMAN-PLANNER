@@ -3,12 +3,13 @@ import { verifyShiftArchiveSchema } from './verify-shift-archive-schema.mjs'
 import { verifyInspectionSchema } from './verify-inspection-schema.mjs'
 
 export function shouldVerifyProductionSchema(env) {
-  return env.VERCEL === '1' && env.VERCEL_ENV === 'production'
+  return env.PRODUCTION_SCHEMA_PREFLIGHT === '1'
+    || (env.VERCEL === '1' && env.VERCEL_ENV === 'production')
 }
 
 async function main() {
   if (!shouldVerifyProductionSchema(process.env)) {
-    console.log('Production hours schema preflight skipped outside Vercel production.')
+    console.log('Production schema preflight skipped; enable it with PRODUCTION_SCHEMA_PREFLIGHT=1 on non-Vercel production targets.')
     return
   }
 

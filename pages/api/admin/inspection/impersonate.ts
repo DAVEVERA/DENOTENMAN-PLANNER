@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getRawSession, getSession } from '@/lib/auth'
-import { hasSameOrigin } from '@/lib/request-security'
+import { hasSameOrigin, setCsrfCookie } from '@/lib/request-security'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ success: false })
@@ -35,5 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   delete session.inspection_service_number_suffix
   delete session.inspection_integrity_accepted_at
   await session.save()
+  setCsrfCookie(res, session.csrf)
   return res.json({ success: true })
 }

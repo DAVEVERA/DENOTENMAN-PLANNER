@@ -14,6 +14,7 @@ import { sessionOptions, type PlannerSessionData } from './session'
 import type { SessionUser } from '@/types'
 import { supabase, T } from './db'
 import { sendInviteEmail, sendPasswordResetEmail } from './email'
+import { setCsrfCookie } from './request-security'
 export { can } from './capabilities'
 
 // ─── Type definities ─────────────────────────────────────────────────────────
@@ -175,6 +176,7 @@ export async function attemptLogin(
     delete session.inspection_admin_csrf
   }
   await session.save()
+  setCsrfCookie(res as NextApiResponse, session.csrf)
   return true
 }
 

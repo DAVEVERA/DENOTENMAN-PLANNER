@@ -5,7 +5,7 @@ import ShiftModal from '@/components/ui/ShiftModal'
 import LocationBadge from '@/components/ui/LocationBadge'
 import { PrevIcon, NextIcon, PlusIcon, CloseIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
-import { currentWeekYear } from '@/lib/dateUtils'
+import { currentWeekYear, getISOWeeksInYear, shiftWeekYear, weeksInRange } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Employee, Location, Day } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES, LOCATION_LABELS } from '@/types'
@@ -20,17 +20,6 @@ const LOCATIONS: { value: Location; label: string }[] = [
 ]
 
 type ViewMode = 'week' | 'month' | '3months'
-
-function weeksInRange(startWeek: number, startYear: number, numWeeks: number): { week: number; year: number }[] {
-  const result = []
-  let w = startWeek, y = startYear
-  for (let i = 0; i < numWeeks; i++) {
-    result.push({ week: w, year: y })
-    w++
-    if (w > 52) { w = 1; y++ }
-  }
-  return result
-}
 
 function formatTime(t: string | null) {
   if (!t) return ''
@@ -87,18 +76,14 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   useEffect(() => { load() }, [load])
 
   function prevPeriod() {
-    if (view === 'week') {
-      if (week === 1) { setWeek(52); setYear(y => y - 1) } else setWeek(w => w - 1)
-    } else {
-      setWeek(w => { const nw = w - numWeeks; if (nw < 1) { setYear(y => y - 1); return 52 + nw }; return nw })
-    }
+    const previous = shiftWeekYear(week, year, -numWeeks)
+    setWeek(previous.week)
+    setYear(previous.year)
   }
   function nextPeriod() {
-    if (view === 'week') {
-      if (week === 52) { setWeek(1); setYear(y => y + 1) } else setWeek(w => w + 1)
-    } else {
-      setWeek(w => { const nw = w + numWeeks; if (nw > 52) { setYear(y => y + 1); return nw - 52 }; return nw })
-    }
+    const next = shiftWeekYear(week, year, numWeeks)
+    setWeek(next.week)
+    setYear(next.year)
   }
 
   function goToday() {
@@ -174,9 +159,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
 
   // ── Copy week handler ──
   function openCopyModal() {
-    const tw = week < 52 ? week + 1 : 1
-    const ty = week < 52 ? year : year + 1
-    setCopyTarget({ week: tw, year: ty })
+    setCopyTarget(shiftWeekYear(week, year, 1))
     setAutomationLocation(location === 'both' ? '' : location)
     setCopyMsg(''); setShowCopy(true)
   }
@@ -184,6 +167,13 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   async function executeCopy() {
     if (!automationLocation) {
       setCopyMsg('Kies eerst welke locatie(s) je wilt kopieren.')
+      return
+    }
+    if (
+      !Number.isInteger(copyTarget.year) || copyTarget.year < 2024 || copyTarget.year > 2030 ||
+      !Number.isInteger(copyTarget.week) || copyTarget.week < 1 || copyTarget.week > getISOWeeksInYear(copyTarget.year)
+    ) {
+      setCopyMsg('Kies een geldige doelweek en een geldig doeljaar.')
       return
     }
     setCopyBusy(true); setCopyMsg('')
@@ -229,6 +219,8 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
   }
 
   const openShiftCount = shifts.filter(s => s.is_open === 1).length
+  const copyTargetIsValid = Number.isInteger(copyTarget.year) && copyTarget.year >= 2024 && copyTarget.year <= 2030 &&
+    Number.isInteger(copyTarget.week) && copyTarget.week >= 1 && copyTarget.week <= getISOWeeksInYear(copyTarget.year)
 
   return (
     <AdminLayout user={user} title="Rooster" location={location}>
@@ -306,8 +298,14 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
             <h3>📋 Week kopiëren</h3>
             <p className="modal-desc">Kopieer alle diensten van week {week} ({year}) naar:</p>
             <div className="modal-fields">
-              <label>Week: <input type="number" min={1} max={52} value={copyTarget.week} onChange={e => setCopyTarget(t => ({ ...t, week: +e.target.value }))} /></label>
-              <label>Jaar: <input type="number" min={2024} max={2030} value={copyTarget.year} onChange={e => setCopyTarget(t => ({ ...t, year: +e.target.value }))} /></label>
+              <label>Doelweek: <input type="number" min={1} max={getISOWeeksInYear(copyTarget.year)} value={copyTarget.week} onChange={e => {
+                const targetWeek = +e.target.value
+                setCopyTarget(t => ({ ...t, week: Math.max(1, Math.min(targetWeek, getISOWeeksInYear(t.year))) }))
+              }} /></label>
+              <label>Doeljaar: <input type="number" min={2024} max={2030} value={copyTarget.year} onChange={e => {
+                const targetYear = Math.max(2024, Math.min(+e.target.value, 2030))
+                setCopyTarget(t => ({ week: Math.min(t.week, getISOWeeksInYear(targetYear)), year: targetYear }))
+              }} /></label>
               <label className="scope-field">Locatie(s):
                 <select value={automationLocation} onChange={e => setAutomationLocation(e.target.value as Location | '')} required>
                   <option value="" disabled>Kies locatie(s)</option>
@@ -318,7 +316,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
             {copyMsg && <p className="modal-msg">{copyMsg}</p>}
             <div className="modal-actions">
               <button className="btn btn-outline btn-sm" onClick={() => setShowCopy(false)}>Annuleren</button>
-              <button className="btn btn-primary btn-sm" onClick={executeCopy} disabled={copyBusy || !automationLocation}>{copyBusy ? 'Bezig…' : 'Kopiëren'}</button>
+              <button className="btn btn-primary btn-sm" onClick={executeCopy} disabled={copyBusy || !automationLocation || !copyTargetIsValid}>{copyBusy ? 'Bezig…' : 'Kopiëren'}</button>
             </div>
           </div>
         </div>

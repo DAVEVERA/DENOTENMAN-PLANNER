@@ -360,25 +360,4 @@ export async function getOccupancy(
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-export function currentWeekYear(): { week: number; year: number } {
-  const now = new Date()
-  return { week: getISOWeek(now), year: now.getFullYear() }
-}
-
-export function getISOWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
-  const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return Math.ceil((((d.getTime() - y.getTime()) / 86400000) + 1) / 7)
-}
-
-/**
- * Returns the number of ISO weeks in a given year (52 or 53).
- * A year has 53 ISO weeks if January 1st or December 31st falls on a Thursday.
- * Examples: 2015, 2020, 2026 all have 53 weeks.
- */
-export function getISOWeeksInYear(year: number): number {
-  const jan1Day  = new Date(year, 0, 1).getDay()   // 0 = Sun, 4 = Thu
-  const dec31Day = new Date(year, 11, 31).getDay()
-  return (jan1Day === 4 || dec31Day === 4) ? 53 : 52
-}
+export { currentWeekYear, getISOWeek, getISOWeeksInYear } from './dateUtils'
