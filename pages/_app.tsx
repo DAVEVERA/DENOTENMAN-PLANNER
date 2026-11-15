@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
+import { Analytics } from '@vercel/analytics/next'
 import '@/styles/globals.css'
 import AutomaticPushNotifications from '@/components/ui/AutomaticPushNotifications'
 import CrispChat from '@/components/ui/CrispChat'
@@ -19,6 +20,7 @@ export default function App({ Component, pageProps }: AppProps) {
       {!isInspection && <AutomaticPushNotifications />}
       {!isInspection && <CrispChat />}
       <Component {...pageProps} />
+      <Analytics />
     </>
   )
 }
