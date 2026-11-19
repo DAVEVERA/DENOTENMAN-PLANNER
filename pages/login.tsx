@@ -109,7 +109,7 @@ export default function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #0d0a08;
+          background: #F6F3EE;
           padding: 24px 16px;
         }
 
