@@ -28,14 +28,17 @@
   --info:         #1976D2;
   --info-bg:      #E3F2FD;
   --chip-ochtend-bg:#FFF3E0;  --chip-ochtend-br:#F39C12;
-  --chip-middag-bg: #E3F2FD;  --chip-middag-br: #1976D2;
-  --chip-avond-bg:  #EDE7F6;  --chip-avond-br:  #7B1FA2;
-  --chip-heledag-bg:#F3E5F5;  --chip-heledag-br:#8E24AA;
-  --chip-verlof-bg: #E8F5E9;  --chip-verlof-br: #388E3C;
-  --chip-vakantie-bg:#FFF8E1; --chip-vakantie-br:#F9A825;
-  --chip-verzuim-bg:#FCE4EC;  --chip-verzuim-br:#C62828;
-  --chip-overwerk-bg:#FBE9E7; --chip-overwerk-br:#BF360C;
+  --chip-middag-bg: #65bcf1;  --chip-middag-br: #1976D2;
+  --chip-avond-bg:  #0051c2;  --chip-avond-br:  #7B1FA2;
+  --chip-heledag-bg:#acdc10;  --chip-heledag-br:#8E24AA;
+  --chip-verlof-bg: #f07917;  --chip-verlof-br: #388E3C;
+  --chip-vakantie-bg:#ffc400; --chip-vakantie-br:#F9A825;
+  --chip-verzuim-bg:#b9003e;  --chip-verzuim-br:#C62828;
+  --chip-overwerk-bg:#295d18; --chip-overwerk-br:#BF360C;
   --chip-extra-bg:  #E0F7FA;  --chip-extra-br:  #00838F;
+  /* Chip foreground. Darker than the page text tokens because chips sit on
+     saturated fills; overridden per type below for dark backgrounds. */
+  --chip-fg: #1A1412; --chip-fg-sub: #2A221E; --chip-fg-muted: #362D27;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s7:28px;--s8:32px;--s10:40px;--s12:48px;
   --r1:4px;--r2:8px;--r3:12px;--r4:16px;--r-pill:999px;
   --radius:8px;--radius-lg:12px;--radius-xl:16px;
@@ -144,11 +147,20 @@ h4{font-size:1rem;font-weight:600}
 [data-type="overwerk"]  { background: var(--shift-overwerk) !important; }
 [data-type="extra"]     { background: var(--shift-extra) !important; }
 
+/* These three backgrounds are dark, so the inherited dark text is unreadable. */
+[data-type="avond"],
+[data-type="verzuim"],
+[data-type="overwerk"] {
+  --chip-fg: #fff;
+  --chip-fg-sub: rgba(255,255,255,.88);
+  --chip-fg-muted: rgba(255,255,255,.82);
+}
+
 /* ─── Shift Chips ──────────────────────────────────────────────────────────── */
-.shift-chip{position:relative;display:block;padding:var(--s2);border-radius:var(--r1);font-size:.8125rem;border-left:3px solid transparent;margin-bottom:var(--s1);line-height:1.4}
+.shift-chip{position:relative;display:block;padding:var(--s2);border-radius:var(--r1);font-size:.8125rem;border-left:3px solid transparent;margin-bottom:var(--s1);line-height:1.4;color:var(--chip-fg)}
 .shift-chip strong{display:block;font-weight:600;font-size:.8125rem}
-.shift-chip .chip-time{color:var(--text-sub);font-size:.75rem}
-.shift-chip .chip-note{color:var(--text-muted);font-size:.75rem;font-style:italic}
+.shift-chip .chip-time{color:var(--chip-fg-sub);font-size:.75rem}
+.shift-chip .chip-note{color:var(--chip-fg-muted);font-size:.75rem;font-style:italic}
 .shift-chip.open{opacity:.65;border-style:dashed}
 .shift-chip[data-type] { border-left-color: rgba(0,0,0,0.1); } /* Subtle border for chips */
 
@@ -169,7 +181,7 @@ h4{font-size:1rem;font-weight:600}
 .shift-act-btn:hover{background:var(--surface)}
 
 /* ─── Shift Badges / Pills ─────────────────────────────────────────────────── */
-.shift-type-badge { display: inline-flex; font-size: .75rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; color: var(--text-sub); }
+.shift-type-badge { display: inline-flex; font-size: .75rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; color: var(--chip-fg-sub); }
 .shift-pill, .slot-shift, .leave-type { display: inline-flex; align-items: center; border-radius: 4px; font-weight: 600; }
 
 /* ─── Cards ────────────────────────────────────────────────────────────────── */

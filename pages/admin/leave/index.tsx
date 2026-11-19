@@ -155,6 +155,7 @@ export default function LeavePage({ user }: Props) {
         .leave-meta { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s2); }
         .leave-type {
           font-size: .8125rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+          color: var(--chip-fg);
         }
         .leave-dates { font-size: .9375rem; }
         .leave-days { font-size: .875rem; color: var(--text-muted); }
