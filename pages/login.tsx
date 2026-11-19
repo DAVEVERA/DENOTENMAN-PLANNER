@@ -116,8 +116,9 @@ export default function LoginPage() {
         .login-card {
           width: 100%;
           max-width: 380px;
-          background: #1a1410;
-          border: 1px solid rgba(255,255,255,.07);
+          background: var(--surface);
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow-sm);
           border-radius: 16px;
           padding: 36px 32px 32px;
           display: flex;
@@ -134,14 +135,11 @@ export default function LoginPage() {
           padding-bottom: 4px;
         }
 
-        /* Logo is zwart op transparant — invert voor witte weergave op donkere achtergrond */
-        .login-brand :global(img) {
-          filter: invert(1) brightness(2);
-        }
+        /* Logo is zwart op transparant en staat nu op een lichte kaart, dus geen invert. */
 
         .login-subtitle {
           font-size: .8125rem;
-          color: rgba(255,255,255,.35);
+          color: var(--text-sub);
           margin: 0;
           letter-spacing: .02em;
         }
@@ -153,9 +151,9 @@ export default function LoginPage() {
           gap: 14px;
         }
         .login-error {
-          background: rgba(239,68,68,.12);
-          border: 1px solid rgba(239,68,68,.3);
-          color: #fca5a5;
+          background: var(--danger-bg);
+          border: 1px solid var(--danger);
+          color: var(--danger);
           border-radius: 8px;
           padding: 10px 12px;
           font-size: .875rem;
@@ -168,22 +166,22 @@ export default function LoginPage() {
         .form-label {
           font-size: .8125rem;
           font-weight: 500;
-          color: rgba(255,255,255,.55);
+          color: var(--text-sub);
         }
         .form-control {
           width: 100%;
           padding: 10px 13px;
-          background: rgba(255,255,255,.04);
-          border: 1px solid rgba(255,255,255,.1);
+          background: var(--surface-alt);
+          border: 1px solid var(--border-strong);
           border-radius: 9px;
-          color: #fff;
+          color: var(--text);
           font-size: .9375rem;
           transition: border-color .14s, background .14s;
         }
         .form-control:focus {
           outline: none;
-          border-color: rgba(200,136,42,.6);
-          background: rgba(255,255,255,.06);
+          border-color: var(--brand);
+          background: var(--surface);
         }
         .login-btn {
           width: 100%;
@@ -203,17 +201,17 @@ export default function LoginPage() {
           margin-top: -6px;
         }
         .forgot-row :global(a) {
-          color: #FFCF6B;
+          color: var(--brand-dark);
           font-size: .875rem;
           font-weight: 600;
           text-decoration: underline;
           text-underline-offset: 3px;
           transition: color .14s;
         }
-        .forgot-row :global(a:hover) { color: #fff; }
+        .forgot-row :global(a:hover) { color: var(--noot); }
         .login-footer {
           font-size: .75rem;
-          color: rgba(255,255,255,.22);
+          color: var(--text-sub);
           text-align: center;
           margin: 0;
         }
