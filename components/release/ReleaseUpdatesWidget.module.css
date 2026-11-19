@@ -1,7 +1,6 @@
 .widget {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   gap: var(--s4);
   height: 100%;
   padding: var(--s5);
@@ -9,6 +8,13 @@
   border-radius: var(--radius-lg);
   background: linear-gradient(110deg, var(--success-bg), var(--surface) 72%);
   box-shadow: var(--shadow-sm);
+}
+
+.header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s4);
 }
 
 .icon {
@@ -35,7 +41,7 @@
 .body h2 { margin: 0; font-size: 1rem; font-weight: 700; }
 .body > p:last-child { margin: var(--s1) 0 0; color: var(--text-sub); font-size: 0.875rem; }
 
-.widget button {
+.header button {
   min-height: 44px;
   padding: 0 var(--s4);
   border: 1px solid var(--success);
@@ -46,9 +52,54 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.widget button:hover { background: #235a3b; }
+.header button:hover { background: #235a3b; }
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.intro {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.875rem;
+}
+.list {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+}
+.item {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--s3);
+  padding: var(--s3);
+  background: var(--surface);
+  border: 1px solid var(--brand-light);
+  border-radius: var(--r3);
+}
+.item > span:last-child { min-width: 0; }
+.item strong,
+.item strong + span { display: block; }
+.item strong { margin-bottom: 2px; font-size: 0.9375rem; }
+.item strong + span { color: var(--text-sub); font-size: 0.875rem; line-height: 1.45; }
+.check {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+@media (min-width: 640px) {
+  .list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 @media (max-width: 600px) {
-  .widget { grid-template-columns: auto minmax(0, 1fr); padding: var(--s4); }
-  .widget button { grid-column: 1 / -1; width: 100%; }
+  .widget { padding: var(--s4); }
+  .header { grid-template-columns: auto minmax(0, 1fr); }
+  .header button { grid-column: 1 / -1; width: 100%; }
 }

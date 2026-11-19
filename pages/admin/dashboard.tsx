@@ -8,7 +8,6 @@ import type { SessionUser } from '@/types';
 import Spinner from '@/components/ui/Spinner';
 import DashboardWidgetLayout from '@/components/dashboard/DashboardWidgetLayout';
 import ReleaseUpdatesWidget from '@/components/release/ReleaseUpdatesWidget';
-import { openReleaseUpdates } from '@/lib/release-updates';
 import {
   NutIcon,
   AlmondIcon,
@@ -178,9 +177,7 @@ export default function AdminDashboard({ user, week, year }: Props) {
   const renderWidget = (widget: DashboardWidget) => {
     if (widget === 'updates') {
       return (
-        <ReleaseUpdatesWidget
-          onOpen={openReleaseUpdates}
-        />
+        <ReleaseUpdatesWidget audience="admin" />
       );
     }
 

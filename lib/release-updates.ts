@@ -1,4 +1,3 @@
-export const RELEASE_UPDATES_OPEN_EVENT = 'release-updates:open'
 export const CURRENT_RELEASE_UPDATE_VERSION = '2026-08-combined-planning'
 
 export type ReleaseUpdateAudience = 'admin' | 'employee'
@@ -84,12 +83,6 @@ const DEFAULT_PREFERENCE: ReleaseUpdatePreference = {
 
 export function getReleaseUpdateContent(audience: ReleaseUpdateAudience): ReleaseUpdateContent {
   return CONTENT[audience]
-}
-
-export function openReleaseUpdates(): boolean {
-  if (typeof window === 'undefined') return false
-  window.dispatchEvent(new CustomEvent(RELEASE_UPDATES_OPEN_EVENT))
-  return true
 }
 
 export function releaseUpdatePreferenceKey(userId: string): string {

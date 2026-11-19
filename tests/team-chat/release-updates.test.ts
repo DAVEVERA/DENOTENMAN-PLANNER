@@ -4,7 +4,6 @@ import {
   CURRENT_RELEASE_UPDATE_VERSION,
   getReleaseUpdateContent,
   hasSeenReleaseUpdate,
-  openReleaseUpdates,
   readReleaseUpdatePreference,
   releaseUpdatePreferenceKey,
 } from '../../lib/release-updates'
@@ -39,5 +38,4 @@ test('release preference helpers are SSR-safe and isolated per user', () => {
   assert.deepEqual(preference, { schemaVersion: 1, autoShow: true, seenVersions: [] })
   assert.equal(hasSeenReleaseUpdate(preference, CURRENT_RELEASE_UPDATE_VERSION), false)
   assert.equal(releaseUpdatePreferenceKey('employee 12'), 'release-updates:preference:employee%2012')
-  assert.equal(openReleaseUpdates(), false)
 })

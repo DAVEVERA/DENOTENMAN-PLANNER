@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/Icons'
 import Sidebar, { type SidebarItem, type SidebarSection } from '@/components/layout/Sidebar'
 import AdminMobileMoreNav from '@/components/layout/AdminMobileMoreNav'
-import ReleaseUpdatePopout from '@/components/ui/ReleaseUpdatePopout'
 
 interface Props { user: SessionUser; children: React.ReactNode; title?: string; location?: Location }
 
@@ -133,12 +132,6 @@ export default function AdminLayout({ user, children, title, location }: Props) 
         items={mobileMenuItems}
         onClose={() => { setMoreOpen(false); requestAnimationFrame(() => moreTriggerRef.current?.focus()) }}
         onLogout={logout}
-      />
-
-      <ReleaseUpdatePopout
-        userId={user.user_id}
-        audience="admin"
-        autoOpen={router.pathname === '/admin'}
       />
 
       <style jsx>{`
