@@ -1,14 +1,7 @@
 import type { WeekInfo } from '@/types'
 
-export function getISOWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
-  const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return Math.ceil((((d.getTime() - y.getTime()) / 86400000) + 1) / 7)
-}
-
-export function getISOWeekYear(date: Date): { week: number; year: number } {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+function isoWeekYearForCalendarDate(year: number, month: number, day: number): WeekInfo {
+  const d = new Date(Date.UTC(year, month - 1, day))
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
   const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
   return {
@@ -17,8 +10,20 @@ export function getISOWeekYear(date: Date): { week: number; year: number } {
   }
 }
 
-export function currentWeekYear(): WeekInfo {
-  return getISOWeekYear(new Date())
+export function getISOWeek(date: Date): number {
+  return getISOWeekYear(date).week
+}
+
+export function getISOWeekYear(date: Date): { week: number; year: number } {
+  return isoWeekYearForCalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate())
+}
+
+export function currentWeekYear(now = new Date()): WeekInfo {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Amsterdam', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now)
+  const value = (type: string) => Number(parts.find(part => part.type === type)?.value)
+  return isoWeekYearForCalendarDate(value('year'), value('month'), value('day'))
 }
 
 /** Returns the number of ISO weeks in an ISO week-year (52 or 53). */
@@ -82,6 +87,13 @@ export function weeksInRange(
   return Array.from({ length: Math.max(0, Math.trunc(numWeeks)) }, (_, index) =>
     shiftWeekYear(startWeek, startYear, index),
   )
+}
+
+/** Keep both ISO years visible when a multi-week period crosses New Year. */
+export function formatWeekSpan(startWeek: number, startYear: number, count: number): string {
+  const end = shiftWeekYear(startWeek, startYear, Math.max(0, Math.trunc(count) - 1))
+  const years = end.year === startYear ? `${startYear}` : `${startYear}–${end.year}`
+  return `Wk ${startWeek}–${end.week} · ${years}`
 }
 
 /** Returns all ISO week/year combos that overlap with a given month span */

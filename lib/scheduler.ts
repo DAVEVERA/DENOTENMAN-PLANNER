@@ -2,6 +2,7 @@ import { supabase, T, unwrap } from './db'
 import type { Shift, Employee, Location } from '@/types'
 import { DAYS } from '@/types'
 import { attachOpenShiftClaims } from './open-shift-claims'
+import { isValidISOWeek } from './dateUtils'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,24 @@ export function shiftHours(s: Pick<Shift, 'full_day' | 'start_time' | 'end_time'
     return Math.max(0, netMin / 60)
   }
   return 0
+}
+
+// ─── Database error translation ───────────────────────────────────
+
+/** Guard messages raised by planner20 triggers, mapped to user-facing Dutch copy. */
+const PLANNING_ERROR_MESSAGES: Record<string, string> = {
+  planner20_shift_overlap: 'Er is al een dienst gepland op dit tijdstip',
+  planner20_shift_approved_leave: 'Medewerker heeft goedgekeurd verlof op deze dag',
+  'assignment_version cannot decrease': 'Deze dienst is net door iemand anders gewijzigd; laad het overzicht opnieuw',
+  archived_shift_not_exchangeable: 'Deze dienst is gearchiveerd en kan niet meer worden geruild',
+}
+
+const PLANNING_ERROR_FALLBACK = 'Dienst kon niet worden opgeslagen'
+
+/** Never expose raw Postgres messages to the planner UI. */
+export function planningErrorMessage(raw: string | null | undefined): string {
+  if (!raw) return PLANNING_ERROR_FALLBACK
+  return PLANNING_ERROR_MESSAGES[raw.trim()] ?? PLANNING_ERROR_FALLBACK
 }
 
 // ─── Shifts ───────────────────────────────────────────────────────────────────
@@ -97,6 +116,9 @@ async function hasConflict(data: Partial<Shift>, excludeId?: number): Promise<bo
 export async function saveShift(
   data: Partial<Shift>, createdBy = '',
 ): Promise<Shift | { error: string }> {
+  if (!isValidISOWeek(data.week_number ?? NaN, data.year ?? NaN))
+    return { error: 'Ongeldige week voor dit jaar' }
+
   if (data.employee_id && await hasConflict(data, data.id))
     return { error: 'Er is al een dienst gepland op dit tijdstip' }
 
@@ -142,14 +164,14 @@ export async function saveShift(
   if (data.id) {
     const { data: updated, error } = await supabase
       .from(T('shifts')).update(fields).eq('id', data.id).is('archived_at', null).select().maybeSingle()
-    if (error) return { error: error.message }
+    if (error) return { error: planningErrorMessage(error.message) }
     if (!updated) return { error: 'Dienst niet gevonden of al gearchiveerd' }
     return updated
   }
 
   const { data: inserted, error } = await supabase
     .from(T('shifts')).insert({ ...fields, created_by: createdBy }).select().single()
-  if (error) return { error: error.message }
+  if (error) return { error: planningErrorMessage(error.message) }
   return inserted
 }
 
@@ -193,6 +215,22 @@ export async function updateOpenShift(
   shiftId: number,
   fields: Partial<Pick<Shift, 'day_of_week' | 'week_number' | 'year' | 'shift_type' | 'start_time' | 'end_time' | 'location' | 'open_note'>>,
 ): Promise<Shift | { error: string }> {
+  let expectedWeekYear: { week_number: number; year: number } | null = null
+  if (fields.week_number !== undefined || fields.year !== undefined) {
+    const { data: current, error: readError } = await supabase
+      .from(T('shifts'))
+      .select('week_number, year')
+      .eq('id', shiftId)
+      .is('archived_at', null)
+      .eq('is_open', 1)
+      .maybeSingle()
+    if (readError) return { error: readError.message }
+    if (!current) return { error: 'Open dienst niet gevonden' }
+    if (!isValidISOWeek(fields.week_number ?? current.week_number, fields.year ?? current.year))
+      return { error: 'Ongeldige week voor dit jaar' }
+    expectedWeekYear = current
+  }
+
   const update: Record<string, unknown> = {}
   if (fields.day_of_week !== undefined)  update.day_of_week = fields.day_of_week
   if (fields.week_number !== undefined)  update.week_number = fields.week_number
@@ -203,15 +241,20 @@ export async function updateOpenShift(
   if (fields.location !== undefined)     update.location    = fields.location
   if (fields.open_note !== undefined)    update.open_note   = fields.open_note
 
-  const { data, error } = await supabase
+  let query = supabase
     .from(T('shifts'))
     .update(update)
     .eq('id', shiftId)
     .is('archived_at', null)
     .eq('is_open', 1)
+  if (expectedWeekYear) {
+    query = query.eq('week_number', expectedWeekYear.week_number).eq('year', expectedWeekYear.year)
+  }
+  const { data, error } = await query
     .select()
-    .single()
-  if (error) return { error: error.message }
+    .maybeSingle()
+  if (error) return { error: planningErrorMessage(error.message) }
+  if (!data) return { error: 'Open dienst is inmiddels gewijzigd; laad het overzicht opnieuw' }
   return data
 }
 

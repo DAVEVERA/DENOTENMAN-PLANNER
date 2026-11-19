@@ -71,7 +71,9 @@ begin
      and existing_shift.week_number = changed_shift.week_number
      and existing_shift.year = changed_shift.year
      and existing_shift.day_of_week = changed_shift.day_of_week
+     and existing_shift.archived_at is null
     where changed_shift.employee_id is not null
+      and changed_shift.archived_at is null
       and lower(trim(changed_shift.shift_type)) not in ('verlof', 'vakantie', 'verzuim')
       and lower(trim(existing_shift.shift_type)) not in ('verlof', 'vakantie', 'verzuim')
       and (
@@ -99,6 +101,7 @@ begin
       on leave_request.employee_id = changed_shift.employee_id
      and leave_request.status = 'approved'
     where changed_shift.employee_id is not null
+      and changed_shift.archived_at is null
       and lower(trim(changed_shift.shift_type)) not in ('verlof', 'vakantie', 'verzuim')
       and case lower(changed_shift.day_of_week)
         when 'maandag' then 1

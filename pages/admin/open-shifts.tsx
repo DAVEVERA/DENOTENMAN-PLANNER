@@ -7,6 +7,7 @@ import { DAYS, DAY_SHORT, SHIFT_TYPES, WORK_TYPES } from '@/types'
 import Spinner from '@/components/ui/Spinner' 
 import { formatShiftDate } from '@/lib/shiftDate'
 import { getOpenShiftReminderStage, getOpenShiftReminderText } from '@/lib/open-shift-age'
+import { currentWeekYear, getISOWeeksInYear, isValidISOWeek } from '@/lib/dateUtils'
 
 interface Props { user: SessionUser }
 
@@ -29,14 +30,6 @@ interface NewShiftForm {
   open_note: string
 }
 
-function currentWeek() {
-  const now = new Date()
-  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
-  const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return { week: Math.ceil((((d.getTime() - y.getTime()) / 86400000) + 1) / 7), year: now.getFullYear() }
-}
-
 function shiftLabel(s: Shift) {
   const time = s.start_time ? `${s.start_time.slice(0,5)}-${s.end_time?.slice(0,5)}` : ''
   const date = formatShiftDate(s.day_of_week, s.week_number, s.year)
@@ -52,7 +45,7 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   const [actionId, setActionId] = useState<number | null>(null)
   const [toast, setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
   const [editShift, setEditShift] = useState<Shift | null>(null)
-  const { week: cw, year: cy } = currentWeek()
+  const { week: cw, year: cy } = currentWeekYear()
 
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok })
@@ -111,6 +104,10 @@ export default function OpenShiftsAdminPage({ user }: Props) {
 
   async function createOpenShift(e: React.FormEvent) {
     e.preventDefault()
+    if (!isValidISOWeek(form.week_number, form.year)) {
+      showToast('Kies een geldige week voor dit jaar.', false)
+      return
+    }
     setSaving(true)
     try {
       const r = await fetch('/api/shifts/open', {
@@ -142,6 +139,10 @@ export default function OpenShiftsAdminPage({ user }: Props) {
   async function editOpenShift(e: React.FormEvent) {
     e.preventDefault()
     if (!editShift) return
+    if (!isValidISOWeek(form.week_number, form.year)) {
+      showToast('Kies een geldige week voor dit jaar.', false)
+      return
+    }
     setSaving(true)
     try {
       const r = await fetch('/api/shifts/open', {
@@ -238,7 +239,8 @@ export default function OpenShiftsAdminPage({ user }: Props) {
     return employees.find(e => e.id === id)?.name ?? `#${id}`
   }
 
-  const formDate = formatShiftDate(form.day_of_week, form.week_number, form.year)
+  const formWeekValid = isValidISOWeek(form.week_number, form.year)
+  const formDate = formWeekValid ? formatShiftDate(form.day_of_week, form.week_number, form.year) : null
 
   return (
     <AdminLayout user={user} title="Open diensten">
@@ -301,19 +303,19 @@ export default function OpenShiftsAdminPage({ user }: Props) {
             <form onSubmit={createOpenShift} className="modal-body">
               <div className="form-row-2">
                 <div className="form-group">
-                  <label className="form-label">Week</label>
-                  <input type="number" className="form-control" min={1} max={53}
-                    title="Weeknummer (1–53)" placeholder="Week"
+                  <label className="form-label" htmlFor="create-open-week">Week</label>
+                  <input id="create-open-week" type="number" className="form-control" min={1} max={getISOWeeksInYear(form.year)}
+                    title={`Weeknummer (1–${getISOWeeksInYear(form.year)})`} placeholder="Week"
                     value={form.week_number} onChange={e => setForm(f => ({ ...f, week_number: +e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Jaar</label>
-                  <input type="number" className="form-control" min={2024} max={2030}
+                  <label className="form-label" htmlFor="create-open-year">Jaar</label>
+                  <input id="create-open-year" type="number" className="form-control" min={2024} max={2030}
                     title="Jaar" placeholder="Jaar"
                     value={form.year} onChange={e => setForm(f => ({ ...f, year: +e.target.value }))} />
                 </div>
               </div>
-              <div className="date-preview">Exacte datum: {formDate}</div>
+              <div className="date-preview">{formDate ? `Exacte datum: ${formDate}` : 'Kies een geldige week en een geldig jaar.'}</div>
               <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Dag</label>
@@ -384,19 +386,19 @@ export default function OpenShiftsAdminPage({ user }: Props) {
             <form onSubmit={editOpenShift} className="modal-body">
               <div className="form-row-2">
                 <div className="form-group">
-                  <label className="form-label">Week</label>
-                  <input type="number" className="form-control" min={1} max={53}
-                    title="Weeknummer" placeholder="Week"
+                  <label className="form-label" htmlFor="edit-open-week">Week</label>
+                  <input id="edit-open-week" type="number" className="form-control" min={1} max={getISOWeeksInYear(form.year)}
+                    title={`Weeknummer (1–${getISOWeeksInYear(form.year)})`} placeholder="Week"
                     value={form.week_number} onChange={e => setForm(f => ({ ...f, week_number: +e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Jaar</label>
-                  <input type="number" className="form-control" min={2024} max={2030}
+                  <label className="form-label" htmlFor="edit-open-year">Jaar</label>
+                  <input id="edit-open-year" type="number" className="form-control" min={2024} max={2030}
                     title="Jaar" placeholder="Jaar"
                     value={form.year} onChange={e => setForm(f => ({ ...f, year: +e.target.value }))} />
                 </div>
               </div>
-              <div className="date-preview">Exacte datum: {formDate}</div>
+              <div className="date-preview">{formDate ? `Exacte datum: ${formDate}` : 'Kies een geldige week en een geldig jaar.'}</div>
               <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Dag</label>

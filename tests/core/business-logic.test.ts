@@ -4,7 +4,7 @@ import { can } from '../../lib/capabilities'
 import { calcHoursWorked } from '../../lib/dateUtils'
 import { buildCSV, buildJSON } from '../../lib/export'
 import { isInspectorPathAllowed } from '../../lib/auth'
-import { shiftHours } from '../../lib/scheduler'
+import { planningErrorMessage, shiftHours } from '../../lib/scheduler'
 import type { SessionUser, TimeLog } from '../../types'
 
 test('calculates worked hours with breaks, rounding boundaries and invalid ranges', () => {
@@ -88,3 +88,21 @@ function user(role: SessionUser['role']): SessionUser {
     location: role === 'employee' ? 'markt' : null,
   }
 }
+
+test('translates planning guard codes into Dutch without leaking raw database codes', () => {
+  assert.equal(
+    planningErrorMessage('planner20_shift_overlap'),
+    'Er is al een dienst gepland op dit tijdstip',
+  )
+  assert.equal(
+    planningErrorMessage('planner20_shift_approved_leave'),
+    'Medewerker heeft goedgekeurd verlof op deze dag',
+  )
+  assert.equal(
+    planningErrorMessage('assignment_version cannot decrease'),
+    'Deze dienst is net door iemand anders gewijzigd; laad het overzicht opnieuw',
+  )
+  assert.doesNotMatch(planningErrorMessage('planner20_shift_overlap'), /planner20_/)
+  assert.equal(planningErrorMessage('duplicate key value violates unique constraint'), 'Dienst kon niet worden opgeslagen')
+  assert.equal(planningErrorMessage(''), 'Dienst kon niet worden opgeslagen')
+})

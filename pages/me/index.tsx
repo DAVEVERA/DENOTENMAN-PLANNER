@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import TeamLayout from '@/components/layout/TeamLayout'
 import { PrevIcon, NextIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
-import { currentWeekYear, shiftWeekYear, weeksInRange } from '@/lib/dateUtils'
+import { currentWeekYear, formatWeekSpan, shiftWeekYear, weeksInRange } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import type { SessionUser, Shift, Location } from '@/types'
@@ -240,7 +240,7 @@ export default function MySchedulePage({ user, initialWeek, initialYear }: Props
                 <span className="period-label">
                   {view === 'week'
                     ? `Week ${week} · ${year}`
-                    : `Wk ${week}–${weeks[weeks.length-1].week} · ${year}`}
+                    : formatWeekSpan(week, year, numWeeks)}
                 </span>
                 {view === 'week' && (
                   <span className="period-date-range">{weekDateRange(week, year)}</span>

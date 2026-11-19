@@ -15,7 +15,7 @@ import { getSession } from '@/lib/auth'
 import { supabase, T } from '@/lib/db'
 import { buildSystemPrompt } from '@/lib/dave-config'
 import { getToolsForRole, executeTool } from '@/lib/dave-tools'
-import { getISOWeek } from '@/lib/scheduler'
+import { currentWeekYear } from '@/lib/dateUtils'
 import { DAVE_MAX_CONTEXT_MESSAGES } from '@/lib/dave-config'
 import { hasSameOrigin } from '@/lib/request-security'
 
@@ -225,10 +225,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await saveMessage(sessionId, 'user', trimmed)
 
     // Bouw context op
-    const now = new Date()
+    const { week, year } = currentWeekYear()
     const systemPrompt = buildSystemPrompt(user.role, {
-      currentWeek: getISOWeek(now),
-      currentYear: now.getFullYear(),
+      currentWeek: week,
+      currentYear: year,
       userName:    user.display_name,
     })
     const tools    = getToolsForRole(user.role)

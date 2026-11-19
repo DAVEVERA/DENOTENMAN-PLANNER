@@ -499,3 +499,17 @@ test('returns the stable exchange response contract', () => {
     assert.match(sql, new RegExp(`'${key}'`, 'i'))
   }
 })
+
+test('ignores archived shifts when validating overlap and approved leave', () => {
+  assert.ok(shiftStatementValidator, 'Missing isolated AFTER STATEMENT shift validator body')
+
+  const overlapBlock = shiftStatementValidator.match(/if\s+exists\s*\([\s\S]+?planner20_shift_overlap/i)?.[0] ?? ''
+  assert.ok(overlapBlock, 'Missing bounded overlap check block')
+  assert.match(overlapBlock, /changed_shift\.archived_at\s+is\s+null/i)
+  assert.match(overlapBlock, /existing_shift\.archived_at\s+is\s+null/i)
+
+  const afterOverlap = shiftStatementValidator.slice(shiftStatementValidator.search(/planner20_shift_overlap/i))
+  const leaveBlock = afterOverlap.match(/if\s+exists\s*\([\s\S]+?planner20_shift_approved_leave/i)?.[0] ?? ''
+  assert.ok(leaveBlock, 'Missing bounded approved-leave check block')
+  assert.match(leaveBlock, /changed_shift\.archived_at\s+is\s+null/i)
+})

@@ -1,5 +1,6 @@
 import { supabase, T, unwrap } from './db'
-import { archiveShift, saveShift, getISOWeek } from './scheduler'
+import { archiveShift, saveShift } from './scheduler'
+import { getISOWeekYear } from './dateUtils'
 import type { LeaveRequest, Day } from '@/types'
 import { DAYS } from '@/types'
 
@@ -45,14 +46,19 @@ export async function reviewLeaveRequest(
     const empLocation = empData?.location ?? 'markt'
 
     // Auto-create shift rows for each day in the date range
-    const start = new Date(row.start_date)
-    const end   = new Date(row.end_date)
+    // Date-only values represent local calendar days. Noon stays on the same
+    // day across timezone offsets and daylight-saving transitions.
+    const localNoon = (date: string) => {
+      const [year, month, day] = date.split('-').map(Number)
+      return new Date(year, month - 1, day, 12)
+    }
+    const start = localNoon(row.start_date)
+    const end   = localNoon(row.end_date)
     const cursor = new Date(start)
     while (cursor <= end) {
       const dow = cursor.toLocaleDateString('nl-NL', { weekday: 'long' }) as Day
       if (DAYS.includes(dow as typeof DAYS[number])) {
-        const week = getISOWeek(cursor)
-        const year = cursor.getFullYear()
+        const { week, year } = getISOWeekYear(cursor)
 
         // Verwijder bestaande diensten van de medewerker op deze dag
         const { data: existingShifts, error: existingShiftError } = await supabase

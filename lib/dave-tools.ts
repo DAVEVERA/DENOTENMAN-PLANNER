@@ -11,7 +11,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { supabase, T } from './db'
 import { saveShift, getWeekShifts, getEmployeeShifts, getOpenShifts, getEmployees } from './scheduler'
-import { getISOWeek } from './scheduler'
+import { currentWeekYear } from './dateUtils'
 import { sendOpenShiftAlertEmail } from './email'
 import { sendPushToAll } from './push'
 import type { SessionUser } from '@/types'
@@ -20,11 +20,6 @@ import { DAYS } from '@/types'
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────────────────────────────
-
-function currentWeekYear() {
-  const now = new Date()
-  return { week: getISOWeek(now), year: now.getFullYear() }
-}
 
 /** Zoek medewerker op naam (fuzzy, case-insensitive) */
 async function findEmployeeByName(name: string) {

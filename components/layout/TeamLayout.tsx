@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/Icons';
 import Sidebar, { type SidebarItem, type SidebarSection } from '@/components/layout/Sidebar';
 import MobileMoreNav from '@/components/layout/MobileMoreNav';
-import ReleaseUpdatePopout from '@/components/ui/ReleaseUpdatePopout';
 
 interface Props {
   user: SessionUser;
@@ -133,12 +132,6 @@ export default function TeamLayout({ user, children, location }: Props) {
           requestAnimationFrame(() => moreTriggerRef.current?.focus());
         }}
         onLogout={logout}
-      />
-
-      <ReleaseUpdatePopout
-        userId={user.user_id}
-        audience="employee"
-        autoOpen={!isAdmin && router.pathname === '/team/[location]' && router.query.location === 'both'}
       />
 
       <style jsx>{`

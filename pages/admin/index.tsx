@@ -5,7 +5,7 @@ import ShiftModal from '@/components/ui/ShiftModal'
 import LocationBadge from '@/components/ui/LocationBadge'
 import { PrevIcon, NextIcon, PlusIcon, CloseIcon } from '@/components/ui/Icons'
 import { getSession } from '@/lib/auth'
-import { currentWeekYear, getISOWeeksInYear, shiftWeekYear, weeksInRange } from '@/lib/dateUtils'
+import { currentWeekYear, formatWeekSpan, getISOWeeksInYear, shiftWeekYear, weeksInRange } from '@/lib/dateUtils'
 import type { GetServerSideProps } from 'next'
 import type { SessionUser, Shift, Employee, Location, Day } from '@/types'
 import { DAYS, DAY_SHORT, SHIFT_TYPES, LOCATION_LABELS } from '@/types'
@@ -248,7 +248,7 @@ export default function AdminPlanning({ user, initialWeek, initialYear }: Props)
             <span className="week-label">
               {view === 'week'
                 ? `Week ${week} · ${year}`
-                : `Wk ${week}–${weeksInRange(week, year, numWeeks).slice(-1)[0].week} · ${year}`}
+                : formatWeekSpan(week, year, numWeeks)}
             </span>
             {view === 'week' && (
               <span className="week-date-range">{weekDateRange(week, year)}</span>

@@ -11,13 +11,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     if (!can(session.user, 'read'))
       return res.status(403).json({ success: false, message: 'Toegang geweigerd' })
+    const current = currentWeekYear()
     const week = parseInt(String(req.query.week || 0))
-    const year = parseInt(String(req.query.year || new Date().getFullYear()))
+    const year = parseInt(String(req.query.year || current.year))
     const empId    = req.query.employee_id ? parseInt(String(req.query.employee_id)) : undefined
     const location = req.query.location as any ?? undefined
     const shifts   = empId
       ? await getEmployeeShifts(empId, week || undefined, year)
-      : await getWeekShifts(week || currentWeekYear().week, year, location)
+      : await getWeekShifts(week || current.week, year, location)
 
     // Verberg beheer- en privénotities server-side voor onbevoegde medewerkers.
     const data = filterShiftsForUser(shifts, session.user)

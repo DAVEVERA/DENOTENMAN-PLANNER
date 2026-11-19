@@ -11,9 +11,6 @@ import type { SessionUser, Shift, Employee, Location } from '@/types'
 import { DAYS, DAY_SHORT, LOCATION_LABELS } from '@/types'
 import Spinner from '@/components/ui/Spinner'
 import { isScheduleLocation } from '@/lib/schedule-view'
-import DashboardWidgetLayout from '@/components/dashboard/DashboardWidgetLayout'
-import ReleaseUpdatesWidget from '@/components/release/ReleaseUpdatesWidget'
-import { openReleaseUpdates } from '@/lib/release-updates'
 
 interface Props {
   user: SessionUser
@@ -21,9 +18,6 @@ interface Props {
   initialWeek: number
   initialYear: number
 }
-
-type TeamDashboardWidget = 'updates'
-const TEAM_DASHBOARD_WIDGETS: TeamDashboardWidget[] = ['updates']
 
 function fmtTime(t: string | null) {
   return t ? t.slice(0, 5) : ''
@@ -122,26 +116,6 @@ export default function TeamView({ user, location, initialWeek, initialYear }: P
           {LOCATION_LABELS[location]}
         </div>
       </div>
-
-      {location === 'both' && (
-        <DashboardWidgetLayout<TeamDashboardWidget>
-          storageKey={`team-dashboard-layout:${user.user_id}`}
-          defaultOrder={TEAM_DASHBOARD_WIDGETS}
-          widgets={[
-            {
-              id: 'updates',
-              label: 'Nieuw in de planner',
-              fullWidth: true,
-              content: (
-                <ReleaseUpdatesWidget
-                  onOpen={openReleaseUpdates}
-                />
-              ),
-            },
-          ]}
-          emptyText="Je hebt nu geen widgets boven je rooster."
-        />
-      )}
 
       {loading ? (
         <div className="loading-row"><Spinner /> Laden…</div>
